@@ -10,10 +10,14 @@ TODO:
  * Backend
 	* Authentication required everywhere (except splash page, registration)
 	* Modify feed
-		* Change name, etc
+		* Change personally visible details
+		* Change feed URL
+		* Change update interval
 	* Tagging / folders
 	* Article search
  * Frontend
+    * Register
+    * Login
 	* New feed view
 	* Display single feed view
 	* Display combined feed view
