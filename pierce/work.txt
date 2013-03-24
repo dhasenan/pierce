@@ -1,0 +1,21 @@
+DONE:
+ * Backend
+	* Persistence
+	* User registration
+	* User login
+	* Track read/unread
+	* Autodetect feed
+	
+TODO:
+ * Backend
+	* Authentication required everywhere (except splash page, registration)
+	* Modify feed
+		* Change name, etc
+	* Tagging / folders
+	* Article search
+ * Frontend
+	* New feed view
+	* Display single feed view
+	* Display combined feed view
+	* Display unread only
+	* Modify feed view
