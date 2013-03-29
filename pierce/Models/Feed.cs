@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using MongoDB.Bson;
 using MongoDB.Driver.Builders;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace pierce
 {
 	public class Feed
 	{
-        public ObjectId Id;
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string Id;
 		
 		// URL for the RSS feed -- where we get the actual XML document.
 		public Uri Uri;
@@ -24,7 +27,7 @@ namespace pierce
 		public string ImageTitle;
         
         public ICollection<Article> Articles = new HashSet<Article>();
-        public ICollection<ObjectId> Subscribers = new HashSet<ObjectId>();
+        public ICollection<string> Subscribers = new HashSet<string>();
 		public DateTime LastRead = DateTime.MinValue;
 		public TimeSpan ReadInterval = TimeSpan.FromHours(1);
 		public int Errors = 0;
@@ -37,13 +40,6 @@ namespace pierce
         public long NextUpdateTimestamp
         {
             get { return Timestamp(LastRead + ReadInterval); }
-        }
-
-        public Feed SanitizeFor(ObjectId userId)
-        {
-            var f = (Feed)MemberwiseClone();
-            f.Articles = Articles.Select(x => x.SanitizeFor(userId)).ToList();
-            return f;
         }
 
         public override string ToString()

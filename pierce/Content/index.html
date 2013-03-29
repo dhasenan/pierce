@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>DockManager</title>
+    <!--<link rel='stylesheet' href='dock-manager.css'>-->
+    <link rel='stylesheet' href='sunny.css'>
+    <link rel='stylesheet' href='pierceweb.css'>
+    <script type='text/javascript' src='jquery-1.9.1.js'></script>
+    <script type='text/javascript' src='jquery-ui-1.10.2.js'></script>
+    <script type='text/javascript' src='jquery.layout.js'></script>
+    <script type='text/javascript' src='ICanHaz.js'></script>
+    <script type='text/javascript' src='app.js'></script>
+    <script id='feedli' type='text/html'>
+      <div
+          id='feedli_{{Id}}'
+          class='feedli'
+      >
+        {{Title}}
+      </div>
+    </script>
+
+    <script id='articleli' type='text/html'>
+      <div
+        id='articleli_{{feed.Id}}_{{article.UniqueId}}'
+        class='articleli'
+      >
+        {{article.Title}}
+      </div>
+    </script>
+
+    <script id='articlefull' type='text/html'>
+      <div>
+        <h3>{{article.Title}} - {{feed.Title}}</h3>
+        <div>{{{article.Description}}}</div>
+      </div>
+    </script>
+  </head>
+  <body>
+    <div id='headerBar'>
+      <span id='userName'>Not logged in</span>
+      <span style='float: right'>Settings</span>
+    </div>
+    <div id='mainPanel'>
+      <div id='articleView' caption='Current article' class='articleView'>
+        <div class='paneTitle'>Article</div>
+        <div class='content'>
+          I need an article.
+        </div>
+      </div>
+      <div id='articleList' caption='Articles' class='articleList'>
+        <div class='paneTitle'>Articles</div>
+        <div class='content'>
+          A list of articles, natch.
+        </div>
+      </div>
+      <div id='feedList' caption='Feeds' class='feedList'>
+        <div class='paneTitle'>Feeds</div>
+        <div class='content'>
+          I need some feeds.
+        </div>
+      </div>
+      <div id='login_window' title='Log In' class='login' style='width: 800px'>
+        <table>
+          <tr>
+            <td><label for='email'>Email address:</label></td>
+            <td><input id='email' type='text' value='dhasenan@gmail.com' /></td>
+          </tr>
+          <tr>
+            <td><label for='password'>Password:</label></td>
+            <td><input id='password' type='password' value='password' /></td>
+            <td><input type='button' value='Log in' id='login_button' /></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

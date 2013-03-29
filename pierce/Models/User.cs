@@ -4,18 +4,21 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Collections.Generic;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace pierce
 {
     public class User
     {
-        public ObjectId Id;
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string Id;
         public string Email;
         public string PasswordHash;
         public ICollection<Subscription> Subscriptions = new HashSet<Subscription>();
         public string Password { set { PasswordHash = HashedPassword(value); } }
 
-        public Subscription GetSubscription(ObjectId objectId)
+        public Subscription GetSubscription(string objectId)
         {
             return Subscriptions.Where(x => x.FeedId == objectId).FirstOrDefault();
         } 

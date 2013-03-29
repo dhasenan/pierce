@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using System.Web.Mvc.Ajax;
 using MongoDB.Bson;
 using MongoDB.Driver.Builders;
+using System.Web.Security;
 
 namespace pierce
 {
@@ -16,13 +17,18 @@ namespace pierce
             return Json(o, JsonRequestBehavior.AllowGet);
         }
 
-        protected ObjectId UserId { get { return new ObjectId(base.User.Identity.Name); } }
-
-        protected new User User
+        protected User GetUser()
         {
-            get
+            if (!User.Identity.IsAuthenticated) return null;
+            try
             {
-                return Pierce.Users.Find(Query.EQ("_id", UserId)).FirstOrDefault();
+                var id = new ObjectId(User.Identity.Name);
+                return Pierce.Users.Find(Query.EQ("_id", id)).FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return null;
             }
         }
     }

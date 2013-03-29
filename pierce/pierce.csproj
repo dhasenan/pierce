@@ -46,12 +46,6 @@
     <Reference Include="HtmlAgilityPack">
       <HintPath>..\lib\HAP\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\lib\riak\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="protobuf-net">
-      <HintPath>..\lib\riak\protobuf-net.dll</HintPath>
-    </Reference>
     <Reference Include="System.Web.Extensions">
       <HintPath>..\lib\System.Web.Extensions.dll</HintPath>
     </Reference>
@@ -88,6 +82,13 @@
     <Content Include="Views\Home\Index.aspx" />
     <Content Include="Web.config" />
     <Content Include="Global.asax" />
+    <Content Include="Content\app.js" />
+    <Content Include="Content\index.html" />
+    <Content Include="Content\jquery.layout.js" />
+    <Content Include="Content\jquery-1.9.1.js" />
+    <Content Include="Content\pierceweb.css" />
+    <Content Include="Content\jquery-ui-1.10.2.js" />
+    <Content Include="Content\sunny.css" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" />

@@ -23,6 +23,15 @@ namespace pierce
 
         }
 
+        public override void Init()
+        {
+            base.Init();
+            this.BeginRequest += (sender, e) => {
+                Context.Response.AppendHeader("Access-Control-Allow-Headers", "Content-Type,Origin");
+                Context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+            };
+        }
+
         public static MongoDatabase Cluster;
         public static MongoCollection<User> Users { get { return Cluster.GetCollection<User>("users"); } }
         public static MongoCollection<Feed> Feeds { get { return Cluster.GetCollection<Feed>("feeds"); } }

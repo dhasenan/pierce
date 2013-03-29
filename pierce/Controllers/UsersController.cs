@@ -11,11 +11,12 @@ namespace pierce
 {
     public class UsersController : BaseController
     {
-        public ActionResult Login(string email, string password, string register)
+        public ActionResult Login(string email, string password)
         {
-            if (register == "true")
+            if (string.IsNullOrEmpty(email))
             {
-                return Register(email, password);
+                Response.StatusCode = 401;
+                return Json(new {});
             }
             password = pierce.User.HashedPassword(password);
             var result = Pierce.Users.Find(Query.EQ("Email", email));
@@ -24,11 +25,23 @@ namespace pierce
                 var user = result.First();
                 if (user.PasswordHash == password)
                 {
-                    FormsAuthentication.SetAuthCookie(user.Id.ToString(), true);
+                    FormsAuthentication.SetAuthCookie(user.Id, true);
                     return Json(user);
                 }
             }
-            return Json(new { Error = "Failed to log in." });
+            Response.StatusCode = 401;
+            return Json(new {});
+        }
+
+        public ActionResult Get()
+        {
+            var user = GetUser();
+            if (user == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new {});
+            }
+            return Json(user);
         }
 
         public ActionResult Register(string email, string password)
@@ -45,14 +58,14 @@ namespace pierce
                 return Json(new { Error = "failed to save user: " + saved.ErrorMessage });
             }
 
-            FormsAuthentication.SetAuthCookie(user.Id.ToString(), true);
-            return Json(new { User = user });
+            FormsAuthentication.SetAuthCookie(user.Id, true);
+            return Json(user);
         }
 
         public ActionResult Logout()
         {
             FormsAuthentication.SignOut();
-            return Json(new { Success = true });
+            return Json(new object());
         }
     }
 }

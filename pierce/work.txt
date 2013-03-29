@@ -5,6 +5,8 @@ DONE:
 	* User login
 	* Track read/unread
 	* Autodetect feed
+ * Frontend
+    * Basic layout
 	
 TODO:
  * Backend
@@ -16,6 +18,7 @@ TODO:
 	* Tagging / folders
 	* Article search
  * Frontend
+    * Style
     * Register
     * Login
 	* New feed view

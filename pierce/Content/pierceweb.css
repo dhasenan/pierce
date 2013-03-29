@@ -1,0 +1,43 @@
+
+body {
+  background-color: #F8F8FF;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.2em;
+  margin: 0px;
+  overflow: hidden;
+  position:fixed;
+}
+
+.paneTitle {
+  width: 100%;
+  background-color: #444;
+  color: #fee;
+  padding: 0.2em;
+  padding-left: 0.3em;
+}
+
+.content {
+  background-color: #f8f8ff;
+}
+
+.ui-layout-resizer-west {
+  width: 4px !important;
+}
+
+.ui-layout-resizer-south {
+  height: 4px !important;
+}
+
+.ui-layout-resizer {
+  background-color: #e95 !important;
+}
+
+.login {
+  background-color: #8af;
+}
+
+#headerBar {
+  background-color: #e95; 
+}

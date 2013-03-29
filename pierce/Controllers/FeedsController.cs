@@ -13,11 +13,17 @@ namespace pierce
     {
         public ActionResult Add(string url)
         {
-            var user = User;
+            var user = GetUser();
+            if (user == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new { Error = "Not authenticated" });
+            }
+            
             var feeds = new AutodetectFeeds().FromHtmlPage(url);
             if (feeds.Count == 1)
             {
-                var f = feeds[0];
+                var f = feeds [0];
                 var uri = f.Uri.ToString();
                 var existing = Pierce.Feeds.Find(Query.EQ("Uri", uri));
                 if (existing.Any())
@@ -26,7 +32,7 @@ namespace pierce
                 }
                 else
                 {
-                    f.Id = ObjectId.GenerateNewId();
+                    f.Id = ObjectId.GenerateNewId().ToString();
                     Pierce.Feeds.Insert(f);
                 }
                 user.SubscribeTo(f);
@@ -43,8 +49,13 @@ namespace pierce
 
         public ActionResult Unsubscribe(string id)
         {
-            var user = User;
-            var sub = user.GetSubscription(new ObjectId(id));
+            var user = GetUser();
+            if (user == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new { Error = "Not authenticated" });
+            }
+            var sub = user.GetSubscription(id);
             if (sub != null)
             {
                 user.Subscriptions.Remove(sub);
@@ -60,28 +71,55 @@ namespace pierce
             {
                 return Json(new { Error = "The requested feed was not found." });
             }
-            return Json(result.SanitizeFor(UserId));
+            return Json(result);
         }
 
         public ActionResult UpdateNow(string id)
         {
+            var user = GetUser();
+            if (user == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new { Error = "Not authenticated" });
+            }
+            if (user.GetSubscription(id) == null)
+            {
+                Response.StatusCode = 404;
+                return Json(new { Error = "Feed not found" });
+            }
             var feed = Feed.ById(id);
             if (feed == null)
+            {
+                Response.StatusCode = 404;
                 return Json(new { Error = "Feed not found" });
+            }
             new ReadFeeds().Read(feed);
             Pierce.Feeds.Insert(feed);
-            return Json(feed.SanitizeFor(UserId));
+            return Json(feed);
         }
 
         public ActionResult MarkRead(string feedId, string articleId)
         {
-            var user = User;
-            Subscription sub = user.GetSubscription(new ObjectId(feedId));
+            var user = GetUser();
+            Subscription sub = user.GetSubscription(feedId);
             if (sub == null)
                 return Json(new { Error = "Feed not found" });
             sub.Read(articleId);
             Pierce.Users.Save(user);
             return Json(new { Success = true });
+        }
+
+        public ActionResult All()
+        {
+            var user = GetUser();
+            if (user == null)
+                return Json(new {Error = "you are not logged in"});
+            var feeds = new List<Feed>();
+            foreach (var sub in user.Subscriptions)
+            {
+                feeds.Add(Feed.ById(sub.FeedId));
+            }
+            return Json(feeds);
         }
 
         public ActionResult List()

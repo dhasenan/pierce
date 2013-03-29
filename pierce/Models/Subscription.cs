@@ -5,6 +5,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.Mvc.Ajax;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace pierce
 {
@@ -14,7 +15,8 @@ namespace pierce
 
         // User-set title, defaulting to feed title.
         public string Title;
-        public ObjectId FeedId;
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string FeedId;
         public TimeSpan CheckInterval = TimeSpan.FromHours(1);
         public ICollection<string> ReadArticles = new HashSet<string>();
         // TODO(dhasenan) how many historical ones to keep, how old in the past, etc

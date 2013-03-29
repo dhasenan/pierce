@@ -16,11 +16,6 @@ namespace pierce
 		public string Author;
 		public ICollection<string> Categories = new HashSet<string>();
 		public string UniqueId;
-
-        public Article SanitizeFor(ObjectId userId)
-        {
-            return this;
-        }
 		
 		public override string ToString()
 		{
