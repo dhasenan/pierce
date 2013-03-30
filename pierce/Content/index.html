@@ -37,6 +37,8 @@
       <div>
         <img style='float: left' src='<%= feed.ImageUri %>'></img>
         <h3><%- article.Title %> - <%- feed.Title %></h3>
+        <div><%- article.PublishDate.toISOString() %>
+          <% if (article.Author) { %> -- by <%- article.Author %><% } %></div>
         <frame><%= article.Description %></frame>
       </div>
     </script>

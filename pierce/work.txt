@@ -13,6 +13,7 @@ DONE:
   * Mark read
   * New feed view
     * Multiple candidate feeds
+  * Sorting
 	
 TODO:
 * Backend
@@ -32,6 +33,5 @@ TODO:
   * Display combined feed view
   * Display unread only
   * Modify feed view
-  * Sorting
   * Unread counts
   * Keyboard shortcuts

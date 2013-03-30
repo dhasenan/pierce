@@ -40,6 +40,12 @@ var domain = {
     return new Date(parseInt(aspNetDate.substr(6)));
   },
 
+  sortArticles: function(articles) {
+    articles.sort(function(a, b) {
+      return a.PublishDate.getTime() - b.PublishDate.getTime();
+    })
+  },
+
   mungeFeed: function(feed) {
     feed.LastRead = domain.jsDate(feed.LastRead);
     feed.NextRead = domain.jsDate(feed.NextRead);
@@ -49,6 +55,7 @@ var domain = {
       console.log('feed ' + feed.Id + ' has no subscription');
       return;
     }
+    feed.Articles.sort()
     $.each(feed.Articles, function(i, art) {
       art.PublishDate = domain.jsDate(art.PublishDate);
       art.HashId = util.hashString(art.UniqueId);
@@ -72,14 +79,18 @@ var domain = {
     });
   },
 
+  sortFeeds: function() {
+    feeds.sort(function(a, b) {
+      return a.Title.localeCompare(b.Title);
+    });
+  },
+
   refreshFeeds: function() {
     $.ajax('/Feeds/All', {
       dataType: 'json',
       success: function(data, statusText, xhr) {
         feeds = data;
-        feeds.sort(function(a, b) {
-          return a.Title.localeCompare(b.Title);
-        });
+        domain.sortFeeds();
         $.each(feeds, function(i, feed) {
           domain.mungeFeed(feed);
         });
@@ -99,6 +110,7 @@ var domain = {
         } else if (data['AddedFeed']) {
           // TODO sorting
           feeds.push(data['AddedFeed']);
+          domain.sortFeeds();
           ui.displayFeeds();
           ui.closeFeedPopup();
         } else {
