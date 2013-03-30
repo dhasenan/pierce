@@ -59,6 +59,7 @@
           A list of articles, natch.
         </div>
       </div>
+
       <div id='feedList' caption='Feeds' class='feedList'>
         <div class='paneTitle'>Feeds</div>
         <div class='content'>
@@ -68,27 +69,17 @@
           <a id='addFeedButton' href='#'>Add a feed</a>
         </div>
       </div>
+
+      <!-- Popups! -->
+
       <div id='addFeedWindow' title='Add a feed' class='addFeed'>
-        <div id='addFeedInitial'>
-          <table>
-            <tr>
-              <td><label for='addFeedUrl'>Feed URL:</label></td>
-              <td><input type='text' id='addFeedUrl' style='width: 100%' /></td>
-            </tr>
-            <tr>
-              <td colspan='2'>
-                <div style='float: right'>
-                  <input type='button' id='addFeedInitialButton' value='Add it!' />
-                  <input type='button' id='addFeedWindowClose' value='Or not' />
-                </div>
-              </td>
-            </tr>
-          </table>
-          <div>
-          </div>
-          <!-- TODO tags / labels / categories -->
+        <div style='width: 25em'>
+          <label for='addFeedUrl'>Feed URL:</label>
+          <input type='text' id='addFeedUrl' style='width: 98%%' />
         </div>
+        <!-- TODO tags / labels / categories -->
       </div>
+
       <div id='login_window' title='Log In' class='login' style='width: 800px'>
         <table>
           <tr>

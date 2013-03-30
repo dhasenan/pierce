@@ -29,6 +29,7 @@ TODO:
     * Style
         * Fix appearance for popups
     * New feed view
+        * Multiple candidate feeds
     * Display combined feed view
     * Display unread only
     * Modify feed view
