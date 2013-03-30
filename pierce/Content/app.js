@@ -1,13 +1,32 @@
+var user;
+var feeds;
+
 var bodyLayout;
+
+function hashString(str) {
+  var hash = 0;
+  for (var i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return hash;
+}
+
 function resizeMainPanel() {
   $('#mainPanel').height($(window).height() - $('#headerBar').height());
   $('#mainPanel').width($(window).width());
 }
 
-var user;
-
 function updateUserInfos() {
   $('#userName').text(user.Email);
+}
+
+function showLoginWindow() {
+  $('#login_window').dialog();
+}
+
+function hideLoginWindow() {
+  $('#login_window').dialog('close');
 }
 
 function refreshUser() {
@@ -17,6 +36,9 @@ function refreshUser() {
       user = data;
       updateUserInfos();
       refreshFeeds();
+    },
+    error: function() {
+      showLoginWindow();
     }
   });
 }
@@ -47,6 +69,7 @@ function refreshFeeds() {
           return;
         }
         $.each(feed.Articles, function(j, article) {
+          article.HashId = hashString(article.UniqueId);
           article.IsRead = sub.ReadArticles.indexOf(article.UniqueId) >= 0;
         });
       });
@@ -97,6 +120,7 @@ function showFeed(feedId) {
     });
     $(dom).click(function() {
       // Thanks to $.each, no need for binding hacks.
+      // I'd put this in the template, but I'm getting errors when I do so.
       showArticle(feed.Id, article.UniqueId);
     });
     $('#articleList .content').append(dom);
@@ -109,10 +133,24 @@ function showArticle(feedId, articleId) {
   if (!feed) return;
   var article = getArticle(feed, articleId);
   if (!article) return;
+  $('.articleli').removeClass('selectedItem');
+  $('#articleli_' + feedId + '_' + article.HashId).addClass('selectedItem');
   $('#articleView .content').html(ich.articlefull({
     feed: feed,
     article: article
   }));
+
+  if (!article.IsRead) {
+    article.IsRead = true;
+    $.ajax('/Feeds/MarkRead', {
+      dataType: 'json',
+      data: {
+        feedId: feedId,
+        articleId: articleId
+      }
+    });
+    // TODO update unread count (once we have such a thing)
+  }
 }
 
 $(document).ready(function() {
@@ -132,7 +170,8 @@ $(document).ready(function() {
       spacing_closed: 4
     },
     south: {
-      paneSelector: '.articleView'
+      paneSelector: '.articleView',
+      size: 400,
     },
     west: {
       paneSelector: '.feedList'
@@ -142,6 +181,23 @@ $(document).ready(function() {
     },
   });
 
+  $('#register_button').click(function() {
+    $('#register_window').dialog('close');
+    $.ajax('/Users/Register', {
+      dataType: 'json',
+      data: {
+        'email': $('#email').val(),
+        'password': $('#password').val(),
+      },
+      success: function(data, statusText, xhr) {
+        hideLoginWindow();
+        user = data;
+        updateUserInfos();
+        refreshFeeds();
+      }
+    });
+  });
+
   $('#login_button').click(function() {
     $('#login_window').dialog('close');
     $.ajax('/Users/Login', {
@@ -149,9 +205,9 @@ $(document).ready(function() {
       data: {
         'email': $('#email').val(),
         'password': $('#password').val(),
-        'register': false
       },
       success: function(data, statusText, xhr) {
+        hideLoginWindow();
         user = data;
         updateUserInfos();
         refreshFeeds();
@@ -162,7 +218,7 @@ $(document).ready(function() {
   if ($.cookie('.MONOAUTH')) {
     refreshUser();
   } else {
-    $('#login_window').dialog();
+    showLoginWindow();
   }
 
   // Every 5 minutes

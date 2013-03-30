@@ -7,6 +7,8 @@ DONE:
 	* Autodetect feed
  * Frontend
     * Basic layout
+    * Login
+    * Display single feed view
 	
 TODO:
  * Backend
@@ -20,9 +22,7 @@ TODO:
  * Frontend
     * Style
     * Register
-    * Login
-	* New feed view
-	* Display single feed view
-	* Display combined feed view
-	* Display unread only
-	* Modify feed view
+    * New feed view
+    * Display combined feed view
+    * Display unread only
+    * Modify feed view

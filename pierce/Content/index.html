@@ -3,7 +3,7 @@
 <html>
   <head>
     <meta charset='utf-8'>
-    <title>DockManager</title>
+    <title>Pierce RSS Reader</title>
     <!--<link rel='stylesheet' href='dock-manager.css'>-->
     <link rel='stylesheet' href='sunny.css'>
     <link rel='stylesheet' href='pierceweb.css'>
@@ -12,6 +12,8 @@
     <script type='text/javascript' src='jquery.layout.js'></script>
     <script type='text/javascript' src='ICanHaz.js'></script>
     <script type='text/javascript' src='app.js'></script>
+
+    <!-- Mustache/icanhaz templates! -->
     <script id='feedli' type='text/html'>
       <div
           id='feedli_{{Id}}'
@@ -23,8 +25,8 @@
 
     <script id='articleli' type='text/html'>
       <div
-        id='articleli_{{feed.Id}}_{{article.UniqueId}}'
-        class='articleli'
+        id='articleli_{{feed.Id}}_{{article.HashId}}'
+        class='articleli {{^article.IsRead?}}{{unread}}{{/article.IsRead?}}'
       >
         {{article.Title}}
       </div>
@@ -33,7 +35,7 @@
     <script id='articlefull' type='text/html'>
       <div>
         <h3>{{article.Title}} - {{feed.Title}}</h3>
-        <div>{{{article.Description}}}</div>
+        <frame>{{{article.Description}}}</frame>
       </div>
     </script>
   </head>
@@ -71,6 +73,7 @@
             <td><label for='password'>Password:</label></td>
             <td><input id='password' type='password' value='password' /></td>
             <td><input type='button' value='Log in' id='login_button' /></td>
+            <td><input type='button' value='Register' id='register_button' /></td>
           </tr>
         </table>
       </div>

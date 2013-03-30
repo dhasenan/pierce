@@ -29,7 +29,7 @@ namespace pierce
                     return Json(user);
                 }
             }
-            Response.StatusCode = 401;
+            Response.StatusCode = 404;
             return Json(new {});
         }
 
@@ -38,7 +38,7 @@ namespace pierce
             var user = GetUser();
             if (user == null)
             {
-                Response.StatusCode = 401;
+                Response.StatusCode = 404;
                 return Json(new {});
             }
             return Json(user);

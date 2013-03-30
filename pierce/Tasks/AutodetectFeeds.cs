@@ -50,7 +50,7 @@ namespace pierce
                         }
                         else
                         {
-                            feed.Uri = new Uri(targetAttribute.Value);
+                            feed.Uri = new Uri(new Uri(pageUrl), targetAttribute.Value);
                         }
                         feeds.Add(feed);
                     }

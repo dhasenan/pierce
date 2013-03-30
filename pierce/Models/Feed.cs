@@ -30,17 +30,13 @@ namespace pierce
         public ICollection<string> Subscribers = new HashSet<string>();
 		public DateTime LastRead = DateTime.MinValue;
 		public TimeSpan ReadInterval = TimeSpan.FromHours(1);
+        public DateTime NextRead = DateTime.MinValue;
 		public int Errors = 0;
 		
 		public Article GetArticle(string uniqueId)
 		{
 			return Articles.Where(x => x.UniqueId == uniqueId).FirstOrDefault();
 		}
-
-        public long NextUpdateTimestamp
-        {
-            get { return Timestamp(LastRead + ReadInterval); }
-        }
 
         public override string ToString()
         {

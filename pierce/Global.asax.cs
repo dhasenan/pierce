@@ -55,8 +55,9 @@ namespace pierce
                     {
                         new ReadFeeds().Execute();
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        Console.WriteLine("while updating feeds {0}", ex);
                     }
                     Thread.Sleep(TimeSpan.FromSeconds(60));
                 }

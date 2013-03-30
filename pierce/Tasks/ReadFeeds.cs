@@ -14,10 +14,11 @@ namespace pierce
     {
         public void Execute()
         {
-            var list = Pierce.Feeds.Find(Query.LT("NextUpdateTimestamp", Feed.Timestamp(DateTime.Now)));
+            var list = Pierce.Feeds.Find(Query.LT("NextRead", DateTime.UtcNow));
+            Console.WriteLine(list.Count());
             foreach (var feed in list)
             {
-                if (feed.LastRead + feed.ReadInterval > DateTime.Now)
+                if (feed.NextRead > DateTime.UtcNow)
                 {
                     continue;
                 }
@@ -30,13 +31,15 @@ namespace pierce
                     Console.WriteLine(ex);
                     feed.Errors++;
                 }
-                Pierce.Feeds.Insert(feed);
+                Pierce.Feeds.Save(feed);
             }
         }
 
         public void Read(Feed feed)
         {
             Read(feed, ReadFeedText(feed));
+            feed.LastRead = DateTime.UtcNow;
+            feed.NextRead = feed.LastRead + feed.ReadInterval;
         }
         
         public TextReader ReadFeedText(Feed feed)
