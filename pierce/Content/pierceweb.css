@@ -59,11 +59,19 @@ body {
   font-weight: bold;
 }
 
+.listRow {
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 0.2em;
+  font-size: 9pt;
+  text-overflow: ellipsis;
+}
+
 .feedli {
   overflow: hidden;
   white-space: nowrap;
   margin: 0.2em;
-  font-size: 11pt;
+  font-size: 9pt;
   text-overflow: ellipsis;
 }
 
@@ -71,7 +79,12 @@ body {
   overflow: hidden;
   white-space: nowrap;
   padding: 0.2em;
-  font-size: 11pt;
+  font-size: 9pt;
   text-overflow: ellipsis;
   border-bottom: 1px dotted #aaa;
+}
+
+a {
+  color: #39e;
+  text-decoration: none;
 }

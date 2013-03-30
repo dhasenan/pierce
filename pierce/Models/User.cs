@@ -12,21 +12,31 @@ namespace pierce
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id;
+        public string
+            Id;
         public string Email;
         public string PasswordHash;
         public ICollection<Subscription> Subscriptions = new HashSet<Subscription>();
+
         public string Password { set { PasswordHash = HashedPassword(value); } }
 
         public Subscription GetSubscription(string objectId)
         {
             return Subscriptions.Where(x => x.FeedId == objectId).FirstOrDefault();
-        } 
+        }
 
         public void SubscribeTo(Feed f)
         {
             Subscriptions.Add(new Subscription { FeedUri = f.Uri, FeedId = f.Id });
             f.Subscribers.Add(Id);
+        }
+
+        public void Unsubscribe(string feedId)
+        {
+            var sub = GetSubscription(feedId);
+            if (sub == null)
+                return;
+            Subscriptions.Remove(sub);
         }
 
         public static string HashedPassword(string password)

@@ -6,6 +6,7 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq;
 using MongoDB.Driver.Builders;
+using System.Globalization;
 
 namespace pierce
 {
@@ -28,7 +29,7 @@ namespace pierce
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    Console.WriteLine("while handling feed {0}: {1}", feed.Uri, ex);
                     feed.Errors++;
                 }
                 Pierce.Feeds.Save(feed);
@@ -49,24 +50,56 @@ namespace pierce
             return new StreamReader(wr.GetResponse().GetResponseStream());
         }
         
-        private void Elem(XElement element, string descendant, Action<string> setter)
+        private void Elem(XElement element, string descendant, params Action<string>[] setter)
         {
             var v = element.Descendants(descendant).FirstOrDefault();
             if (v == null)
                 return;
-            try
+            foreach (var s in setter)
             {
-                setter(v.Value);
+                try
+                {
+                    s(v.Value);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                }
             }
-            catch (Exception ex)
+        }
+
+        // The RSS2.0 spec doesn't mandate RFC1123 dates, but it does mention them.
+        const string Rfc1123 = "ddd, dd MMM yyyy HH':'mm':'ss";
+        const int Rfc1123Length = 25;
+
+        bool TryParseRfc1123(string v, ref DateTime date)
+        {
+            if (v.Length < Rfc1123Length)
+                return false;
+            DateTime d;
+            if (DateTime.TryParseExact(v.Substring(0, Rfc1123Length), Rfc1123, null, DateTimeStyles.None, out d))
             {
-                Console.WriteLine(ex);
+                try
+                {
+                    TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(v.Substring(Rfc1123Length).Trim());
+                    d = TimeZoneInfo.ConvertTimeToUtc(d, tz);
+                }
+                catch (Exception ex)
+                {
+                    d = d.AddDays(0);
+                }
+                date = d;
+                return true;
             }
+            Console.WriteLine("bad date found: {0}", v);
+            return false;
         }
 
         public void Read(Feed feed, TextReader feedText)
         {
-            XElement x = XElement.Parse(feedText.ReadToEnd());
+            var text = feedText.ReadToEnd();
+            Console.WriteLine(feed.Uri);
+            XDocument x = XDocument.Parse(text);
             var channel = x.Descendants("channel").FirstOrDefault();
             if (channel == null)
             {
@@ -75,7 +108,7 @@ namespace pierce
             }
             Elem(channel, "title", v => feed.Title = v);
             Elem(channel, "description", v => feed.Description = v);
-            Elem(channel, "link", v => feed.Uri = new Uri(v));
+            Elem(channel, "link", v => feed.Link = new Uri(v));
             var img = channel.Descendants("image").FirstOrDefault();
             if (img != null)
             {
@@ -91,7 +124,7 @@ namespace pierce
                 Elem(item, "author", v => a.Author = v);
                 Elem(item, "description", v => a.Description = v);
                 Elem(item, "guid", v => a.UniqueId = v);
-                Elem(item, "pubDate", v => a.PublishDate = DateTime.Parse(v));
+                Elem(item, "pubDate", v => a.PublishDate = DateTime.Parse(v), v => TryParseRfc1123(v, ref a.PublishDate));
                 Elem(item, "link", v => a.Link = new Uri(v));
                 Elem(item, "comments", v => a.CommentLink = new Uri(v));
                 
@@ -103,6 +136,11 @@ namespace pierce
                     {
                         a.PublishDate = existing.PublishDate;
                     }
+                }
+                if (a.UniqueId == null)
+                {
+                    // This is crap. It's a better approximation than what we have currently.
+                    a.UniqueId = a.Link.ToString();
                 }
                 feed.Articles.Add(a);
             }

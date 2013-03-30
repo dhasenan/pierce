@@ -16,6 +16,7 @@ DONE:
   * Sorting
   * Unread counts
   * Display unread only
+  * Links!
 	
 TODO:
 * Backend
@@ -33,6 +34,10 @@ TODO:
   * Ajax loading gifs
   * Style tweaks
   * Labels
-  * All feeds view
   * Modify feed view
+    * Unsubscribe
+    * Update interval
+    * Show user-supplied title when available
   * Keyboard shortcuts
+  * Date formatting?
+  * Look over ordering (engadget bug)

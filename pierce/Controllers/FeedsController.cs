@@ -94,7 +94,7 @@ namespace pierce
                 return Json(new { Error = "Feed not found" });
             }
             new ReadFeeds().Read(feed);
-            Pierce.Feeds.Insert(feed);
+            Pierce.Feeds.Save(feed);
             return Json(feed);
         }
 

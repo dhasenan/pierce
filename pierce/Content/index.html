@@ -13,9 +13,24 @@
     <script type='text/javascript' src='underscore-min.js'></script>
     <script type='text/javascript' src='app.js'></script>
 
-    <!-- Mustache/icanhaz templates! -->
-    <script id='feedli' type='x-jqote-template'>
-      <div id='feedli_<%- feed.Id %>' class='feedli<% if (domain.unreadCount(feed) > 0) {
+    <!-- underscore templates! -->
+    <script id='feedlistTemplate' type='text/html'>
+      <table width='100%' table-layout='fixed'>
+      <% $.each(feeds, function(i, feed) { %>
+        <div class='listRow'>
+          <span style='float: left; overflow: hidden; text-overflow: ellipsis; width: 90%'>
+            <%= ui.template('feedli', { feed: feed }) %>
+          </span>
+          <span style='width: 1em; float: right'>
+            <%= ui.template('feedmenubutton', { feed: feed }) %>
+          </span>
+        </div>
+      <% }); %>
+      </table>
+    </script>
+
+    <script id='feedli' type='text/html'>
+      <span id='feedli_<%- feed.Id %>' class='feedli<% if (domain.unreadCount(feed) > 0) {
         print(' unread'); } %>' onclick='ui.showFeed("<%= feed.Id %>");'>
         <%
           var unreadc = domain.unreadCount(feed);
@@ -25,10 +40,19 @@
           <img style='height: 1em; width: 1em;' src='<%- feed.ImageUri %>'></img>
         <% } %>
         <%-  feed.Title  %>
-      </div>
+      </span>
     </script>
 
-    <script id='articleli' type='x-jqote-template'>
+    <script id='feedmenubutton' type='text/html'>
+      <span
+        style='float: right; height: 1em; width: 1em'
+        class='ui-icon ui-icon-triangle-s'
+        onclick='ui.showUpdateFeedWindow("<%= feed.Id %>")'
+      >
+      </span>
+    </script>
+
+    <script id='articleli' type='text/html'>
       <div
         id='<%- domain.articleId(feed, article) %>'
         class='articleli <%- article.IsRead ? "read" : "unread" %>'
@@ -41,9 +65,10 @@
     <script id='articlefull' type='text/html'>
       <div>
         <img style='float: left' src='<%= feed.ImageUri %>'></img>
-        <h3><%- article.Title %> - <%- feed.Title %></h3>
+        <h3><a href="<%= article.Link %>"><%- article.Title %></a> - <%- feed.Title %></h3>
         <div><%- article.PublishDate.toISOString() %>
           <% if (article.Author) { %> -- by <%- article.Author %><% } %></div>
+        <!-- as a special case, load this with html unescaped -->
         <frame><%= article.Description %></frame>
       </div>
     </script>
@@ -97,7 +122,24 @@
         <!-- TODO tags / labels / categories -->
       </div>
 
-      <div id='login_window' title='Log In' class='login' style='width: 800px'>
+      <div id='modifyFeedWindow' title='Modify your feed'>
+        <table>
+          <tr>
+            <td><label for='modFeedUrl'>URL:</label></td>
+            <td><input type='text' id='modFeedUrl' style='width: 98%' /></td>
+          </tr>
+          <tr>
+            <td><label for='modFeedTitle'>Title:</label></td>
+            <td><input type='text' id='modFeedTitle' style='width: 98%' /></td>
+          </tr>
+          <tr>
+            <td><label for='modFeedRefreshInterval'>Refresh every:</label></td>
+            <td><input type='text' id='modFeedInterval' min='15' /> minutes</td>
+          </tr>
+        </table>
+      </div>
+
+      <div id='loginWindow' title='Log In' class='login' style='width: 800px'>
         <table>
           <tr>
             <td><label for='email'>Email address:</label></td>
