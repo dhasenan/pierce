@@ -62,6 +62,30 @@
         <div class='content'>
           I need some feeds.
         </div>
+        <div style='float: bottom; border-top: 1px solid #aaa'>
+          <a id='addFeedButton' href='#'>Add a feed</a>
+        </div>
+      </div>
+      <div id='addFeedWindow' title='Add a feed' class='addFeed'>
+        <div id='addFeedInitial' style='width: 100%'>
+          <table style='width: 100%'>
+            <tr>
+              <td><label for='addFeedUrl'>Feed URL:</label></td>
+              <td><input type='text' id='addFeedUrl' style='width: 100%' /></td>
+            </tr>
+            <tr>
+              <td colspan='2'>
+                <div style='float: right'>
+                  <input type='button' id='addFeedInitialButton' value='Add it!' />
+                  <input type='button' id='addFeedWindowClose' value='Or not' />
+                </div>
+              </td>
+            </tr>
+          </table>
+          <div>
+          </div>
+          <!-- TODO tags / labels / categories -->
+        </div>
       </div>
       <div id='login_window' title='Log In' class='login' style='width: 800px'>
         <table>

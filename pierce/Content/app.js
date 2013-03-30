@@ -22,7 +22,7 @@ function updateUserInfos() {
 }
 
 function showLoginWindow() {
-  $('#login_window').dialog();
+  $('#login_window').dialog({ height: 'auto', width: 'auto' });
 }
 
 function hideLoginWindow() {
@@ -182,7 +182,6 @@ $(document).ready(function() {
   });
 
   $('#register_button').click(function() {
-    $('#register_window').dialog('close');
     $.ajax('/Users/Register', {
       dataType: 'json',
       data: {
@@ -199,7 +198,6 @@ $(document).ready(function() {
   });
 
   $('#login_button').click(function() {
-    $('#login_window').dialog('close');
     $.ajax('/Users/Login', {
       dataType: 'json',
       data: {
@@ -213,6 +211,34 @@ $(document).ready(function() {
         refreshFeeds();
       }
     });
+  });
+
+  $('#addFeedButton').click(function() {
+    $('#addFeedWindow').dialog({ height: 'auto', width: 'auto' });
+  });
+  $('#addFeedWindowClose').click(function() {
+    $('#addFeedWindow').dialog('close');
+  });
+  $('#addFeedInitialButton').click(function() {
+    $.ajax('/Feeds/Add', {
+      dataType: 'json',
+      data: { url: $('#addFeedUrl').val() },
+      success: function(data, statusText, xhr) {
+        if (!data['FoundFeeds']) {
+          // leave window open for corrections
+          alert('I didn\'t find any feeds :(');
+        } else if (data['AddedFeed']) {
+          // TODO sorting
+          feeds[feeds.length] = data['AddedFeed'];
+          displayFeeds();
+          $('#addFeedWindow').dialog('close');
+        } else {
+          // TODO select between them, leave dialog open
+          alert('Multiple feeds detected!');
+          $('#addFeedWindow').dialog('close');
+        }
+      }
+    })
   });
 
   if ($.cookie('.MONOAUTH')) {

@@ -12,6 +12,7 @@ DONE:
 	
 TODO:
  * Backend
+    * Feed deduplication?
 	* Authentication required everywhere (except splash page, registration)
 	* Modify feed
 		* Change personally visible details
@@ -19,6 +20,9 @@ TODO:
 		* Change update interval
 	* Tagging / folders
 	* Article search
+    * Mark read
+    * Annotating articles?
+    	Requires us to maintain data FOREVER
  * Frontend
     * Style
     * Register
@@ -26,3 +30,5 @@ TODO:
     * Display combined feed view
     * Display unread only
     * Modify feed view
+    * Sorting
+    * Mark read

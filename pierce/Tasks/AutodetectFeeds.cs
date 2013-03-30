@@ -29,7 +29,10 @@ namespace pierce
             {
                 var doc = new HtmlDocument();
                 doc.LoadHtml(text);
-                foreach (var link in doc.DocumentNode.SelectNodes("//link[@type='application/rss+xml']"))
+                var rssLinks = doc.DocumentNode.SelectNodes("//link[@type='application/rss+xml']");
+                if (rssLinks == null)
+                    return feeds;
+                foreach (var link in rssLinks)
                 {
                     try
                     {

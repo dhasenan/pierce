@@ -30,6 +30,10 @@ body {
   height: 4px !important;
 }
 
+.ui-layout-pane {
+  background-color: #f8f8ff !important;
+}
+
 .ui-layout-resizer {
   background-color: #e95 !important;
 }
