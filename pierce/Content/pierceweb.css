@@ -1,6 +1,6 @@
 
 body {
-  background-color: #F8F8FF;
+  background-color: #fdfdff;
   font-family: 'Open Sans', sans-serif;
   font-size: 12px;
   font-weight: normal;
@@ -31,7 +31,7 @@ body {
 }
 
 .ui-layout-pane {
-  background-color: #f8f8ff !important;
+  background-color: #fdfdff !important;
 }
 
 .ui-layout-resizer {
@@ -48,4 +48,8 @@ body {
 
 .selectedItem {
   background-color: #acf;
+}
+
+.articleli.unread {
+  font-weight: bold;
 }

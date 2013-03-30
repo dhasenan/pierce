@@ -68,18 +68,20 @@ namespace pierce
         {
             XElement x = XElement.Parse(feedText.ReadToEnd());
             var channel = x.Descendants("channel").FirstOrDefault();
-            if (channel != null)
+            if (channel == null)
             {
-                Elem(channel, "title", v => feed.Title = v);
-                Elem(channel, "description", v => feed.Description = v);
-                Elem(channel, "link", v => feed.Uri = new Uri(v));
-                var img = channel.Descendants("image").FirstOrDefault();
-                if (img != null)
-                {
-                    Elem(img, "title", v => feed.ImageTitle = v);
-                    Elem(img, "url", v => feed.ImageUri = new Uri(v));
-                    Elem(img, "link", v => feed.ImageLinkTarget = new Uri(v));
-                }
+                // Nothing we can do; everything's in <channel>.
+                return;
+            }
+            Elem(channel, "title", v => feed.Title = v);
+            Elem(channel, "description", v => feed.Description = v);
+            Elem(channel, "link", v => feed.Uri = new Uri(v));
+            var img = channel.Descendants("image").FirstOrDefault();
+            if (img != null)
+            {
+                Elem(img, "title", v => feed.ImageTitle = v);
+                Elem(img, "url", v => feed.ImageUri = new Uri(v));
+                Elem(img, "link", v => feed.ImageLinkTarget = new Uri(v));
             }
             foreach (var item in channel.Descendants("item").AsEnumerable())
             {

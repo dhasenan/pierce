@@ -10,32 +10,34 @@
     <script type='text/javascript' src='jquery-1.9.1.js'></script>
     <script type='text/javascript' src='jquery-ui-1.10.2.js'></script>
     <script type='text/javascript' src='jquery.layout.js'></script>
-    <script type='text/javascript' src='ICanHaz.js'></script>
+    <script type='text/javascript' src='underscore-min.js'></script>
     <script type='text/javascript' src='app.js'></script>
 
     <!-- Mustache/icanhaz templates! -->
-    <script id='feedli' type='text/html'>
-      <div
-          id='feedli_{{Id}}'
-          class='feedli'
-      >
-        {{Title}}
+    <script id='feedli' type='x-jqote-template'>
+      <div id='feedli_<%- Id %>' class='feedli' onclick='showFeed("<%= Id %>");'>
+        <% if (ImageUri) { %>
+          <img style='height: 1em; width: 1em;' src='<%- ImageUri %>'></img>
+        <% } %>
+        <%-  Title  %>
       </div>
     </script>
 
-    <script id='articleli' type='text/html'>
+    <script id='articleli' type='x-jqote-template'>
       <div
-        id='articleli_{{feed.Id}}_{{article.HashId}}'
-        class='articleli {{^article.IsRead?}}{{unread}}{{/article.IsRead?}}'
-      >
-        {{article.Title}}
+        id='<%- articleId(feed, article) %>'
+        class='articleli <%- article.IsRead ? "read" : "unread" %>'
+        onclick='showArticle("<%= feed.Id %>", "<%= article.HashId %>");'>
+        <img style='height: 1em; width: 1em;' src='<%= feed.ImageUri %>'></img>
+        <%- article.Title %>
       </div>
     </script>
 
     <script id='articlefull' type='text/html'>
       <div>
-        <h3>{{article.Title}} - {{feed.Title}}</h3>
-        <frame>{{{article.Description}}}</frame>
+        <img style='float: left' src='<%= feed.ImageUri %>'></img>
+        <h3><%- article.Title %> - <%- feed.Title %></h3>
+        <frame><%= article.Description %></frame>
       </div>
     </script>
   </head>
@@ -67,8 +69,8 @@
         </div>
       </div>
       <div id='addFeedWindow' title='Add a feed' class='addFeed'>
-        <div id='addFeedInitial' style='width: 100%'>
-          <table style='width: 100%'>
+        <div id='addFeedInitial'>
+          <table>
             <tr>
               <td><label for='addFeedUrl'>Feed URL:</label></td>
               <td><input type='text' id='addFeedUrl' style='width: 100%' /></td>

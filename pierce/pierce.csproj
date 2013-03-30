@@ -89,6 +89,7 @@
     <Content Include="Content\pierceweb.css" />
     <Content Include="Content\jquery-ui-1.10.2.js" />
     <Content Include="Content\sunny.css" />
+    <Content Include="Content\underscore-min.js" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" />

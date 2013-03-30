@@ -8,7 +8,9 @@ DONE:
  * Frontend
     * Basic layout
     * Login
+    * Register
     * Display single feed view
+    * Mark read
 	
 TODO:
  * Backend
@@ -25,10 +27,9 @@ TODO:
     	Requires us to maintain data FOREVER
  * Frontend
     * Style
-    * Register
+        * Fix appearance for popups
     * New feed view
     * Display combined feed view
     * Display unread only
     * Modify feed view
     * Sorting
-    * Mark read
