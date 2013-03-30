@@ -15,11 +15,16 @@
 
     <!-- Mustache/icanhaz templates! -->
     <script id='feedli' type='x-jqote-template'>
-      <div id='feedli_<%- Id %>' class='feedli' onclick='ui.showFeed("<%= Id %>");'>
-        <% if (ImageUri) { %>
-          <img style='height: 1em; width: 1em;' src='<%- ImageUri %>'></img>
+      <div id='feedli_<%- feed.Id %>' class='feedli<% if (domain.unreadCount(feed) > 0) {
+        print(' unread'); } %>' onclick='ui.showFeed("<%= feed.Id %>");'>
+        <%
+          var unreadc = domain.unreadCount(feed);
+          if (unreadc) print('(' + unreadc + ') ');
+        %>
+        <% if (feed.ImageUri) { %>
+          <img style='height: 1em; width: 1em;' src='<%- feed.ImageUri %>'></img>
         <% } %>
-        <%-  Title  %>
+        <%-  feed.Title  %>
       </div>
     </script>
 
@@ -27,7 +32,7 @@
       <div
         id='<%- domain.articleId(feed, article) %>'
         class='articleli <%- article.IsRead ? "read" : "unread" %>'
-        onclick='ui.showArticle("<%= feed.Id %>", "<%= article.HashId %>");'>
+        onclick='ui.showArticle("<%= feed.Id %>", "<%= article.Id %>");'>
         <img style='height: 1em; width: 1em;' src='<%= feed.ImageUri %>'></img>
         <%- article.Title %>
       </div>

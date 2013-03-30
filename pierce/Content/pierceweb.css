@@ -1,6 +1,6 @@
 
 body {
-  background-color: #fdfdff;
+  background-color: #fafaff;
   font-family: 'Open Sans', sans-serif;
   font-size: 10pt;
   font-weight: normal;
@@ -19,7 +19,7 @@ body {
 }
 
 .content {
-  background-color: #f8f8ff;
+  background-color: #fafafa;
 }
 
 .ui-layout-resizer-west {
@@ -50,7 +50,7 @@ body {
   background-color: #acf;
 }
 
-.articleli.unread {
+.unread {
   font-weight: bold;
 }
 

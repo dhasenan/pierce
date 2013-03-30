@@ -14,6 +14,7 @@ DONE:
   * New feed view
     * Multiple candidate feeds
   * Sorting
+  * Unread counts
 	
 TODO:
 * Backend
@@ -33,5 +34,4 @@ TODO:
   * Display combined feed view
   * Display unread only
   * Modify feed view
-  * Unread counts
   * Keyboard shortcuts

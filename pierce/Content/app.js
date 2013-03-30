@@ -25,15 +25,26 @@ var domain = {
 
   getArticle: function(feed, artId) {
     for (var i = 0; i < feed.Articles.length; i++) {
-      if (feed.Articles[i].HashId == artId) {
+      if (feed.Articles[i].Id == artId) {
         return feed.Articles[i];
       }
     }
     return null;
   },
 
+  unreadCount: function(feed) {
+    var articles = feed.Articles;
+    var unread = 0;
+    for (var i = 0; i < articles.length; i++) {
+      if (!articles[i].IsRead) {
+        unread++;
+      }
+    }
+    return unread;
+  },
+
   articleId: function(feed, article) {
-    return 'articleli_' + feed.Id + '_' + article.HashId;
+    return 'articleli_' + feed.Id + '_' + article.Id.replace('-', '');
   },
 
   jsDate: function(aspNetDate) {
@@ -58,9 +69,8 @@ var domain = {
     feed.Articles.sort()
     $.each(feed.Articles, function(i, art) {
       art.PublishDate = domain.jsDate(art.PublishDate);
-      art.HashId = util.hashString(art.UniqueId);
       if (sub) {
-        art.IsRead = sub.ReadArticles.indexOf(art.UniqueId) >= 0;
+        art.IsRead = sub.ReadArticles.indexOf(art.Id) >= 0;
       }
     });
   },
@@ -129,12 +139,12 @@ var domain = {
   },
 
   markRead: function(feed, article) {
-    domain.getSubscription(feed.Id).ReadArticles.push(article.UniqueId);
+    domain.getSubscription(feed.Id).ReadArticles.push(article.Id);
     $.ajax('/Feeds/MarkRead', {
       dataType: 'json',
       data: {
         feedId: feed.Id,
-        articleId: article.UniqueId
+        articleId: article.Id
       }
     });
   },
@@ -231,9 +241,13 @@ var ui = {
   displayFeeds: function() {
     $('.feedList .content').empty();
     $.each(feeds, function(i, feed) {
-      var dom = ui.template('feedli', feed);
+      var dom = ui.template('feedli', {feed: feed});
       $('.feedList .content').append(dom);
     });
+  },
+
+  updateFeedDisplay: function(feed) {
+    $('#feedli_' + feed.Id).replaceWith(ui.template('feedli', {feed: feed}));
   },
 
   showFeed: function(feedId) {
@@ -255,9 +269,15 @@ var ui = {
   showArticle: function(feedId, artId) {
     var feed = domain.getFeed(feedId);
     // TODO error message?
-    if (!feed) return;
+    if (!feed) {
+      console.log('feed ' + feedId + ' not found');
+      return;
+    }
     var article = domain.getArticle(feed, artId);
-    if (!article) return;
+    if (!article) {
+      console.log('feed ' + feedId + ' has no article ' + artId);
+      return;
+    }
     $('.articleli').removeClass('selectedItem');
     var artDiv = $('#' + domain.articleId(feed, article));
     artDiv.addClass('selectedItem');
@@ -268,9 +288,13 @@ var ui = {
       article: article
     }));
 
-    if (!article.IsRead) {
+    if (article.IsRead) {
+      console.log('article is read already');
+    } else {
+      console.log('telling server that the article is done');
       article.IsRead = true;
       domain.markRead(feed, article);
+      ui.updateFeedDisplay(feed);
       // TODO update unread count (once we have such a thing)
     }
   },
