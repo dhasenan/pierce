@@ -15,7 +15,7 @@
 
     <!-- Mustache/icanhaz templates! -->
     <script id='feedli' type='x-jqote-template'>
-      <div id='feedli_<%- Id %>' class='feedli' onclick='showFeed("<%= Id %>");'>
+      <div id='feedli_<%- Id %>' class='feedli' onclick='ui.showFeed("<%= Id %>");'>
         <% if (ImageUri) { %>
           <img style='height: 1em; width: 1em;' src='<%- ImageUri %>'></img>
         <% } %>
@@ -25,9 +25,9 @@
 
     <script id='articleli' type='x-jqote-template'>
       <div
-        id='<%- articleId(feed, article) %>'
+        id='<%- domain.articleId(feed, article) %>'
         class='articleli <%- article.IsRead ? "read" : "unread" %>'
-        onclick='showArticle("<%= feed.Id %>", "<%= article.HashId %>");'>
+        onclick='ui.showArticle("<%= feed.Id %>", "<%= article.HashId %>");'>
         <img style='height: 1em; width: 1em;' src='<%= feed.ImageUri %>'></img>
         <%- article.Title %>
       </div>
@@ -74,8 +74,13 @@
 
       <div id='addFeedWindow' title='Add a feed' class='addFeed'>
         <div style='width: 25em'>
-          <label for='addFeedUrl'>Feed URL:</label>
-          <input type='text' id='addFeedUrl' style='width: 98%%' />
+          <div>
+            <label for='addFeedUrl'>Feed URL:</label>
+            <input type='text' id='addFeedUrl' style='width: 98%%' />
+          </div>
+          <div id='multifeed'>
+            <select id='multifeedOptions'></select>
+          </div>
         </div>
         <!-- TODO tags / labels / categories -->
       </div>
@@ -89,8 +94,6 @@
           <tr>
             <td><label for='password'>Password:</label></td>
             <td><input id='password' type='password' value='password' /></td>
-            <td><input type='button' value='Log in' id='login_button' /></td>
-            <td><input type='button' value='Register' id='register_button' /></td>
           </tr>
         </table>
       </div>

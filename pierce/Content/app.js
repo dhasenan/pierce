@@ -3,44 +3,166 @@ var feeds;
 
 var bodyLayout;
 
-function articleId(feed, article) {
-  return 'articleli_' + feed.Id + '_' + article.HashId;
-}
+var domain = {
+  getSubscription: function(feedId) {
+    if (!user.Subscriptions) return;
+    for (var i = 0; i < user.Subscriptions.length; i++) {
+      if (user.Subscriptions[i].FeedId == feedId) {
+        return user.Subscriptions[i];
+      }
+    }
+    return null;
+  },
 
-function template(name, data) {
-  var templ = $('script#' + name);
-  if (!templ) {
-    console.log('template ' + name + ' not found!');
-    return 'TEMPLATE ' + name + ' NOT FOUND';
+  getFeed: function(feedId) {
+    for (var i = 0; i < feeds.length; i++) {
+      if (feeds[i].Id == feedId) {
+        return feeds[i];
+      }
+    }
+    return null;
+  },
+
+  getArticle: function(feed, artId) {
+    for (var i = 0; i < feed.Articles.length; i++) {
+      if (feed.Articles[i].HashId == artId) {
+        return feed.Articles[i];
+      }
+    }
+    return null;
+  },
+
+  articleId: function(feed, article) {
+    return 'articleli_' + feed.Id + '_' + article.HashId;
+  },
+
+  jsDate: function(aspNetDate) {
+    return new Date(parseInt(aspNetDate.substr(6)));
+  },
+
+  mungeFeed: function(feed) {
+    feed.LastRead = domain.jsDate(feed.LastRead);
+    feed.NextRead = domain.jsDate(feed.NextRead);
+    feed.ReadInterval = feed.ReadInterval.TotalSeconds;
+    var sub = domain.getSubscription(feed.Id);
+    if (!sub) {
+      console.log('feed ' + feed.Id + ' has no subscription');
+      return;
+    }
+    $.each(feed.Articles, function(i, art) {
+      art.PublishDate = domain.jsDate(art.PublishDate);
+      art.HashId = util.hashString(art.UniqueId);
+      if (sub) {
+        art.IsRead = sub.ReadArticles.indexOf(art.UniqueId) >= 0;
+      }
+    });
+  },
+
+  refreshUser: function() {
+    $.ajax('/Users/Get', {
+      dataType: 'json',
+      success: function(data, statusText, xhr) {
+        user = data;
+        ui.updateUserInfos();
+        domain.refreshFeeds();
+      },
+      error: function() {
+        ui.showLoginWindow();
+      }
+    });
+  },
+
+  refreshFeeds: function() {
+    $.ajax('/Feeds/All', {
+      dataType: 'json',
+      success: function(data, statusText, xhr) {
+        feeds = data;
+        feeds.sort(function(a, b) {
+          return a.Title.localeCompare(b.Title);
+        });
+        $.each(feeds, function(i, feed) {
+          domain.mungeFeed(feed);
+        });
+        ui.displayFeeds();
+      }
+    });
+  },
+
+  addFeed: function() {
+    $.ajax('/Feeds/Add', {
+      dataType: 'json',
+      data: { url: $('#addFeedUrl').val() },
+      success: function(data, statusText, xhr) {
+        if (!data['FoundFeeds']) {
+          // leave window open for corrections
+          alert('I didn\'t find any feeds :(');
+        } else if (data['AddedFeed']) {
+          // TODO sorting
+          feeds.push(data['AddedFeed']);
+          ui.displayFeeds();
+          ui.closeFeedPopup();
+        } else {
+          // TODO select between them, leave dialog open
+          alert('Multiple feeds detected!');
+          ui.closeFeedPopup();
+        }
+      }
+    })
+  },
+
+  markRead: function(feed, article) {
+    domain.getSubscription(feed.Id).ReadArticles.push(article.UniqueId);
+    $.ajax('/Feeds/MarkRead', {
+      dataType: 'json',
+      data: {
+        feedId: feedId,
+        articleId: article.UniqueId
+      }
+    });
+  },
+  
+  initialize: function() {
+    // TODO should be something else, no?
+    if ($.cookie('.MONOAUTH')) {
+      domain.refreshUser();
+    } else {
+      ui.showLoginWindow();
+    }
+
+    // Every 5 minutes
+    window.setInterval(domain.refreshUser, 5 * 60 * 1000);
   }
+};
 
-  // Have to trim template text in order not to give jquery a hissy fit.
-  return _.template(templ.text(), data)
+var ui = {
+  closeFeedPopup: function() {
+    $('#addFeedWindow').dialog('close');
+  },
+
+  template: function(name, data) {
+    var templ = $('script#' + name);
+    if (!templ) {
+      console.log('template ' + name + ' not found!');
+      return 'TEMPLATE ' + name + ' NOT FOUND';
+    }
+
+    // Have to trim template text in order not to give jquery a hissy fit.
+    return _.template(templ.text(), data)
       .replace(/^\s+/g, '')
       .replace(/\s+$/g, '');
-}
+  },
 
-function hashString(str) {
-  if (str == null) return 0;
-  var hash = 0;
-  for (var i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash = hash & hash;
-  }
-  return Math.abs(hash);
-}
+  resizeMainPanel: function() {
+    $('#mainPanel').height($(window).height() - $('#headerBar').height());
+    $('#mainPanel').width($(window).width());
+  },
 
-function resizeMainPanel() {
-  $('#mainPanel').height($(window).height() - $('#headerBar').height());
-  $('#mainPanel').width($(window).width());
-}
+  updateUserInfos: function() {
+    $('#userName').text(user.Email);
+  },
 
-function updateUserInfos() {
-  $('#userName').text(user.Email);
-}
-
-function showLoginWindow() {
-  $('#login_window').dialog({
+  showLoginWindow: function() {
+    $('#login_window').dialog({
       height: 'auto',
       width: 'auto',
       buttons: [
@@ -54,10 +176,10 @@ function showLoginWindow() {
                 'password': $('#password').val(),
               },
               success: function(data, statusText, xhr) {
-                hideLoginWindow();
+                ui.hideLoginWindow();
                 user = data;
-                updateUserInfos();
-                refreshFeeds();
+                ui.updateUserInfos();
+                domain.refreshFeeds();
               }
             });
           }
@@ -74,259 +196,127 @@ function showLoginWindow() {
               success: function(data, statusText, xhr) {
                 hideLoginWindow();
                 user = data;
-                updateUserInfos();
-                refreshFeeds();
+                ui.updateUserInfos();
+                domain.refreshFeeds();
               }
             });
           }
         },
-    ]
-  });
-}
+      ]
+    });
+  },
 
-function hideLoginWindow() {
-  $('#login_window').dialog('close');
-}
+  hideLoginWindow: function() {
+    $('#login_window').dialog('close');
+  },
 
-function refreshUser() {
-  $.ajax('/Users/Get', {
-    dataType: 'json',
-    success: function(data, statusText, xhr) {
-      user = data;
-      updateUserInfos();
-      refreshFeeds();
-    },
-    error: function() {
-      showLoginWindow();
-    }
-  });
-}
+  displayFeeds: function() {
+    $('.feedList .content').empty();
+    $.each(feeds, function(i, feed) {
+      var dom = ui.template('feedli', feed);
+      $('.feedList .content').append(dom);
+    });
+  },
 
-function jsDate(aspNetDate) {
-  return new Date(parseInt(aspNetDate.substr(6)));
-}
-
-function mungeFeed(feed) {
-  feed.LastRead = jsDate(feed.LastRead);
-  feed.NextRead = jsDate(feed.NextRead);
-  feed.ReadInterval = feed.ReadInterval.TotalSeconds;
-  var sub = getSubscription(feed.Id);
-  if (!sub) {
-    console.log('feed ' + feed.Id + ' has no subscription');
-    return;
-  }
-  $.each(feed.Articles, function(i, art) {
-    art.PublishDate = jsDate(art.PublishDate);
-    art.HashId = hashString(art.UniqueId);
-    if (sub) {
-      art.IsRead = sub.ReadArticles.indexOf(art.UniqueId) >= 0;
-    }
-  });
-}
-
-function getSubscription(feedId) {
-  if (!user.Subscriptions) return;
-  for (var i = 0; i < user.Subscriptions.length; i++) {
-    if (user.Subscriptions[i].FeedId == feedId) {
-      return user.Subscriptions[i];
-    }
-  }
-  return null;
-}
-
-function refreshFeeds() {
-  $.ajax('/Feeds/All', {
-    dataType: 'json',
-    success: function(data, statusText, xhr) {
-      feeds = data;
-      $.each(feeds, function(i, feed) {
-        mungeFeed(feed);
+  showFeed: function(feedId) {
+    var feed = domain.getFeed(feedId);
+    if (!feed) return;
+    $('.feedli').removeClass('selectedItem');
+    $('#feedli_' + feedId).addClass('selectedItem');
+    $('#articleList .content').empty();
+    $.each(feed.Articles, function(i, article) {
+      var dom = ui.template('articleli', {
+        article: article,
+          feed: feed,
+          readClass: article.IsRead ? 'read' : 'unread'
       });
-      displayFeeds();
-    }
-  });
-}
+      $('#articleList .content').append(dom);
+    });
+  },
 
-function displayFeeds() {
-  $('.feedList .content').empty();
-  feeds.sort(function(a, b) {
-    return 
-  });
-  $.each(feeds, function(i, feed) {
-    var dom = template('feedli', feed);
-    $(dom).click(function() {
-      showFeed(feed.Id);
-    })
-    $('.feedList .content').append(dom);
-  });
-}
-
-function getFeed(feedId) {
-  for (var i = 0; i < feeds.length; i++) {
-    if (feeds[i].Id == feedId) {
-      return feeds[i];
-    }
-  }
-  return null;
-}
-
-function getArticle(feed, artId) {
-  for (var i = 0; i < feed.Articles.length; i++) {
-    if (feed.Articles[i].HashId == artId) {
-      return feed.Articles[i];
-    }
-  }
-  return null;
-}
-
-function showFeed(feedId) {
-  var feed = getFeed(feedId);
-  if (!feed) return;
-  $('.feedli').removeClass('selectedItem');
-  $('#feedli_' + feedId).addClass('selectedItem');
-  $('#articleList .content').empty();
-  $.each(feed.Articles, function(i, article) {
-    var dom = template('articleli', {
-      article: article,
+  showArticle: function(feedId, artId) {
+    var feed = domain.getFeed(feedId);
+    // TODO error message?
+    if (!feed) return;
+    var article = domain.getArticle(feed, artId);
+    if (!article) return;
+    $('.articleli').removeClass('selectedItem');
+    var artDiv = $('#' + domain.articleId(feed, article));
+    artDiv.addClass('selectedItem');
+    artDiv.removeClass('unread');
+    artDiv.addClass('read');
+    $('#articleView .content').html(ui.template('articlefull', {
       feed: feed,
-      readClass: article.IsRead ? 'read' : 'unread'
-    });
-    $('#articleList .content').append(dom);
-  });
-}
+      article: article
+    }));
 
-function showArticle(feedId, artId) {
-  var feed = getFeed(feedId);
-  // TODO error message?
-  if (!feed) return;
-  var article = getArticle(feed, artId);
-  if (!article) return;
-  $('.articleli').removeClass('selectedItem');
-  var artDiv = $('#' + articleId(feed, article));
-  artDiv.addClass('selectedItem');
-  artDiv.removeClass('unread');
-  artDiv.addClass('read');
-  $('#articleView .content').html(template('articlefull', {
-    feed: feed,
-    article: article
-  }));
+    if (!article.IsRead) {
+      article.IsRead = true;
+      domain.markRead(feed, article);
+      // TODO update unread count (once we have such a thing)
+    }
+  },
 
-  if (!article.IsRead) {
-    article.IsRead = true;
-    getSubscription(feedId).ReadArticles.push(article.UniqueId);
-    $.ajax('/Feeds/MarkRead', {
-      dataType: 'json',
-      data: {
-        feedId: feedId,
-        articleId: article.UniqueId
-      }
+  initialize: function() {
+    ui.resizeMainPanel();
+    $(window).resize(ui.resizeMainPanel);
+    // This is currently using the jquery ui layout plugin.
+    // I have some annoyances with it. Consider switching to something better,
+    // or at least simpler, like http://www.methvin.com/splitter/
+    bodyLayout = $('#mainPanel').layout({
+      defaults: {
+        applyDefaultStyles: true,
+        resizable: true,
+        closable: false,
+        slidable: true,
+        contentSelector: '.content',
+        spacing_open: 4,
+        spacing_closed: 4
+      },
+      south: {
+        paneSelector: '.articleView',
+        size: 400,
+      },
+      west: {
+        paneSelector: '.feedList'
+      },
+      center: {
+        paneSelector: '.articleList'
+      },
     });
-    // TODO update unread count (once we have such a thing)
+
+    $('#addFeedButton').click(function() {
+      $('#addFeedWindow').dialog({
+          height: 'auto',
+          width: 'auto',
+          buttons: [
+              { text: 'Add feed!', click: domain.addFeed },
+              { text: 'Maybe later', click: function() { $(this).dialog('close'); } }
+          ]
+      });
+    });
+    $('#addFeedWindowClose').click(function() {
+      $('#addFeedWindow').dialog('close');
+    });
+  
   }
-}
+};
 
-function addFeed() {
-    $.ajax('/Feeds/Add', {
-      dataType: 'json',
-      data: { url: $('#addFeedUrl').val() },
-      success: function(data, statusText, xhr) {
-        if (!data['FoundFeeds']) {
-          // leave window open for corrections
-          alert('I didn\'t find any feeds :(');
-        } else if (data['AddedFeed']) {
-          // TODO sorting
-          feeds[feeds.length] = data['AddedFeed'];
-          displayFeeds();
-          $('#addFeedWindow').dialog('close');
-        } else {
-          // TODO select between them, leave dialog open
-          alert('Multiple feeds detected!');
-          $('#addFeedWindow').dialog('close');
-        }
-      }
-    })
-}
+var util = {
+  hashString: function(str) {
+    if (str == null) return 0;
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+};
+
+
 
 $(document).ready(function() {
-  resizeMainPanel();
-  $(window).resize(resizeMainPanel);
-  // This is currently using the jquery ui layout plugin.
-  // I have some annoyances with it. Consider switching to something better,
-  // or at least simpler, like http://www.methvin.com/splitter/
-  bodyLayout = $('#mainPanel').layout({
-    defaults: {
-      applyDefaultStyles: true,
-      resizable: true,
-      closable: false,
-      slidable: true,
-      contentSelector: '.content',
-      spacing_open: 4,
-      spacing_closed: 4
-    },
-    south: {
-      paneSelector: '.articleView',
-      size: 400,
-    },
-    west: {
-      paneSelector: '.feedList'
-    },
-    center: {
-      paneSelector: '.articleList'
-    },
-  });
-
-  $('#register_button').click(function() {
-    $.ajax('/Users/Register', {
-      dataType: 'json',
-      data: {
-        'email': $('#email').val(),
-        'password': $('#password').val(),
-      },
-      success: function(data, statusText, xhr) {
-        hideLoginWindow();
-        user = data;
-        updateUserInfos();
-        refreshFeeds();
-      }
-    });
-  });
-
-  $('#login_button').click(function() {
-    $.ajax('/Users/Login', {
-      dataType: 'json',
-      data: {
-        'email': $('#email').val(),
-        'password': $('#password').val(),
-      },
-      success: function(data, statusText, xhr) {
-        hideLoginWindow();
-        user = data;
-        updateUserInfos();
-        refreshFeeds();
-      }
-    });
-  });
-
-  $('#addFeedButton').click(function() {
-    $('#addFeedWindow').dialog({
-        height: 'auto',
-        width: 'auto',
-        buttons: [
-            { text: 'Add feed!', click: addFeed },
-            { text: 'Maybe later', click: function() { $(this).dialog('close'); } }
-        ]
-    });
-  });
-  $('#addFeedWindowClose').click(function() {
-    $('#addFeedWindow').dialog('close');
-  });
-
-  if ($.cookie('.MONOAUTH')) {
-    refreshUser();
-  } else {
-    showLoginWindow();
-  }
-
-  // Every 5 minutes
-  window.setInterval(refreshUser, 5 * 60 * 1000);
+  ui.initialize();
+  domain.initialize();
 });
