@@ -1,36 +1,37 @@
 DONE:
- * Backend
+* Backend
 	* Persistence
 	* User registration
 	* User login
 	* Track read/unread
 	* Autodetect feed
- * Frontend
-    * Basic layout
-    * Login
-    * Register
-    * Display single feed view
-    * Mark read
+* Frontend
+  * Basic layout
+  * Login
+  * Register
+  * Display single feed view
+  * Mark read
+  * New feed view
+    * Multiple candidate feeds
 	
 TODO:
- * Backend
-    * Feed deduplication?
-	* Authentication required everywhere (except splash page, registration)
+* Backend
+  * Feed deduplication?
+	* Authentication required everywhere (except login, registration, content)
 	* Modify feed
 		* Change personally visible details
 		* Change feed URL
 		* Change update interval
 	* Tagging / folders
 	* Article search
-    * Mark read
-    * Annotating articles?
-    	Requires us to maintain data FOREVER
- * Frontend
-    * Style
-        * Fix appearance for popups
-    * New feed view
-        * Multiple candidate feeds
-    * Display combined feed view
-    * Display unread only
-    * Modify feed view
-    * Sorting
+  * Annotating articles?
+  	Requires us to maintain data FOREVER
+* Frontend
+  * Ajax loading gifs
+  * Style tweaks
+  * Display combined feed view
+  * Display unread only
+  * Modify feed view
+  * Sorting
+  * Unread counts
+  * Keyboard shortcuts

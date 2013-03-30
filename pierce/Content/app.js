@@ -102,9 +102,15 @@ var domain = {
           ui.displayFeeds();
           ui.closeFeedPopup();
         } else {
-          // TODO select between them, leave dialog open
-          alert('Multiple feeds detected!');
-          ui.closeFeedPopup();
+          $('#multifeedOptions').empty();
+          $('#addFeedUrl').val(data['DiscoveredFeeds'][0].Uri);
+          $.each(data['DiscoveredFeeds'], function(i, feed) {
+            $('#multifeedOptions')
+              .append($('<option></option>')
+                .attr('value', feed.Uri)
+                .text(feed.Title));
+          });
+          $('#multifeed').show();
         }
       }
     })
@@ -115,7 +121,7 @@ var domain = {
     $.ajax('/Feeds/MarkRead', {
       dataType: 'json',
       data: {
-        feedId: feedId,
+        feedId: feed.Id,
         articleId: article.UniqueId
       }
     });
@@ -286,6 +292,7 @@ var ui = {
     });
 
     $('#addFeedButton').click(function() {
+      $('#multifeed').hide();
       $('#addFeedWindow').dialog({
           height: 'auto',
           width: 'auto',
@@ -295,10 +302,9 @@ var ui = {
           ]
       });
     });
-    $('#addFeedWindowClose').click(function() {
-      $('#addFeedWindow').dialog('close');
+    $('#multifeedOptions').change(function() {
+      $('#addFeedUrl').val($('#multifeedOptions').val());
     });
-  
   }
 };
 

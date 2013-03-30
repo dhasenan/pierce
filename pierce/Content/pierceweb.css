@@ -2,7 +2,7 @@
 body {
   background-color: #fdfdff;
   font-family: 'Open Sans', sans-serif;
-  font-size: 12px;
+  font-size: 10pt;
   font-weight: normal;
   line-height: 1.2em;
   margin: 0px;
@@ -58,12 +58,15 @@ body {
   overflow: hidden;
   white-space: nowrap;
   margin: 0.2em;
-  font-size: 14px;
+  font-size: 11pt;
+  text-overflow: ellipsis;
 }
 
 .articleli {
   overflow: hidden;
   white-space: nowrap;
-  margin: 0.2em;
-  font-size: 14px;
+  padding: 0.2em;
+  font-size: 11pt;
+  text-overflow: ellipsis;
+  border-bottom: 1px dotted #aaa;
 }
