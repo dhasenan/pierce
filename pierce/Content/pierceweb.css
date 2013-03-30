@@ -53,3 +53,17 @@ body {
 .articleli.unread {
   font-weight: bold;
 }
+
+.feedli {
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 0.2em;
+  font-size: 14px;
+}
+
+.articleli {
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 0.2em;
+  font-size: 14px;
+}
