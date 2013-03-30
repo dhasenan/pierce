@@ -18,6 +18,11 @@ body {
   padding-left: 0.3em;
 }
 
+.paneTitle a {
+  color: #f0e0e0;
+  padding-right: 0.5em;
+}
+
 .content {
   background-color: #fafafa;
 }

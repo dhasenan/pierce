@@ -15,6 +15,7 @@ DONE:
     * Multiple candidate feeds
   * Sorting
   * Unread counts
+  * Display unread only
 	
 TODO:
 * Backend
@@ -31,7 +32,7 @@ TODO:
 * Frontend
   * Ajax loading gifs
   * Style tweaks
-  * Display combined feed view
-  * Display unread only
+  * Labels
+  * All feeds view
   * Modify feed view
   * Keyboard shortcuts

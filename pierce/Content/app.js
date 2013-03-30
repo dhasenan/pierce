@@ -250,13 +250,20 @@ var ui = {
     $('#feedli_' + feed.Id).replaceWith(ui.template('feedli', {feed: feed}));
   },
 
+  showingUnreadOnly: false,
+  currentFeed: null,
+
   showFeed: function(feedId) {
     var feed = domain.getFeed(feedId);
     if (!feed) return;
+    ui.currentFeed = feed;
     $('.feedli').removeClass('selectedItem');
     $('#feedli_' + feedId).addClass('selectedItem');
     $('#articleList .content').empty();
     $.each(feed.Articles, function(i, article) {
+      if (ui.showingUnreadOnly && article.IsRead) {
+        return;
+      }
       var dom = ui.template('articleli', {
         article: article,
           feed: feed,
@@ -297,6 +304,17 @@ var ui = {
       ui.updateFeedDisplay(feed);
       // TODO update unread count (once we have such a thing)
     }
+  },
+
+  toggleUnreadOnly: function() {
+    if (ui.showingUnreadOnly) {
+      ui.showingUnreadOnly = false;
+      $('#toggleUnread').text('Unread');
+    } else {
+      ui.showingUnreadOnly = true;
+      $('#toggleUnread').text('All');
+    }
+    ui.showFeed(ui.currentFeed.Id);
   },
 
   initialize: function() {
