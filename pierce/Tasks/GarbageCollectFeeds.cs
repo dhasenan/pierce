@@ -11,6 +11,7 @@ namespace pierce
 
         public void Execute()
         {
+
             Pierce.Feeds.Remove(Query.Size("Subscribers", 0));
         }
     }

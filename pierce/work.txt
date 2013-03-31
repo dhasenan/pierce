@@ -5,6 +5,11 @@ DONE:
 	* User login
 	* Track read/unread
 	* Autodetect feed
+  * Reduce update interval if people unsubscribe / alter update interval
+  * Feed deduplication
+	* Modify feed
+		* Change personally visible details
+		* Change update interval
 * Frontend
   * Basic layout
   * Login
@@ -19,26 +24,39 @@ DONE:
   * Links!
   * Modify feed view
     * Unsubscribe
-	
-TODO:
-* Backend
-  * Feed deduplication?
-	* Authentication required everywhere (except login, registration, content)
-	* Modify feed
-		* Change personally visible details
-		* Change feed URL
-		* Change update interval
-	* Tagging / folders
-	* Article search
-  * Annotating articles?
-  	Requires us to maintain data FOREVER
-* Frontend
-  * Ajax loading gifs
-  * Style tweaks
-  * Labels
-  * Keyboard shortcuts
-  * Date formatting?
-  * Look over ordering (engadget bug)
-  * Modify feed view
     * Update interval
     * Show user-supplied title when available
+	
+TODO:
+* General
+	* Tagging / folders / labels
+	* Article search
+* Backend
+	* Authentication required everywhere (except login, registration, content)
+  * RSS0.92
+  * Atom
+* Frontend
+  * Ajax loading gifs
+  * Keyboard shortcuts
+    * Follow link in new tab
+  * Persist layout (per browser)
+  * Graceful error handling
+    * Show a butterbar
+  * Help menu
+  * Youtube user following
+  * Mobile-optimized site
+  * Update article list after updating feeds if feed changed
+  * Unravel the mess of ui vs domain
+  * Set a title
+
+
+Things to look into eventually:
+* Social media following (twitter, g+)
+* Following a site that doesn't publish a feed
+* More sort/filter options?
+* What other data can we show?
+* Annotating articles
+* Attached media (<enclosure>)
+* Change feed URL
+  For things like schneier's blog feed change, if the unique ids for
+  articles is consistent, this means you save history.

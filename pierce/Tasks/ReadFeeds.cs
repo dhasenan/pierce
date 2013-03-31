@@ -7,6 +7,7 @@ using System.Xml;
 using System.Xml.Linq;
 using MongoDB.Driver.Builders;
 using System.Globalization;
+using MongoDB.Bson;
 
 namespace pierce
 {
@@ -18,7 +19,12 @@ namespace pierce
             var list = Pierce.Feeds.Find(Query.LT("NextRead", DateTime.UtcNow));
             foreach (var feed in list)
             {
-                if (feed.NextRead > DateTime.UtcNow)
+                // We should have a sort of feed maintenance task that goes
+                // through each feed in sequence and runs a number of subtasks
+                // on each, rather than sneaking in this maybe-delete and the
+                // update-feed-interval stuff all in the name of reading the
+                // latest stories from the webs.
+                if (MaybeGarbageCollect(feed))
                 {
                     continue;
                 }
@@ -33,6 +39,23 @@ namespace pierce
                 }
                 Pierce.Feeds.Save(feed);
             }
+        }
+
+        bool MaybeGarbageCollect(Feed feed)
+        {
+            var users = Pierce.Users.Find(Query.ElemMatch("Subscriptions", Query.EQ("FeedId", new ObjectId(feed.Id)))).ToList();
+            if (!users.Any())
+            {
+                Pierce.Feeds.Remove(Query.EQ("_id", new ObjectId(feed.Id)));
+                return true;
+            }
+            var interval = users
+                .Select(x => x.GetSubscription(feed.Id))
+                .Where(x => x != null)
+                .Select(x => x.CheckInterval)
+                .Min();
+            feed.ReadInterval = interval;
+            return false;
         }
 
         public void Read(Feed feed)

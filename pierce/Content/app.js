@@ -86,7 +86,6 @@ var domain = {
     if (sub.Title) {
       feed.Title = sub.Title;
     }
-    feed.Articles.sort()
     $.each(feed.Articles, function(i, art) {
       art.Feed = feed;
       art.PublishDate = domain.jsDate(art.PublishDate);
@@ -94,6 +93,7 @@ var domain = {
         art.IsRead = sub.ReadArticles.indexOf(art.Id) >= 0;
       }
     });
+    domain.sortArticles(feed.Articles);
   },
 
   refreshUser: function() {
@@ -247,7 +247,7 @@ var ui = {
               data: {
                 id: feedId,
                 title: title,
-                checkIntervalSeconds: checkInterval
+                checkIntervalSeconds: checkInterval * 60
               },
               success: function(res, foo, bar) {
                 feed = domain.getFeed(feedId);

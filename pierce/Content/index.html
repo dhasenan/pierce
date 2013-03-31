@@ -58,6 +58,7 @@
         class='articleli <%- article.IsRead ? "read" : "unread" %>'
         onclick='ui.showArticle("<%= feed.Id %>", "<%= article.Id %>");'>
         <img style='height: 1em; width: 1em;' src='<%= feed.ImageUri %>'></img>
+        <%- ui.fmtDate(article.PublishDate) %>
         <%- article.Title %>
       </div>
     </script>
@@ -66,7 +67,7 @@
       <div>
         <img style='float: left' src='<%= feed.ImageUri %>'></img>
         <h3><a href="<%= article.Link %>"><%- article.Title %></a> - <%- feed.Title %></h3>
-        <div><%- article.PublishDate.toISOString() %>
+        <div><%- ui.fmtDate(article.PublishDate) %>
           <% if (article.Author) { %> -- by <%- article.Author %><% } %></div>
         <!-- as a special case, load this with html unescaped -->
         <frame><%= article.Description %></frame>
