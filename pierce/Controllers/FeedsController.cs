@@ -74,7 +74,49 @@ namespace pierce
             return Json(result);
         }
 
-        public ActionResult UpdateNow(string id)
+        public ActionResult Update(string id, string title, int checkIntervalSeconds)
+        {
+            var user = GetUser();
+            if (user == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new { Error = "Not authenticated" });
+            }
+
+            // Clamp updateInterval.
+            var checkInterval = TimeSpan.FromSeconds(checkIntervalSeconds);
+            if (checkInterval > Feed.MaxUpdateInterval)
+                checkInterval = Feed.MaxUpdateInterval;
+            if (checkInterval < Feed.MinUpdateInterval)
+                checkInterval = Feed.MinUpdateInterval;
+            var sub = user.GetSubscription(id);
+            var feed = Feed.ById(id);
+            if (feed == null)
+            {
+                return Json(new { Error = "We couldn't find your feed! We tried recreating it for you, but we couldn't. Is the site working?" });
+            }
+            if (sub == null)
+            {
+                // not subscribed to the feed -- fix this
+                user.SubscribeTo(feed);
+                sub = user.GetSubscription(feed.Id);
+            }
+            sub.CheckInterval = checkInterval;
+            if (sub.CheckInterval < feed.ReadInterval)
+            {
+                feed.ReadInterval = sub.CheckInterval;
+                feed.NextRead = feed.LastRead + feed.ReadInterval;
+                Pierce.Feeds.Save(feed);
+            }
+            if (title != feed.Title)
+            {
+                sub.Title = title;
+            }
+            Pierce.Users.Save(user);
+            return Json(new { Feed = feed, Subscription = sub });
+        }
+
+        public ActionResult RefreshNow(string id)
         {
             var user = GetUser();
             if (user == null)

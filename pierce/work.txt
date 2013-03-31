@@ -17,6 +17,8 @@ DONE:
   * Unread counts
   * Display unread only
   * Links!
+  * Modify feed view
+    * Unsubscribe
 	
 TODO:
 * Backend
@@ -34,10 +36,9 @@ TODO:
   * Ajax loading gifs
   * Style tweaks
   * Labels
-  * Modify feed view
-    * Unsubscribe
-    * Update interval
-    * Show user-supplied title when available
   * Keyboard shortcuts
   * Date formatting?
   * Look over ordering (engadget bug)
+  * Modify feed view
+    * Update interval
+    * Show user-supplied title when available

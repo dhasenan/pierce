@@ -27,8 +27,11 @@ namespace pierce
 
         public void SubscribeTo(Feed f)
         {
-            Subscriptions.Add(new Subscription { FeedUri = f.Uri, FeedId = f.Id });
-            f.Subscribers.Add(Id);
+            if (!Subscriptions.Where(x => x.FeedId == f.Id).Any())
+            {
+                Subscriptions.Add(new Subscription { FeedUri = f.Uri, FeedId = f.Id });
+                f.Subscribers.Add(Id);
+            }
         }
 
         public void Unsubscribe(string feedId)

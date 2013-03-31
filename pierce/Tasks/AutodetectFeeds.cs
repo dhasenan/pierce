@@ -11,21 +11,29 @@ namespace pierce
     {
         public List<Feed> FromHtmlPage(string pageUrl)
         {
-            WebRequest wr = WebRequest.Create(pageUrl);
-            wr.Method = "GET";
-            TextReader reader = new StreamReader(wr.GetResponse().GetResponseStream());
-            var text = reader.ReadToEnd();
-            reader = new StringReader(text);
+            string text;
             var feeds = new List<Feed>();
-            // Is this an rss feed or an html page?
-            // Try rss first.
+            var existing = Feed.ByUri(pageUrl);
+            if (existing != null)
+            {
+                feeds.Add(existing);
+                return feeds;
+            }
             try
             {
-                var feed = new Feed();
-                new ReadFeeds().Read(feed, reader);
-                feeds.Add(feed);
+                WebRequest wr = WebRequest.Create(pageUrl);
+                wr.Method = "GET";
+                TextReader tr = new StreamReader(wr.GetResponse().GetResponseStream());
+                text = tr.ReadToEnd();
             }
             catch
+            {
+                // invalid url
+                return feeds;
+            }
+
+            // Is this an rss feed or an html page?
+            try
             {
                 var doc = new HtmlDocument();
                 doc.LoadHtml(text);
@@ -37,6 +45,21 @@ namespace pierce
                     try
                     {
                         var feed = new Feed();
+                        var targetAttribute = link.Attributes ["href"];
+                        if (targetAttribute == null)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            feed.Uri = new Uri(new Uri(pageUrl), targetAttribute.Value);
+                            existing = Feed.ByUri(feed.Uri.ToString());
+                            if (existing != null)
+                            {
+                                feeds.Add(existing);
+                                continue;
+                            }
+                        }
                         var titleAttribute = link.Attributes ["title"];
                         if (titleAttribute != null)
                         {
@@ -46,15 +69,6 @@ namespace pierce
                         {
                             feed.Title = "RSS";
                         }
-                        var targetAttribute = link.Attributes ["href"];
-                        if (targetAttribute == null)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            feed.Uri = new Uri(new Uri(pageUrl), targetAttribute.Value);
-                        }
                         feeds.Add(feed);
                     }
                     catch
@@ -62,7 +76,13 @@ namespace pierce
                         // Malformed thingy; maybe there's a better one later.
                     }
                 }
-
+            }
+            catch
+            {
+                var feed = new Feed();
+                feed.Uri = new Uri(pageUrl);
+                new ReadFeeds().Read(feed, new StringReader(text));
+                feeds.Add(feed);
             }
             return feeds;
         }

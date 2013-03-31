@@ -17,8 +17,8 @@ namespace pierce
 
             routes.MapRoute(
                 "Default",
-                "{controller}/{action}/{id}",
-                new { controller = "Home", action = "Index", id = "" }
+                "{controller}/{action}",
+                new { controller = "Home", action = "Index" }
             );
 
         }

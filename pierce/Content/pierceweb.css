@@ -52,7 +52,7 @@ body {
 }
 
 .selectedItem {
-  background-color: #acf;
+  background-color: #ddd;
 }
 
 .unread {
@@ -63,6 +63,7 @@ body {
   overflow: hidden;
   white-space: nowrap;
   margin: 0.2em;
+  padding-right: 0.4em;
   font-size: 9pt;
   text-overflow: ellipsis;
 }

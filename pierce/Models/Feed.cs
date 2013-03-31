@@ -9,6 +9,9 @@ namespace pierce
 {
 	public class Feed
 	{
+        public static readonly TimeSpan MinUpdateInterval = TimeSpan.FromMinutes(15);
+        public static readonly TimeSpan MaxUpdateInterval = TimeSpan.FromDays(14);
+
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id;
@@ -52,5 +55,11 @@ namespace pierce
         {
             return Pierce.Feeds.Find(Query.EQ("_id", new ObjectId(id))).FirstOrDefault();
         }
+ 
+        public static Feed ByUri(string uri)
+        {
+            return Pierce.Feeds.Find(Query.EQ("Uri", uri)).FirstOrDefault();
+        }
+
 	}
 }

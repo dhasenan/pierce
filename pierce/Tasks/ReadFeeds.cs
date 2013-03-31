@@ -16,7 +16,6 @@ namespace pierce
         public void Execute()
         {
             var list = Pierce.Feeds.Find(Query.LT("NextRead", DateTime.UtcNow));
-            Console.WriteLine(list.Count());
             foreach (var feed in list)
             {
                 if (feed.NextRead > DateTime.UtcNow)
@@ -98,13 +97,17 @@ namespace pierce
         public void Read(Feed feed, TextReader feedText)
         {
             var text = feedText.ReadToEnd();
-            Console.WriteLine(feed.Uri);
+            Console.WriteLine("reading feed {0}", feed.Uri);
             XDocument x = XDocument.Parse(text);
+            var rss = x.Descendants("rss").FirstOrDefault();
+            if (rss == null)
+            {
+                throw new ArgumentException("Feed did not contain an <rss> element.");
+            }
             var channel = x.Descendants("channel").FirstOrDefault();
             if (channel == null)
             {
-                // Nothing we can do; everything's in <channel>.
-                return;
+                throw new ArgumentException("Feed did not contain a <channel> element.");
             }
             Elem(channel, "title", v => feed.Title = v);
             Elem(channel, "description", v => feed.Description = v);
