@@ -31,32 +31,48 @@ TODO:
 * General
 	* Tagging / folders / labels
 	* Article search
+  * Packaging and deployment
+  * Attached media (<enclosure>)?
 * Backend
 	* Authentication required everywhere (except login, registration, content)
-  * RSS0.92
+  * RSS 0.92
   * Atom
 * Frontend
   * Ajax loading gifs
+  * Feed list going all the way to the bottom
   * Keyboard shortcuts
     * Follow link in new tab
+    * Documentation
   * Persist layout (per browser)
   * Graceful error handling
-    * Show a butterbar
+  * Show a butterbar
+    * Error messages
+    * Info messages
   * Help menu
-  * Youtube user following
   * Mobile-optimized site
   * Update article list after updating feeds if feed changed
   * Unravel the mess of ui vs domain
   * Set a title
+  * Nicer timespan editor than 'X minutes'
 
 
-Things to look into eventually:
-* Social media following (twitter, g+)
-* Following a site that doesn't publish a feed
-* More sort/filter options?
-* What other data can we show?
-* Annotating articles
-* Attached media (<enclosure>)
-* Change feed URL
-  For things like schneier's blog feed change, if the unique ids for
-  articles is consistent, this means you save history.
+Monetization:
+* Need:
+  * Better splash screen (login/register)
+    Requires someone else to help.
+  * Personal name
+  * Update name / email / etc
+  * Logging (SMTP appender for high severity errors)
+  * Registration tracking
+  * Performance tracking (request latency, etc) + alarms
+  * Help
+  * Security testing
+* Interesting:
+  * Youtube user following
+  * Twitter following
+  * G+ following (can only do public feed)
+  * Facebook following (probably the same)
+  * Annotating articles
+  * More sort/filter options?
+  * What other data can we show?
+  * Following a site that doesn't publish a feed

@@ -24,8 +24,14 @@ namespace pierce
 		public Uri Link;
 		public string Description;
 		public ICollection<string> Categories = new HashSet<string>();
-
-		public Uri ImageUri;
+        
+        public Uri LogoUri;
+        public Uri IconUri;
+        public Uri ImageUri
+        {
+            get { return LogoUri; }
+            set { LogoUri = value; IconUri = value; }
+        }
 		public Uri ImageLinkTarget;
 		public string ImageTitle;
         

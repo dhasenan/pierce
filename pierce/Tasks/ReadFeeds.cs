@@ -5,6 +5,7 @@ using System.Net;
 using System.IO;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using MongoDB.Driver.Builders;
 using System.Globalization;
 using MongoDB.Bson;
@@ -71,24 +72,6 @@ namespace pierce
             wr.Method = "GET";
             return new StreamReader(wr.GetResponse().GetResponseStream());
         }
-        
-        private void Elem(XElement element, string descendant, params Action<string>[] setter)
-        {
-            var v = element.Descendants(descendant).FirstOrDefault();
-            if (v == null)
-                return;
-            foreach (var s in setter)
-            {
-                try
-                {
-                    s(v.Value);
-                    return;
-                }
-                catch (Exception ex)
-                {
-                }
-            }
-        }
 
         // The RSS2.0 spec doesn't mandate RFC1123 dates, but it does mention them.
         const string Rfc1123 = "ddd, dd MMM yyyy HH':'mm':'ss";
@@ -106,9 +89,8 @@ namespace pierce
                     TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(v.Substring(Rfc1123Length).Trim());
                     d = TimeZoneInfo.ConvertTimeToUtc(d, tz);
                 }
-                catch (Exception ex)
+                catch
                 {
-                    d = d.AddDays(0);
                 }
                 date = d;
                 return true;
@@ -117,16 +99,134 @@ namespace pierce
             return false;
         }
 
+        private static readonly XNamespace atom = "http://www.w3.org/2005/Atom";
+
         public void Read(Feed feed, TextReader feedText)
         {
             var text = feedText.ReadToEnd();
             Console.WriteLine("reading feed {0}", feed.Uri);
             XDocument x = XDocument.Parse(text);
             var rss = x.Descendants("rss").FirstOrDefault();
+            XName atomFeedName = atom + "feed";
+            var atomFeed = x.Descendants(atomFeedName).FirstOrDefault();
             if (rss == null)
             {
-                throw new ArgumentException("Feed did not contain an <rss> element.");
+                if (atomFeed == null)
+                {
+                    throw new ArgumentException("Feed did not contain an <rss> or <feed> element.");
+                }
+                ReadAtom(feed, x);
             }
+            else
+            {
+                ReadRss(feed, x);
+            }
+        }
+        
+        private void Elem(XElement element, XName descendant, params Action<string>[] setter)
+        {
+            var vs = element.Descendants(descendant);
+            foreach (var v in vs)
+            {
+                foreach (var s in setter)
+                {
+                    try
+                    {
+                        s(v.Value);
+                        return;
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+        }
+        
+        private void ElemAttrLink(XElement xelem, Action<Uri> setter)
+        {
+            ElemAttrLink(xelem, null, setter);
+        }
+
+        private void ElemAttrLink(XElement xelem, string rel, Action<Uri> setter)
+        {
+            Uri uri;
+            foreach (var name in new XName[]{"link", atom + "link"})
+            {
+                var selected = xelem.Descendants(name);
+                foreach (var s in selected)
+                {
+                    if (rel != null)
+                    {
+                        if (s.Attribute("rel") != null && s.Attribute("rel").Value != rel)
+                        {
+                            continue;
+                        }
+                    }
+                    if (s.Attribute("href") == null)
+                        continue;
+                    if (Uri.TryCreate(s.Attribute("href").Value, UriKind.Absolute, out uri))
+                    {
+                        setter(uri);
+                    }
+                }
+            }
+        }
+
+        private void ElemLink(XElement xelem, XName descendant, Action<Uri> setter)
+        {
+            var ds = xelem.Descendants(descendant);
+            foreach (var d in ds)
+            {
+                Uri uri;
+                if (Uri.TryCreate(d.Value, UriKind.Absolute, out uri))
+                {
+                    setter(uri);
+                }
+            }
+        }
+
+        private void ReadAtom(Feed feed, XDocument x)
+        {
+            var xfeed = x.Descendants(atom + "feed").First();
+            Elem(xfeed, atom + "title", v => feed.Title = v);
+            ElemAttrLink(xfeed, "alternate", v => feed.Link = v);
+            ElemLink(xfeed, atom + "icon", v => feed.IconUri = v);
+            ElemLink(xfeed, atom + "logo", v => feed.LogoUri = v);
+            foreach (var xentry in x.Descendants(atom + "entry"))
+            {
+                var article = new Article();
+                Elem(xentry, atom + "id", v => article.UniqueId = v);
+                Elem(xentry, atom + "title", v => article.Title = v);
+                Elem(xentry, atom + "author", v => article.Authors.Add(v));
+                ElemAttrLink(xentry, v => article.Link = v);
+                // Atom uses ISO8601 rather than RFC1123. Yay!
+                Elem(xentry, atom + "published", v => article.PublishDate = DateTime.Parse(v).ToUniversalTime());
+                Elem(xentry, atom + "summary", v => article.Summary = v);
+
+                // Should pay attention to the content type.
+                var content = xentry.Descendants(atom + "content").FirstOrDefault();
+                if (content != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(content.Value))
+                    {
+                        article.Description = content.Value;
+                    }
+                    var attr = content.Attribute("src");
+                    if (attr != null)
+                    {
+                        if (article.Link == null)
+                        {
+                            // Maybe just have a series of links, with optional tag?
+                            Uri.TryCreate(attr.Value, UriKind.Absolute, out article.Link);
+                        }
+                    }
+                }
+                feed.Articles.Add(article);
+            }
+        }
+
+        private void ReadRss(Feed feed, XDocument x)
+        {
             var channel = x.Descendants("channel").FirstOrDefault();
             if (channel == null)
             {
@@ -139,20 +239,23 @@ namespace pierce
             if (img != null)
             {
                 Elem(img, "title", v => feed.ImageTitle = v);
-                Elem(img, "url", v => feed.ImageUri = new Uri(v));
-                Elem(img, "link", v => feed.ImageLinkTarget = new Uri(v));
+                ElemLink(img, "url", v => {
+                    feed.LogoUri = v;
+                    feed.IconUri = v; }
+                );
+                ElemLink(img, "link", v => feed.ImageLinkTarget = v);
             }
             foreach (var item in channel.Descendants("item").AsEnumerable())
             {
                 var a = new Article();
                 a.PublishDate = DateTime.UtcNow;
                 Elem(item, "title", v => a.Title = v);
-                Elem(item, "author", v => a.Author = v);
+                Elem(item, "author", v => a.Authors.Add(v));
                 Elem(item, "description", v => a.Description = v);
                 Elem(item, "guid", v => a.UniqueId = v);
                 Elem(item, "pubDate", v => a.PublishDate = DateTime.Parse(v), v => TryParseRfc1123(v, ref a.PublishDate));
-                Elem(item, "link", v => a.Link = new Uri(v));
-                Elem(item, "comments", v => a.CommentLink = new Uri(v));
+                ElemLink(item, "link", v => a.Link = v);
+                ElemLink(item, "comments", v => a.CommentLink = v);
                 
                 var existing = feed.GetArticle(a.UniqueId);
                 if (existing != null)

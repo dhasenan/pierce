@@ -61,6 +61,7 @@
     <Folder Include="Models\" />
     <Folder Include="Scripts\" />
     <Folder Include="Tasks\" />
+    <Folder Include="Views\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Global.asax.cs">
@@ -76,10 +77,10 @@
     <Compile Include="Controllers\BaseController.cs" />
     <Compile Include="Controllers\FeedsController.cs" />
     <Compile Include="Tasks\GarbageCollectFeeds.cs" />
+    <Compile Include="Controllers\HomeController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Web.config" />
-    <Content Include="Views\Home\Index.aspx" />
     <Content Include="Web.config" />
     <Content Include="Global.asax" />
     <Content Include="Content\app.js" />

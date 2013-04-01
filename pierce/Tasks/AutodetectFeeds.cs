@@ -9,6 +9,58 @@ namespace pierce
 {
     public class AutodetectFeeds
     {
+        private Feed ReadRss(string pageUrl, HtmlNode link)
+        {
+            try
+            {
+                var feed = new Feed();
+                var targetAttribute = link.Attributes ["href"];
+                if (targetAttribute == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    feed.Uri = new Uri(new Uri(pageUrl), targetAttribute.Value);
+                    var existing = Feed.ByUri(feed.Uri.ToString());
+                    if (existing != null)
+                    {
+                        return existing;
+                    }
+                }
+                var titleAttribute = link.Attributes ["title"];
+                if (titleAttribute != null)
+                {
+                    feed.Title = titleAttribute.Value;
+                }
+                else
+                {
+                    feed.Title = "RSS";
+                }
+                return feed;
+            }
+            catch
+            {
+                // malformed
+                return null;
+            }
+        }
+
+        private void FindFeeds(HtmlDocument doc, string pageUrl, List<Feed> feeds, string type)
+        {
+            var rssLinks = doc.DocumentNode.SelectNodes(string.Format("//link[@type='{0}']", type));
+            if (rssLinks != null)
+            {
+                foreach (var link in rssLinks)
+                {
+                    var feed = ReadRss(pageUrl, link);
+                    if (feed != null)
+                    {
+                        feeds.Add(feed);
+                    }
+                }
+            }
+        }
         public List<Feed> FromHtmlPage(string pageUrl)
         {
             string text;
@@ -35,54 +87,26 @@ namespace pierce
             // Is this an rss feed or an html page?
             try
             {
+                // rss feed definitely shouldn't parse as html
                 var doc = new HtmlDocument();
                 doc.LoadHtml(text);
-                var rssLinks = doc.DocumentNode.SelectNodes("//link[@type='application/rss+xml']");
-                if (rssLinks == null)
-                    return feeds;
-                foreach (var link in rssLinks)
-                {
-                    try
-                    {
-                        var feed = new Feed();
-                        var targetAttribute = link.Attributes ["href"];
-                        if (targetAttribute == null)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            feed.Uri = new Uri(new Uri(pageUrl), targetAttribute.Value);
-                            existing = Feed.ByUri(feed.Uri.ToString());
-                            if (existing != null)
-                            {
-                                feeds.Add(existing);
-                                continue;
-                            }
-                        }
-                        var titleAttribute = link.Attributes ["title"];
-                        if (titleAttribute != null)
-                        {
-                            feed.Title = titleAttribute.Value;
-                        }
-                        else
-                        {
-                            feed.Title = "RSS";
-                        }
-                        feeds.Add(feed);
-                    }
-                    catch
-                    {
-                        // Malformed thingy; maybe there's a better one later.
-                    }
-                }
+                FindFeeds(doc, pageUrl, feeds, "application/rss+xml");
+                FindFeeds(doc, pageUrl, feeds, "application/atom+xml");
             }
             catch
             {
-                var feed = new Feed();
-                feed.Uri = new Uri(pageUrl);
-                new ReadFeeds().Read(feed, new StringReader(text));
-                feeds.Add(feed);
+                try
+                {
+                    // my parsing is lax enough that it might parse some
+                    // invalid xhtml as an rss feed, maybe
+                    var feed = new Feed();
+                    feed.Uri = new Uri(pageUrl);
+                    new ReadFeeds().Read(feed, new StringReader(text));
+                    feeds.Add(feed);
+                }
+                catch
+                {
+                }
             }
             return feeds;
         }
