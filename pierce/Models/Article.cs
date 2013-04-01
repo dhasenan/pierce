@@ -14,21 +14,8 @@ namespace pierce
         public Uri CommentLink;
         public string Title;
         public string Description;
-
-        public string Author
-        {
-            get { return Authors.FirstOrDefault(); }
-            set
-            {
-                if (!Authors.Contains(value))
-                {
-                    Authors.Add(value);
-                }
-            }
-        }
-
         public ICollection<string> Categories = new HashSet<string>();
-        public ICollection<string> Authors = new HashSet<string>();
+        public ICollection<Author> Authors = new HashSet<Author>();
         public string UniqueId;
         public string Summary;
         

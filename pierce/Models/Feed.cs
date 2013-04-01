@@ -27,16 +27,12 @@ namespace pierce
         
         public Uri LogoUri;
         public Uri IconUri;
-        public Uri ImageUri
-        {
-            get { return LogoUri; }
-            set { LogoUri = value; IconUri = value; }
-        }
-		public Uri ImageLinkTarget;
+        public Uri ImageLinkTarget;
 		public string ImageTitle;
         
         public ICollection<Article> Articles = new HashSet<Article>();
-        public ICollection<string> Subscribers = new HashSet<string>();
+
+        public ICollection<Author> Authors = new HashSet<Author>();
 		public DateTime LastRead = DateTime.MinValue;
 		public TimeSpan ReadInterval = TimeSpan.FromHours(1);
         public DateTime NextRead = DateTime.MinValue;

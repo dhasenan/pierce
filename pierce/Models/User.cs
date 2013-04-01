@@ -30,7 +30,6 @@ namespace pierce
             if (!Subscriptions.Where(x => x.FeedId == f.Id).Any())
             {
                 Subscriptions.Add(new Subscription { FeedUri = f.Uri, FeedId = f.Id });
-                f.Subscribers.Add(Id);
             }
         }
 

@@ -505,7 +505,20 @@ var ui = {
 
   fmtDate: function(date) {
     return date.toISOString().replace('T', ' ').substring(0, 16);
-  }
+  },
+
+  authors: function(article) {
+    if (!article.Authors) {
+      if (!feed.Authors) {
+        return '';
+      }
+      return util.commaAnd(feed.Authors);
+    }
+    return util.commaAnd(article.Authors);
+  },
+
+  // this is so everything can end with a comma
+  _barrier: null
 };
 
 var util = {
@@ -517,7 +530,27 @@ var util = {
       hash = hash & hash;
     }
     return Math.abs(hash);
-  }
+  },
+
+  commaAnd: function(list) {
+    if (!list) return '';
+    if (list.length == 1) {
+      return list[0];
+    }
+    if (list.length == 2) {
+      return list[0] + ' and ' + list[1];
+    }
+    var str = list[0];
+    for (var i = 1; i < list.length - 1; i++) {
+      str += ', ';
+      str += list[i];
+    }
+    str += ', and ' + list[list.length - 1];
+    return str;
+  },
+
+  // this is so everything can end with a comma
+  _barrier: null
 };
 
 

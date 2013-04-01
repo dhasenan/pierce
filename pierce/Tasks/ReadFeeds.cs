@@ -125,7 +125,7 @@ namespace pierce
         
         private void Elem(XElement element, XName descendant, params Action<string>[] setter)
         {
-            var vs = element.Descendants(descendant);
+            var vs = element.Elements(descendant);
             foreach (var v in vs)
             {
                 foreach (var s in setter)
@@ -152,7 +152,7 @@ namespace pierce
             Uri uri;
             foreach (var name in new XName[]{"link", atom + "link"})
             {
-                var selected = xelem.Descendants(name);
+                var selected = xelem.Elements(name);
                 foreach (var s in selected)
                 {
                     if (rel != null)
@@ -174,13 +174,28 @@ namespace pierce
 
         private void ElemLink(XElement xelem, XName descendant, Action<Uri> setter)
         {
-            var ds = xelem.Descendants(descendant);
+            var ds = xelem.Elements(descendant);
             foreach (var d in ds)
             {
                 Uri uri;
                 if (Uri.TryCreate(d.Value, UriKind.Absolute, out uri))
                 {
                     setter(uri);
+                }
+            }
+        }
+
+        private void ReadAuthors(XElement entry, string name, ICollection<Author> output)
+        {
+            foreach (var xauthor in entry.Elements(atom + name))
+            {
+                var author = new Author();
+                Elem(xauthor, atom + "name", v => author.Name = v);
+                ElemLink(xauthor, atom + "uri", v => author.Link = v);
+                Elem(xauthor, atom + "email", v => author.Email = v);
+                if (!output.Where(x => x.Name == author.Name).Any())
+                {
+                    output.Add(author);
                 }
             }
         }
@@ -192,19 +207,26 @@ namespace pierce
             ElemAttrLink(xfeed, "alternate", v => feed.Link = v);
             ElemLink(xfeed, atom + "icon", v => feed.IconUri = v);
             ElemLink(xfeed, atom + "logo", v => feed.LogoUri = v);
-            foreach (var xentry in x.Descendants(atom + "entry"))
+            ReadAuthors(xfeed, "author", feed.Authors);
+            ReadAuthors(xfeed, "contributor", feed.Authors);
+            foreach (var xentry in xfeed.Elements(atom + "entry"))
             {
                 var article = new Article();
                 Elem(xentry, atom + "id", v => article.UniqueId = v);
                 Elem(xentry, atom + "title", v => article.Title = v);
-                Elem(xentry, atom + "author", v => article.Authors.Add(v));
+                ReadAuthors(xentry, "author", article.Authors);
+                ReadAuthors(xentry, "contributor", article.Authors);
                 ElemAttrLink(xentry, v => article.Link = v);
                 // Atom uses ISO8601 rather than RFC1123. Yay!
                 Elem(xentry, atom + "published", v => article.PublishDate = DateTime.Parse(v).ToUniversalTime());
+                if (article.PublishDate == DateTime.MinValue)
+                {
+                    Elem(xentry, atom + "updated", v => article.PublishDate = DateTime.Parse(v).ToUniversalTime());
+                }
                 Elem(xentry, atom + "summary", v => article.Summary = v);
 
                 // Should pay attention to the content type.
-                var content = xentry.Descendants(atom + "content").FirstOrDefault();
+                var content = xentry.Elements(atom + "content").FirstOrDefault();
                 if (content != null)
                 {
                     if (!string.IsNullOrWhiteSpace(content.Value))
@@ -227,7 +249,7 @@ namespace pierce
 
         private void ReadRss(Feed feed, XDocument x)
         {
-            var channel = x.Descendants("channel").FirstOrDefault();
+            var channel = x.Element("rss").Element("channel");
             if (channel == null)
             {
                 throw new ArgumentException("Feed did not contain a <channel> element.");
@@ -235,7 +257,7 @@ namespace pierce
             Elem(channel, "title", v => feed.Title = v);
             Elem(channel, "description", v => feed.Description = v);
             Elem(channel, "link", v => feed.Link = new Uri(v));
-            var img = channel.Descendants("image").FirstOrDefault();
+            var img = channel.Elements("image").FirstOrDefault();
             if (img != null)
             {
                 Elem(img, "title", v => feed.ImageTitle = v);
@@ -245,12 +267,12 @@ namespace pierce
                 );
                 ElemLink(img, "link", v => feed.ImageLinkTarget = v);
             }
-            foreach (var item in channel.Descendants("item").AsEnumerable())
+            foreach (var item in channel.Elements("item").AsEnumerable())
             {
                 var a = new Article();
                 a.PublishDate = DateTime.UtcNow;
                 Elem(item, "title", v => a.Title = v);
-                Elem(item, "author", v => a.Authors.Add(v));
+                Elem(item, "author", v => a.Authors.Add(new Author { Name = v }));
                 Elem(item, "description", v => a.Description = v);
                 Elem(item, "guid", v => a.UniqueId = v);
                 Elem(item, "pubDate", v => a.PublishDate = DateTime.Parse(v), v => TryParseRfc1123(v, ref a.PublishDate));
@@ -261,7 +283,7 @@ namespace pierce
                 if (existing != null)
                 {
                     feed.Articles.Remove(existing);
-                    if (!item.Descendants("pubDate").Any())
+                    if (!item.Elements("pubDate").Any())
                     {
                         a.PublishDate = existing.PublishDate;
                     }

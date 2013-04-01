@@ -10,6 +10,7 @@ DONE:
 	* Modify feed
 		* Change personally visible details
 		* Change update interval
+  * Atom
 * Frontend
   * Basic layout
   * Login
@@ -36,7 +37,6 @@ TODO:
 * Backend
 	* Authentication required everywhere (except login, registration, content)
   * RSS 0.92
-  * Atom
 * Frontend
   * Ajax loading gifs
   * Feed list going all the way to the bottom
@@ -76,3 +76,4 @@ Monetization:
   * More sort/filter options?
   * What other data can we show?
   * Following a site that doesn't publish a feed
+  * Android / iOS app

@@ -68,7 +68,7 @@
         <img style='float: left' src='<%= feed.ImageUri %>'></img>
         <h3><a href="<%= article.Link %>"><%- article.Title %></a> - <%- feed.Title %></h3>
         <div><%- ui.fmtDate(article.PublishDate) %>
-          <% if (article.Author) { %> -- by <%- article.Author %><% } %></div>
+          <% if (ui.authors(article)) { %> -- by <%- ui.authors(article) %><% } %></div>
         <!-- as a special case, load this with html unescaped -->
         <frame><%= article.Description %></frame>
       </div>

@@ -76,8 +76,8 @@
     <Compile Include="Models\Subscription.cs" />
     <Compile Include="Controllers\BaseController.cs" />
     <Compile Include="Controllers\FeedsController.cs" />
-    <Compile Include="Tasks\GarbageCollectFeeds.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Models\Author.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Web.config" />

@@ -19,6 +19,7 @@ namespace pierce
         public string FeedId;
         public TimeSpan CheckInterval = TimeSpan.FromHours(1);
         public ICollection<string> ReadArticles = new HashSet<string>();
+        public ICollection<string> Labels = new HashSet<string>();
         // TODO(dhasenan) how many historical ones to keep, how old in the past, etc
 
         public void Read(string article)

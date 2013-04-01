@@ -39,7 +39,8 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ReadFeedsTest.cs" />
+    <Compile Include="ReadAtomTest.cs" />
+    <Compile Include="ReadRssTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

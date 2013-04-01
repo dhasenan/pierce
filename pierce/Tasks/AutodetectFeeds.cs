@@ -61,6 +61,7 @@ namespace pierce
                 }
             }
         }
+
         public List<Feed> FromHtmlPage(string pageUrl)
         {
             string text;
@@ -95,18 +96,18 @@ namespace pierce
             }
             catch
             {
-                try
-                {
-                    // my parsing is lax enough that it might parse some
-                    // invalid xhtml as an rss feed, maybe
-                    var feed = new Feed();
-                    feed.Uri = new Uri(pageUrl);
-                    new ReadFeeds().Read(feed, new StringReader(text));
-                    feeds.Add(feed);
-                }
-                catch
-                {
-                }
+            }
+            try
+            {
+                // my parsing is lax enough that it might parse some
+                // invalid xhtml as an rss feed, maybe
+                var feed = new Feed();
+                feed.Uri = new Uri(pageUrl);
+                new ReadFeeds().Read(feed, new StringReader(text));
+                feeds.Add(feed);
+            }
+            catch
+            {
             }
             return feeds;
         }
