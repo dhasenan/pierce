@@ -243,7 +243,11 @@ namespace pierce
                         }
                     }
                 }
-                feed.Articles.Add(article);
+                if (article.UniqueId == null)
+                {
+                    article.UniqueId = article.Link.ToString();
+                }
+                feed.AddArticle(article);
             }
         }
 
@@ -290,10 +294,9 @@ namespace pierce
                 }
                 if (a.UniqueId == null)
                 {
-                    // This is crap. It's a better approximation than what we have currently.
                     a.UniqueId = a.Link.ToString();
                 }
-                feed.Articles.Add(a);
+                feed.AddArticle(a);
             }
         }
     }

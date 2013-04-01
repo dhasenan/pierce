@@ -94,6 +94,7 @@ var domain = {
       }
     });
     domain.sortArticles(feed.Articles);
+    ui.updateTitle();
   },
 
   refreshUser: function() {
@@ -176,8 +177,8 @@ var domain = {
           alert('I didn\'t find any feeds :(');
         } else if (data['AddedFeed']) {
           // TODO sorting
-          feeds.push(data['AddedFeed']);
-          domain.sortFeeds();
+          domain.realFeeds.push(data['AddedFeed']);
+          domain.reloadFeedInfo();
           ui.displayFeeds();
           ui.closeFeedPopup();
         } else {
@@ -226,6 +227,8 @@ var domain = {
         ui.updateFeedDisplay(f);
       }
     }
+
+    ui.updateTitle(domain.currentFeed);
   },
   
   initialize: function() {
@@ -390,6 +393,7 @@ var ui = {
 
   displayFeeds: function() {
     $('.feedList .content').html(ui.template('feedlistTemplate', {feeds: feeds}));
+    ui.updateTitle();
   },
 
   updateFeedDisplay: function(feed) {
@@ -417,6 +421,7 @@ var ui = {
       });
       $('#articleList .content').append(dom);
     });
+    ui.updateTitle();
   },
 
   showArticle: function(feedId, artId) {
@@ -442,10 +447,7 @@ var ui = {
     }));
 
     domain.showingArticle(feed, article);
-    if (article.IsRead) {
-      console.log('article is read already');
-    } else {
-    }
+    ui.updateTitle();
   },
 
   toggleUnreadOnly: function() {
@@ -508,13 +510,31 @@ var ui = {
   },
 
   authors: function(article) {
+    function formatAuthor(author) {
+      return ui.template('authorLink', { author: author });
+    }
     if (!article.Authors) {
       if (!feed.Authors) {
         return '';
       }
-      return util.commaAnd(feed.Authors);
+      return util.commaAnd(feed.Authors, formatAuthor);
     }
-    return util.commaAnd(article.Authors);
+    return util.commaAnd(article.Authors, formatAuthor);
+  },
+
+  updateTitle: function() {
+    if (ui.currentFeed) {
+      ui.currentFeed = domain.getFeed(ui.currentFeed.Id);
+      var unread = domain.unreadCount(ui.currentFeed);
+      if (unread) {
+        window.document.title =
+          ui.currentFeed.Title + ' (' + unread + ') - Pierce RSS Reader';
+      } else {
+        window.document.title = ui.currentFeed.Title + ' - Pierce RSS Reader';
+      }
+    } else {
+      window.document.title = 'Pierce RSS Reader';
+    }
   },
 
   // this is so everything can end with a comma
@@ -532,20 +552,20 @@ var util = {
     return Math.abs(hash);
   },
 
-  commaAnd: function(list) {
-    if (!list) return '';
+  commaAnd: function(list, fmt) {
+    if (list.length == 0) return '';
     if (list.length == 1) {
-      return list[0];
+      return fmt(list[0]);
     }
     if (list.length == 2) {
-      return list[0] + ' and ' + list[1];
+      return fmt(list[0]) + ' and ' + fmt(list[1]);
     }
-    var str = list[0];
+    var str = fmt(list[0]);
     for (var i = 1; i < list.length - 1; i++) {
       str += ', ';
-      str += list[i];
+      str += fmt(list[i]);
     }
-    str += ', and ' + list[list.length - 1];
+    str += ', and ' + fmt(list[list.length - 1]);
     return str;
   },
 

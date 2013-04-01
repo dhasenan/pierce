@@ -27,33 +27,40 @@ DONE:
     * Unsubscribe
     * Update interval
     * Show user-supplied title when available
+  * Set page title
 	
-TODO:
+Personal:
 * General
 	* Tagging / folders / labels
-	* Article search
-  * Packaging and deployment
   * Attached media (<enclosure>)?
 * Backend
-	* Authentication required everywhere (except login, registration, content)
   * RSS 0.92
+  * Add linked feed: update before returning
 * Frontend
-  * Ajax loading gifs
   * Feed list going all the way to the bottom
   * Keyboard shortcuts
     * Follow link in new tab
-    * Documentation
   * Persist layout (per browser)
-  * Graceful error handling
-  * Show a butterbar
-    * Error messages
-    * Info messages
-  * Help menu
-  * Mobile-optimized site
-  * Update article list after updating feeds if feed changed
   * Unravel the mess of ui vs domain
-  * Set a title
+
+
+Dissemination:
+	* Article search
+  * Ajax loading gifs
+  * Packaging and deployment
+	* Authentication required everywhere (except login, registration, content)
+  * Documentation
+    * Setup
+    * Usage
+      * Help menu
+      * Butter bar stuff
+  * Error handling / feedback
+    * Butter bar!
+    * Don't show login window when we fail to contact server
   * Nicer timespan editor than 'X minutes'
+  * Update article list after updating feeds / subscribing
+  * Mobile-optimized site
+  * Mark all|selected read
 
 
 Monetization:

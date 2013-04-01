@@ -109,6 +109,10 @@ namespace pierce
             catch
             {
             }
+            if (feeds.Count == 1 && feeds[0].Articles.Count == 0)
+            {
+                new ReadFeeds().Read(feeds[0]);
+            }
             return feeds;
         }
     }
