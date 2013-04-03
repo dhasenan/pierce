@@ -56,6 +56,7 @@ Bugs:
   * Refreshing a feed manually results in it getting duplicated in the feed list.
   * Adding a feed doesn't seem to close the popup or update the feed list.
   * Unsubscribing from a feed doesn't remove it from the list.
+  * Click on a feed in second label: highlights every copy of that feed
 
 
 Ugly:

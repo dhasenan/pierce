@@ -396,6 +396,7 @@ var ui = {
                   alert('Successfully unsubscribed.');
                   $('#modifyFeedWindow').dialog('close');
                   domain.removeFeed(feedId);
+                  ui.displayFeeds();
                 }
               });
             } else {
@@ -486,14 +487,12 @@ var ui = {
   currentFeed: null,
 
   showLabel: function(labelId) {
-    console.log('trying to show ' + labelId);
     var label = domain.getLabel(labelId);
     if (!label) return;
     ui.currentFeed = null;
     ui.currentLabel = label;
-    //ui.displayFeeds();
     ui.showArticles(domain.buildCombinedArticles(label.Feeds));
-    $('#listRow_' + labelId).addClass('selectedItem');
+    $('#labelName_' + labelId).addClass('selectedItem');
   },
 
   showFeed: function(feedId) {
@@ -503,11 +502,10 @@ var ui = {
     ui.currentFeed = feed;
     ui.currentLabel = null;
     ui.showArticles(feed.Articles);
-    $('#listRow_' + feedId).addClass('selectedItem');
+    $('.listRow_' + feedId).addClass('selectedItem');
   },
 
   showArticles: function(articles) {
-    //console.log('showing ' + articles.length + ' articles');
     $('.listRow').removeClass('selectedItem');
     $('#articleList .content').empty();
     $.each(articles, function(i, article) {

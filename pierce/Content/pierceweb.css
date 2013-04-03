@@ -55,6 +55,10 @@ body {
   background-color: #ddd;
 }
 
+.selectedItem .labelName {
+  background-color: #ddd;
+}
+
 .unread {
   font-weight: bold;
 }
