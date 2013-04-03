@@ -11,6 +11,7 @@ DONE:
 		* Change personally visible details
 		* Change update interval
   * Atom
+  * Default icon to site's favicon
 * Frontend
   * Basic layout
   * Login
@@ -30,11 +31,12 @@ DONE:
   * Set page title
   * Add linked feed: update before returning
   * Favicon (crappy but whatevs!)
+  * Default feed icon
+  * Labels
+    * Update title
 	
 
 Personal:
-* General
-	* Tagging / folders / labels
 * Backend
   * RSS 0.92
   * Look for favicons more thoroughly -- specify precise feed, look for site favicon
@@ -44,14 +46,22 @@ Personal:
     * Follow link in new tab
   * Persist layout (per browser)
   * Unravel the mess of ui vs domain
-  * Default icon to site's favicon
   * Reset scrolling for article area when switching articles
   * User interface!
+	* Tagging / folders / labels
+    * Collapse/expand
 
 
 Bugs:
   * Refreshing a feed manually results in it getting duplicated in the feed list.
   * Adding a feed doesn't seem to close the popup or update the feed list.
+  * Unsubscribing from a feed doesn't remove it from the list.
+
+
+Ugly:
+  * Resize handles are 1px wide.
+  * 'Articles', 'Article' labels don't update
+  * Menu icon is small, not really clear what it's for
 
 
 Dissemination:

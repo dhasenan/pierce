@@ -72,8 +72,21 @@ body {
   overflow: hidden;
   white-space: nowrap;
   margin: 0.2em;
+  margin-left: 1em;
   font-size: 9pt;
   text-overflow: ellipsis;
+  height: 16px;
+  line-height: 16px;
+}
+
+.feedli img {
+  position: relative;
+  top: 4px;
+}
+
+.feedName {
+  line-height: 1em;
+  height: 1em;
 }
 
 .articleli {

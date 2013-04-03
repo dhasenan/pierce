@@ -47,7 +47,7 @@ var domain = {
     return null;
   },
 
-  // Get a label object based on the label name (eg 'Yogscast' -> {Name: 'Yogscast', ...})
+  // Get a label object based on the label name (eg 'Yogscast' -> {Title: 'Yogscast', ...})
   getLabel: function(labelId) {
     for (var i = 0; i < domain.labels.length; i++) {
       if (domain.labels[i].Id == labelId) {
@@ -60,6 +60,7 @@ var domain = {
   // Get the number of unread articles in the given feed or label.
   unreadCount: function(feed) {
     var articles = feed.Articles;
+    if (!articles) return 0;
     var unread = 0;
     for (var i = 0; i < articles.length; i++) {
       if (!articles[i].IsRead) {
@@ -82,7 +83,7 @@ var domain = {
             e.Feeds.push(feed);
           } else {
             lab[name] = {
-              Name: name,
+              Title: name,
               Id: 'label_' + util.safeId(name),
               Feeds: [feed]
             };
@@ -95,29 +96,27 @@ var domain = {
 
     var lablist = [];
     $.each(lab, function(k, label) {
-      var articles = [];
-      $.each(label.Feeds, function(i, feed) {
-        articles = articles.concat(feed.Articles);
-      });
-      util.sortArticles(articles);
-      label.Articles = articles;
       lablist.push(label);
     });
 
     domain.allList = {
-      Name: 'All',
+      Title: 'All',
       Id: 'special_label_All',
-      Feeds: domain.realFeeds,
+      Feeds: domain.realFeeds
     };
-    lablist.sort(function(a, b) { return a.Name.compareTo(b.Name); });
+    lablist.sort(function(a, b) { return a.Title.compareTo(b.Title); });
     lablist.splice(0, 0, domain.allList);
 
     domain.uncategorizedList = {
-      Name: 'Uncategorized',
+      Title: 'Uncategorized',
       Id: 'special_label_Uncategorized',
-      Feeds: unlisted,
+      Feeds: unlisted
     };
     lablist.push(domain.uncategorizedList);
+    $.each(lablist, function(k, label) {
+      label.Articles = domain.buildCombinedArticles(label.Feeds);
+    });
+
     domain.labels = lablist;
     ui.displayFeeds();
   },
@@ -480,7 +479,7 @@ var ui = {
   },
 
   updateFeedDisplay: function(feed) {
-    $('#feedli_' + feed.Id).replaceWith(ui.template('feedli', {feed: feed}));
+    $('.feedli_' + feed.Id).replaceWith(ui.template('feedli', {feed: feed}));
   },
 
   showingUnreadOnly: false,
@@ -624,17 +623,17 @@ var ui = {
   },
 
   updateTitle: function() {
-    if (ui.currentFeed) {
-      ui.currentFeed = domain.getFeed(ui.currentFeed.Id);
-      var unread = domain.unreadCount(ui.currentFeed);
-      if (unread) {
-        window.document.title =
-          ui.currentFeed.Title + ' (' + unread + ') - Pierce RSS Reader';
-      } else {
-        window.document.title = ui.currentFeed.Title + ' - Pierce RSS Reader';
-      }
-    } else {
+    var f = ui.currentFeed || ui.currentLabel || domain.allList;
+    if (!f) {
       window.document.title = 'Pierce RSS Reader';
+      return;
+    }
+    var unread = domain.unreadCount(f);
+    var topic = f.Title;
+    if (unread) {
+      window.document.title = topic + ' (' + unread + ') - Pierce RSS Reader';
+    } else {
+      window.document.title = topic + ' - Pierce RSS Reader';
     }
   },
 

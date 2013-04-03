@@ -16,14 +16,23 @@
 
     <!-- underscore templates! -->
     <script id='labelListTemplate' type='text/html'>
-      <% $.each(labels, function(i, label) { %>
-        <div id='labelBox_<%= label.Id %>' class='labelBox <%
-            if (label == ui.currentLabel) { %>selected <% }
-            if (ui.isExpanded(label.Id)) { %>expanded <% } else { %>collapsed <% }%> '>
-          <div id='labelName_<%= label.Id %>' class='labelName'
+      <% $.each(labels, function(i, label) { 
+        var count = domain.unreadCount(label);
+        var classes = 'labelBox';
+        var labelclass = 'labelName';
+        var name = label.Title;
+        if (ui.isExpanded(label.Id)) classes += ' expanded';
+        if (label == ui.currentLabel) classes += ' selected';
+        if (count > 0) {
+          labelclass += ' unread';
+          name += ' (' + count + ')';
+        }
+      %>
+      <div id='labelBox_<%= label.Id %>' class='<%= classes %>'>
+        <div id='labelName_<%= label.Id %>' class='<%= labelclass %>'
             onclick='ui.showLabel("<%= label.Id %>")'
             >
-            <%- label.Name %>
+            <%- name %>
           </div>
           <div id='labelContent_<%= label.Id %>' class='labelContent'>
             <%= ui.template('feedlistTemplate', { feeds: label.Feeds }) %>
@@ -48,16 +57,18 @@
     </script>
 
     <script id='feedli' type='text/html'>
-      <span id='feedli_<%- feed.Id %>' class='feedli<% if (domain.unreadCount(feed) > 0) {
-        print(' unread'); } %>'>
-        <%
-          var unreadc = domain.unreadCount(feed);
-          if (unreadc) print('(' + unreadc + ') ');
-        %>
+      <span class='feedli_<%- feed.Id %> feedli<%
+        var unreadc = domain.unreadCount(feed);
+        if (unreadc > 0) print(' unread'); %>'>
         <% if (feed.IconUri) { %>
           <img style='height: 16px; width: 16px;' src='<%- feed.IconUri %>'></img>
+        <% } else { %>
+          <img style='height: 16px; width: 16px;' src='/Content/no-icon.png'></img>
         <% } %>
         <%-  feed.Title  %>
+        <%
+          if (unreadc) print(' (' + unreadc + ')');
+        %>
       </span>
     </script>
 
