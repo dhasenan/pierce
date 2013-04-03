@@ -286,16 +286,7 @@ namespace pierce
                 Elem(item, "pubDate", v => a.PublishDate = DateTime.Parse(v), v => TryParseRfc1123(v, ref a.PublishDate));
                 ElemLink(item, "link", v => a.Link = v);
                 ElemLink(item, "comments", v => a.CommentLink = v);
-                
-                var existing = feed.GetArticle(a.UniqueId);
-                if (existing != null)
-                {
-                    feed.Articles.Remove(existing);
-                    if (!item.Elements("pubDate").Any())
-                    {
-                        a.PublishDate = existing.PublishDate;
-                    }
-                }
+
                 if (a.UniqueId == null)
                 {
                     a.UniqueId = a.Link.ToString();
