@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
-using MongoDB.Bson;
 using System.Linq;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace pierce
 {
     public class Article
     {
         // Id is our internal, globally unique ID; UniqueId is (supposedly) unique to the feed.
+        [BsonRepresentation(BsonType.String)]
         public Guid Id = Guid.NewGuid();
         public DateTime PublishDate;
         public Uri Link;

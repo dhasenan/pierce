@@ -5,8 +5,9 @@
     <meta charset='utf-8'>
     <title>Pierce RSS Reader</title>
     <!--<link rel='stylesheet' href='dock-manager.css'>-->
-    <link rel='stylesheet' href='sunny.css'>
-    <link rel='stylesheet' href='pierceweb.css'>
+    <link rel='stylesheet' href='sunny.css' />
+    <link rel='stylesheet' href='pierceweb.css' />
+    <link rel='icon' href='/Content/favicon.ico' />
     <script type='text/javascript' src='jquery-1.9.1.js'></script>
     <script type='text/javascript' src='jquery-ui-1.10.2.js'></script>
     <script type='text/javascript' src='jquery.layout.js'></script>
@@ -14,6 +15,23 @@
     <script type='text/javascript' src='app.js'></script>
 
     <!-- underscore templates! -->
+    <script id='labelListTemplate' type='text/html'>
+      <% $.each(labels, function(i, label) { %>
+        <div id='labelBox_<%= label.Id %>' class='labelBox <%
+            if (label == ui.currentLabel) { %>selected <% }
+            if (ui.isExpanded(label.Id)) { %>expanded <% } else { %>collapsed <% }%> '>
+          <div id='labelName_<%= label.Id %>' class='labelName'
+            onclick='ui.showLabel("<%= label.Id %>")'
+            >
+            <%- label.Name %>
+          </div>
+          <div id='labelContent_<%= label.Id %>' class='labelContent'>
+            <%= ui.template('feedlistTemplate', { feeds: label.Feeds }) %>
+          </div>
+        </div>
+      <%}); %>
+    </script>
+
     <script id='feedlistTemplate' type='text/html'>
       <% $.each(feeds, function(i, feed) { %>
         <div class='listRow' id='listRow_<%= feed.Id %>' onclick='ui.showFeed("<%= feed.Id %>")'>
@@ -36,8 +54,8 @@
           var unreadc = domain.unreadCount(feed);
           if (unreadc) print('(' + unreadc + ') ');
         %>
-        <% if (feed.ImageUri) { %>
-          <img style='height: 1em; width: 1em;' src='<%- feed.ImageUri %>'></img>
+        <% if (feed.IconUri) { %>
+          <img style='height: 16px; width: 16px;' src='<%- feed.IconUri %>'></img>
         <% } %>
         <%-  feed.Title  %>
       </span>
@@ -57,7 +75,7 @@
         id='<%- util.articleId(feed, article) %>'
         class='articleli <%- article.IsRead ? "read" : "unread" %>'
         onclick='ui.showArticle("<%= feed.Id %>", "<%= article.Id %>");'>
-        <img style='height: 1em; width: 1em;' src='<%= feed.ImageUri %>'></img>
+        <img style='height: 16px; width: 16px;' src='<%= feed.IconUri %>'></img>
         <%- ui.fmtDate(article.PublishDate) %>
         <%- article.Title %>
       </div>

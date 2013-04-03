@@ -85,6 +85,14 @@ body {
   border-bottom: 1px dotted #aaa;
 }
 
+.collapsed .labelContent {
+  display: none;
+}
+
+.expanded .labelContent {
+  display: block;
+}
+
 a {
   color: #39e;
   text-decoration: none;

@@ -46,6 +46,19 @@ namespace pierce
             }
         }
 
+        private Uri FindShortcutIcon(HtmlDocument doc, string pageUrl)
+        {
+            var iconLink = doc.DocumentNode.SelectNodes("//link[@rel='shortcut icon'").FirstOrDefault();
+            if (iconLink == null)
+                return null;
+            Uri uri;
+            if (Uri.TryCreate(new Uri(pageUrl), iconLink.GetAttributeValue("href", "favicon.ico"), out uri))
+            {
+                return uri;
+            }
+            return null;
+        }
+
         private void FindFeeds(HtmlDocument doc, string pageUrl, List<Feed> feeds, string type)
         {
             var rssLinks = doc.DocumentNode.SelectNodes(string.Format("//link[@type='{0}']", type));
@@ -85,6 +98,8 @@ namespace pierce
                 return feeds;
             }
 
+            Uri defaultIcon = null;
+
             // Is this an rss feed or an html page?
             try
             {
@@ -93,6 +108,7 @@ namespace pierce
                 doc.LoadHtml(text);
                 FindFeeds(doc, pageUrl, feeds, "application/rss+xml");
                 FindFeeds(doc, pageUrl, feeds, "application/atom+xml");
+                defaultIcon = FindShortcutIcon(doc, pageUrl);
             }
             catch
             {
@@ -109,9 +125,18 @@ namespace pierce
             catch
             {
             }
-            if (feeds.Count == 1 && feeds[0].Articles.Count == 0)
+
+            foreach (var feed in feeds)
             {
-                new ReadFeeds().Read(feeds[0]);
+                if (feed.IconUri == null)
+                {
+                    feed.IconUri = defaultIcon;
+                }
+            }
+
+            if (feeds.Count == 1 && feeds [0].Articles.Count == 0)
+            {
+                new ReadFeeds().Read(feeds [0]);
             }
             return feeds;
         }

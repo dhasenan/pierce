@@ -47,6 +47,7 @@ namespace pierce
                 {
                     Articles.Remove(existing);
                     article.Id = existing.Id;
+                    //article.PublishDate = existing.PublishDate;
                 }
             }
             Articles.Add(article);

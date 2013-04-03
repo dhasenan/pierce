@@ -74,7 +74,7 @@ namespace pierce
         }
 
         // The RSS2.0 spec doesn't mandate RFC1123 dates, but it does mention them.
-        const string Rfc1123 = "ddd, dd MMM yyyy HH':'mm':'ss";
+        const string Rfc1123 = "ddd, d MMM yyyy HH':'mm':'ss";
         const int Rfc1123Length = 25;
 
         bool TryParseRfc1123(string v, ref DateTime date)
@@ -82,11 +82,15 @@ namespace pierce
             if (v.Length < Rfc1123Length)
                 return false;
             DateTime d;
-            if (DateTime.TryParseExact(v.Substring(0, Rfc1123Length), Rfc1123, null, DateTimeStyles.None, out d))
+            // Since the length of the date can vary by 1, we might cut off on one side of the final space
+            // or the other. We trim both sides to be sure.
+            var datePart = v.Substring(0, Rfc1123Length).Trim();
+            if (DateTime.TryParseExact(datePart, Rfc1123, null, DateTimeStyles.None, out d))
             {
                 try
                 {
-                    TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(v.Substring(Rfc1123Length).Trim());
+                    var tzPart = v.Substring(Rfc1123Length).Trim();
+                    TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(tzPart);
                     d = TimeZoneInfo.ConvertTimeToUtc(d, tz);
                 }
                 catch

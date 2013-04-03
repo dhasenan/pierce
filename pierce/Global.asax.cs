@@ -14,7 +14,7 @@ namespace pierce
         public static void RegisterRoutes(RouteCollection routes)
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
-
+            routes.Ignore("favicon.ico");
             routes.MapRoute(
                 "Default",
                 "{controller}/{action}",

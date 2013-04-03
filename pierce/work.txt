@@ -29,6 +29,7 @@ DONE:
     * Show user-supplied title when available
   * Set page title
   * Add linked feed: update before returning
+  * Favicon (crappy but whatevs!)
 	
 
 Personal:
@@ -36,17 +37,21 @@ Personal:
 	* Tagging / folders / labels
 * Backend
   * RSS 0.92
+  * Look for favicons more thoroughly -- specify precise feed, look for site favicon
 * Frontend
   * Feed list going all the way to the bottom
   * Keyboard shortcuts
     * Follow link in new tab
   * Persist layout (per browser)
   * Unravel the mess of ui vs domain
+  * Default icon to site's favicon
+  * Reset scrolling for article area when switching articles
   * User interface!
 
 
 Bugs:
   * Refreshing a feed manually results in it getting duplicated in the feed list.
+  * Adding a feed doesn't seem to close the popup or update the feed list.
 
 
 Dissemination:
