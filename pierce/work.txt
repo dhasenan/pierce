@@ -30,6 +30,7 @@ DONE:
   * Set page title
   * Add linked feed: update before returning
 	
+
 Personal:
 * General
 	* Tagging / folders / labels
@@ -41,6 +42,11 @@ Personal:
     * Follow link in new tab
   * Persist layout (per browser)
   * Unravel the mess of ui vs domain
+  * User interface!
+
+
+Bugs:
+  * Refreshing a feed manually results in it getting duplicated in the feed list.
 
 
 Dissemination:

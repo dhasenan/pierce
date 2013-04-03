@@ -16,7 +16,7 @@
     <!-- underscore templates! -->
     <script id='feedlistTemplate' type='text/html'>
       <% $.each(feeds, function(i, feed) { %>
-        <div class='listRow' id='listRow_<%= feed.Id %>'>
+        <div class='listRow' id='listRow_<%= feed.Id %>' onclick='ui.showFeed("<%= feed.Id %>")'>
           <span style='float: left; overflow: hidden; text-overflow: ellipsis; width: 90%'>
             <%= ui.template('feedli', { feed: feed }) %>
           </span>
@@ -31,7 +31,7 @@
 
     <script id='feedli' type='text/html'>
       <span id='feedli_<%- feed.Id %>' class='feedli<% if (domain.unreadCount(feed) > 0) {
-        print(' unread'); } %>' onclick='ui.showFeed("<%= feed.Id %>");'>
+        print(' unread'); } %>'>
         <%
           var unreadc = domain.unreadCount(feed);
           if (unreadc) print('(' + unreadc + ') ');
