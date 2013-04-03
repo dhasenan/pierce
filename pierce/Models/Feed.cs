@@ -13,8 +13,7 @@ namespace pierce
         public static readonly TimeSpan MaxUpdateInterval = TimeSpan.FromDays(14);
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string
-            Id;
+        public string Id;
         
         // URL for the RSS feed -- where we get the actual XML document.
         public Uri Uri;
@@ -47,6 +46,7 @@ namespace pierce
                 foreach (var existing in Articles.Where(x => x.UniqueId == article.UniqueId).ToList())
                 {
                     Articles.Remove(existing);
+                    article.Id = existing.Id;
                 }
             }
             Articles.Add(article);

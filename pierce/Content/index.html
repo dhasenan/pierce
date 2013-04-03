@@ -54,7 +54,7 @@
 
     <script id='articleli' type='text/html'>
       <div
-        id='<%- domain.articleId(feed, article) %>'
+        id='<%- util.articleId(feed, article) %>'
         class='articleli <%- article.IsRead ? "read" : "unread" %>'
         onclick='ui.showArticle("<%= feed.Id %>", "<%= article.Id %>");'>
         <img style='height: 1em; width: 1em;' src='<%= feed.ImageUri %>'></img>

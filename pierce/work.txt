@@ -28,14 +28,13 @@ DONE:
     * Update interval
     * Show user-supplied title when available
   * Set page title
+  * Add linked feed: update before returning
 	
 Personal:
 * General
 	* Tagging / folders / labels
-  * Attached media (<enclosure>)?
 * Backend
   * RSS 0.92
-  * Add linked feed: update before returning
 * Frontend
   * Feed list going all the way to the bottom
   * Keyboard shortcuts
@@ -67,6 +66,7 @@ Monetization:
 * Need:
   * Better splash screen (login/register)
     Requires someone else to help.
+  * Payment integration
   * Personal name
   * Update name / email / etc
   * Logging (SMTP appender for high severity errors)
