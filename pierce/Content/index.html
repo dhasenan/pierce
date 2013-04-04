@@ -70,7 +70,10 @@
     <script id='feedli' type='text/html'>
       <span class='feedli_<%- feed.Id %> feedli<%
         var unreadc = domain.unreadCount(feed);
-        if (unreadc > 0) print(' unread'); %>'>
+        if (unreadc > 0) print(' unread');
+        if (ui.currentFeed && ui.currentFeed.Id == feed.Id) {
+          print(' selectedItem');
+        } %>'>
         <% if (feed.IconUri) { %>
           <img style='height: 16px; width: 16px;' src='<%- feed.IconUri %>'></img>
         <% } else { %>

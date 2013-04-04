@@ -198,7 +198,7 @@ var domain = {
       ui.currentLabel = domain.allList;
       console.log('showing ' + domain.allList.Feeds.length + ' feeds')
     }
-    ui.showFeed(ui.currentFeed);
+    ui.showFeed(ui.currentFeed.Id);
   },
 
   /********* Modifying data ************/
@@ -303,7 +303,7 @@ var domain = {
           return;
         }
       }
-      ui.showArticle(f.Articles[0]);
+      ui.showArticle(f.Id, f.Articles[0].Id);
     }
   },
 
@@ -322,10 +322,10 @@ var domain = {
           return;
         } else {
           var f = domain.feeds[index];
-          ui.showFeed(f);
+          ui.showFeed(f.Id);
           if (f.Articles.length) {
             var ai = (f.Articles.length + offset) % f.Articles.length;
-            ui.showArticle(f.Articles[ai]);
+            ui.showArticle(f.Id, f.Articles[ai].Id);
           } else {
           }
         }
@@ -566,7 +566,7 @@ var ui = {
   selected: function(query) {
     console.log('selecting ' + query);
     $('.labelName').removeClass('selectedItem');
-    $('.feedli').removeClass('selectedItem');
+    $('.feedRow').removeClass('selectedItem');
     $(query).addClass('selectedItem');
   },
 
@@ -686,6 +686,10 @@ var ui = {
         domain.nextFeed();
       } else if (evt.which == 'K'.charCodeAt(0)) {
         domain.previousFeed();
+      } else if (evt.which == 'o') {
+        var art = ui.currentArticle;
+        if (!art) return;
+        window.open(art.Link, '_blank');
       }
     })
   },
