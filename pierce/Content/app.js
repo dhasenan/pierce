@@ -279,27 +279,80 @@ var domain = {
   },
 
   /********** Moving **********/
-
-  nextArticle: function() {
+  _moveArticle: function(offset) {
     // This should respect the current filters about read/unread articles.
     var f = ui.currentFeed || ui.currentLabel;
     if (!f) {
       f = domain.allList;
+      if (!f) return;
     }
-    if (!f || !f.Articles) {
+    if (!f.Articles) {
+      // TODO should move anyway
       return;
     }
     var currentArticle = domain.currentArticle;
     if (currentArticle) {
-      var index = 0;
       for (var i = 0; i < f.Articles.length; i++) {
         if (f.Articles[i].Id == currentArticle.Id) {
-          ui.showArticle(f.Articles[i + 1]);
+          var index = i + offset;
+          if (index < 0 || index >= f.Articles.length) {
+            domain._moveFeed(offset);
+            return;
+          }
+          ui.showArticle(f.Id, f.Articles[index].Id);
           return;
         }
       }
       ui.showArticle(f.Articles[0]);
     }
+  },
+
+  _moveFeed: function(offset, startFeed) {
+    var currentFeed = ui.currentFeed;
+    if (!currentFeed) {
+      domain._moveLabel(offset);
+      return;
+    }
+    // We *need* to track what label we're in. This is going to go in a strange order.
+    for (var i = 0; i < domain.feeds.length; i++) {
+      if (domain.feeds[i].Id == currentFeed.Id) {
+        var index = i + offset;
+        if (index < 0 || index >= domain.feeds.length) {
+          domain._moveLabel(offset);
+          return;
+        } else {
+          var f = domain.feeds[index];
+          ui.showFeed(f);
+          if (f.Articles.length) {
+            var ai = (f.Articles.length + offset) % f.Articles.length;
+            ui.showArticle(f.Articles[ai]);
+          } else {
+          }
+        }
+        return;
+      }
+    }
+    domain._moveLabel(offset);
+  },
+
+  _moveLabel: function(offset) {
+    console.log('YOLO');
+  },
+
+  previousArticle: function() {
+    domain._moveArticle(-1);
+  },
+
+  nextArticle: function() {
+    domain._moveArticle(1);
+  },
+
+  previousFeed: function() {
+    domain._moveFeed(-1);
+  },
+
+  nextFeed: function() {
+    domain._moveFeed(1);
   },
 
   /********** Misc ************/
