@@ -113,6 +113,7 @@ var domain = {
     };
     lablist.push(domain.uncategorizedList);
     $.each(lablist, function(k, label) {
+      util.sortFeeds(label.Feeds);
       label.Articles = domain.buildCombinedArticles(label.Feeds);
     });
 
@@ -189,7 +190,7 @@ var domain = {
   reloadFeedInfo: function() {
     console.log('reloading feed info for ' + domain.realFeeds.length + ' real feeds');
     domain.feeds = [].concat(domain.realFeeds);
-    util.sortFeeds();
+    util.sortFeeds(domain.feeds);
     domain.buildLabels();
     console.log('displaying feeds');
     ui.displayFeeds();
@@ -324,7 +325,7 @@ var domain = {
           var f = domain.feeds[index];
           ui.showFeed(f.Id);
           if (f.Articles.length) {
-            var ai = (f.Articles.length + offset) % f.Articles.length;
+            var ai = (offset < 0) ? f.Articles.length - 1 : 0;
             ui.showArticle(f.Id, f.Articles[ai].Id);
           } else {
           }
@@ -772,8 +773,8 @@ var util = {
     })
   },
 
-  sortFeeds: function() {
-    domain.feeds.sort(function(a, b) {
+  sortFeeds: function(feeds) {
+    feeds.sort(function(a, b) {
       return a.Title.localeCompare(b.Title);
     });
   },
