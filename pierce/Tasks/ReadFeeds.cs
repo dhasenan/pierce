@@ -103,8 +103,6 @@ namespace pierce
             return false;
         }
 
-        private static readonly XNamespace atom = "http://www.w3.org/2005/Atom";
-
         public void Read(Feed feed, TextReader feedText)
         {
             var text = feedText.ReadToEnd();
@@ -126,7 +124,31 @@ namespace pierce
                 ReadRss(feed, x);
             }
         }
-        
+
+        // XML namespaces. The most notable is Atom's, but there are a number of RSS extensions in
+        // use across the web that each have their own.
+        // Wordpress, for instance, uses:
+        //  * http://wellformedweb.org/CommentAPI/ -- RSS feeds for article comments
+        //  * http://purl.org/rss/1.0/modules/content/ -- because <description>'s too plebian
+        //  * http://purl.org/rss/1.0/modules/slash/ -- comment counts
+        //  * http://purl.org/dc/elements/1.1/ -- because <author>'s too plebian
+        //  * http://purl.org/rss/1.0/modules/syndication/ -- update schedule
+        // Feedburner:
+        //  * Atom (they appear not to have an RSS feed)
+        //  * http://a9.com/-/spec/opensearch/1.1/ -- some sort of search results thing
+        //  * http://schemas.google.com/blogger/2008 -- unused? undocumented?
+        //  * http://www.georss.org/georss -- adds Address, CityState, phone, etc
+        //  * http://schemas.google.com/g/2005 -- https://developers.google.com/gdata/docs/1.0/elements
+        //  * http://purl.org/syndication/thread/1.0 -- marks things as replies to other things
+        //  * http://rssnamespace.org/feedburner/ext/1.0 -- used to display a number of UI elements,
+        //    so they can abuse stylesheets to turn a feed into a webpage. Clever, but annoying.
+        //
+        // The ones I have to pay attention to are purl:content and purl:elements. That's because
+        // they reimplement feed attributes that I need.
+        private static readonly XNamespace atom = "http://www.w3.org/2005/Atom";
+        private static readonly XNamespace elements = "http://purl.org/dc/elements/1.1/";
+        private static readonly XNamespace content = "http://purl.org/rss/1.0/modules/content/";
+
         private void Elem(XElement element, XName descendant, params Action<string>[] setter)
         {
             var vs = element.Elements(descendant);
@@ -215,44 +237,82 @@ namespace pierce
             ReadAuthors(xfeed, "contributor", feed.Authors);
             foreach (var xentry in xfeed.Elements(atom + "entry"))
             {
-                var article = new Article();
-                Elem(xentry, atom + "id", v => article.UniqueId = v);
-                Elem(xentry, atom + "title", v => article.Title = v);
-                ReadAuthors(xentry, "author", article.Authors);
-                ReadAuthors(xentry, "contributor", article.Authors);
-                ElemAttrLink(xentry, v => article.Link = v);
-                // Atom uses ISO8601 rather than RFC1123. Yay!
-                Elem(xentry, atom + "published", v => article.PublishDate = DateTime.Parse(v).ToUniversalTime());
-                if (article.PublishDate == DateTime.MinValue)
-                {
-                    Elem(xentry, atom + "updated", v => article.PublishDate = DateTime.Parse(v).ToUniversalTime());
-                }
-                Elem(xentry, atom + "summary", v => article.Summary = v);
-
-                // Should pay attention to the content type.
-                var content = xentry.Elements(atom + "content").FirstOrDefault();
-                if (content != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(content.Value))
-                    {
-                        article.Description = content.Value;
-                    }
-                    var attr = content.Attribute("src");
-                    if (attr != null)
-                    {
-                        if (article.Link == null)
-                        {
-                            // Maybe just have a series of links, with optional tag?
-                            Uri.TryCreate(attr.Value, UriKind.Absolute, out article.Link);
-                        }
-                    }
-                }
+                var article = ReadArticle(xentry);
                 if (article.UniqueId == null)
                 {
                     article.UniqueId = article.Link.ToString();
                 }
                 feed.AddArticle(article);
             }
+        }
+
+        private Article ReadArticle(XElement xentry)
+        {
+            var article = new Article();
+
+            // RSS stuffs
+            Elem(xentry, "title", v => article.Title = v);
+            Elem(xentry, "author", v => article.Authors.Add(new Author { Name = v }));
+            Elem(xentry, "description", v => article.Description = v);
+            Elem(xentry, "guid", v => article.UniqueId = v);
+            Elem(xentry, "pubDate", v => article.PublishDate = DateTime.Parse(v), v => TryParseRfc1123(v, ref article.PublishDate));
+            ElemLink(xentry, "link", v => article.Link = v);
+            ElemLink(xentry, "comments", v => article.CommentLink = v);
+
+            // Atom stuffs
+            Elem(xentry, atom + "id", v => article.UniqueId = v);
+            Elem(xentry, atom + "title", v => article.Title = v);
+            ReadAuthors(xentry, "author", article.Authors);
+            ReadAuthors(xentry, "contributor", article.Authors);
+            ElemAttrLink(xentry, v => article.Link = v);
+            if (article.PublishDate == DateTime.MinValue)
+            {
+                // Atom uses ISO8601 rather than RFC1123. Yay!
+                Elem(xentry, atom + "published", v => article.PublishDate = DateTime.Parse(v).ToUniversalTime());
+                if (article.PublishDate == DateTime.MinValue)
+                {
+                    Elem(xentry, atom + "updated", v => article.PublishDate = DateTime.Parse(v).ToUniversalTime());
+                    if (article.PublishDate == DateTime.MinValue)
+                    {
+                        article.PublishDate = DateTime.UtcNow;
+                    }
+                }
+            }
+            Elem(xentry, atom + "summary", v => article.Summary = v);
+
+            // Should pay attention to the content type.
+            var content = xentry.Elements(atom + "content").FirstOrDefault();
+            if (content == null)
+            {
+                content = xentry.Elements(ReadFeeds.content + "encoded").FirstOrDefault();
+            }
+            if (content != null)
+            {
+                if (!string.IsNullOrWhiteSpace(content.Value))
+                {
+                    article.Description = content.Value;
+                    var type = content.Attribute("type");
+                    if (type != null &&
+                        type.Value.Contains("html") &&
+                        !article.Description.Contains("<") &&
+                        article.Description.Contains("&"))
+                    {
+                        // A lot of people seem to double-encode this -- atomenabled.org says you should.
+                        // It's pretty fucking stupid, but there you go.
+                        article.Description = WebUtility.HtmlDecode(article.Description);
+                    }
+                }
+                var attr = content.Attribute("src");
+                if (attr != null)
+                {
+                    if (article.Link == null)
+                    {
+                        // Maybe just have a series of links, with optional tag?
+                        Uri.TryCreate(attr.Value, UriKind.Absolute, out article.Link);
+                    }
+                }
+            }
+            return article;
         }
 
         private void ReadRss(Feed feed, XDocument x)
@@ -277,16 +337,7 @@ namespace pierce
             }
             foreach (var item in channel.Elements("item").AsEnumerable())
             {
-                var a = new Article();
-                a.PublishDate = DateTime.UtcNow;
-                Elem(item, "title", v => a.Title = v);
-                Elem(item, "author", v => a.Authors.Add(new Author { Name = v }));
-                Elem(item, "description", v => a.Description = v);
-                Elem(item, "guid", v => a.UniqueId = v);
-                Elem(item, "pubDate", v => a.PublishDate = DateTime.Parse(v), v => TryParseRfc1123(v, ref a.PublishDate));
-                ElemLink(item, "link", v => a.Link = v);
-                ElemLink(item, "comments", v => a.CommentLink = v);
-
+                var a = ReadArticle(item);
                 if (a.UniqueId == null)
                 {
                     a.UniqueId = a.Link.ToString();

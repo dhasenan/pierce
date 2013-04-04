@@ -72,7 +72,7 @@ body {
   overflow: hidden;
   white-space: nowrap;
   margin: 0.2em;
-  margin-left: 1em;
+  margin-left: 2em;
   font-size: 9pt;
   text-overflow: ellipsis;
   height: 16px;
@@ -110,3 +110,4 @@ a {
   color: #39e;
   text-decoration: none;
 }
+

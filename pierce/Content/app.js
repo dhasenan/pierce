@@ -204,11 +204,11 @@ var domain = {
   /********* Modifying data ************/
   updateFeed: function(feed) {
     domain.mungeFeed(feed);
-    var existing = domain.realFeeds.indexOf(feed.Id);
-    if (existing >= 0) {
-      domain.realFeeds[existing] = feed;
-    } else {
-      domain.realFeeds.push(feed);
+    for (var i = 0; i < domain.realFeeds.length; i++) {
+      if (domain.realFeeds[i].Id == feed.Id) {
+        domain.realFeeds[i] = feed;
+        break;
+      }
     }
     domain.reloadFeedInfo();
   },
@@ -275,7 +275,31 @@ var domain = {
       }
     }
 
-    ui.updateTitle(domain.currentFeed);
+    ui.updateTitle();
+  },
+
+  /********** Moving **********/
+
+  nextArticle: function() {
+    // This should respect the current filters about read/unread articles.
+    var f = ui.currentFeed || ui.currentLabel;
+    if (!f) {
+      f = domain.allList;
+    }
+    if (!f || !f.Articles) {
+      return;
+    }
+    var currentArticle = domain.currentArticle;
+    if (currentArticle) {
+      var index = 0;
+      for (var i = 0; i < f.Articles.length; i++) {
+        if (f.Articles[i].Id == currentArticle.Id) {
+          ui.showArticle(f.Articles[i + 1]);
+          return;
+        }
+      }
+      ui.showArticle(f.Articles[0]);
+    }
   },
 
   /********** Misc ************/
@@ -284,6 +308,8 @@ var domain = {
     if (!article.IsRead) {
       domain.markRead(feed, article);
     } 
+    ui.displayFeeds();
+    ui.updateTitle();
   },
   
   initialize: function() {
@@ -481,25 +507,29 @@ var ui = {
     ui.currentFeed = null;
     ui.currentLabel = label;
     ui.showArticles(domain.buildCombinedArticles(label.Feeds));
+    ui.selected('#labelName_' + labelId);
+  },
+
+  selected: function(query) {
+    console.log('selecting ' + query);
     $('.labelName').removeClass('selectedItem');
     $('.feedli').removeClass('selectedItem');
-    $('#labelName_' + labelId).addClass('selectedItem');
+    $(query).addClass('selectedItem');
   },
 
   showFeed: function(feedId) {
-    // TODO make sure this doesn't rescroll if we're already showing it
     var feed = domain.getFeed(feedId);
     if (!feed) return;
     ui.currentFeed = feed;
     ui.currentLabel = null;
     ui.showArticles(feed.Articles);
-    $('.labelName').removeClass('selectedItem');
-    $('.listRow_' + feedId).addClass('selectedItem');
+    ui.selected('.feedli_' + feedId);
   },
 
   showArticles: function(articles) {
     $('.listRow').removeClass('selectedItem');
     $('#articleList .content').empty();
+    // TODO this should be a template
     $.each(articles, function(i, article) {
       if (ui.showingUnreadOnly && article.IsRead) {
         return;
@@ -593,6 +623,18 @@ var ui = {
     $('#multifeedOptions').change(function() {
       $('#addFeedUrl').val($('#multifeedOptions').val());
     });
+
+    $(document).keypress(function(evt) {
+      if (evt.which == 'j'.charCodeAt(0)) {
+        domain.nextArticle();
+      } else if (evt.which == 'k'.charCodeAt(0)) {
+        domain.previousArticle();
+      } else if (evt.which == 'J'.charCodeAt(0)) {
+        domain.nextFeed();
+      } else if (evt.which == 'K'.charCodeAt(0)) {
+        domain.previousFeed();
+      }
+    })
   },
 
   fmtDate: function(date) {

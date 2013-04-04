@@ -120,6 +120,8 @@ namespace pierce
                 var feed = new Feed();
                 feed.Uri = new Uri(pageUrl);
                 new ReadFeeds().Read(feed, new StringReader(text));
+                // This supercedes the html stuff.
+                feeds.Clear();
                 feeds.Add(feed);
             }
             catch

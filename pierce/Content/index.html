@@ -22,28 +22,39 @@
         var labelclass = 'labelName';
         var name = label.Title;
         if (ui.isExpanded(label.Id)) classes += ' expanded';
-        if (ui.currentLabel && label.Id == ui.currentLabel.Id) classes += ' selectedItem';
+        if (ui.currentLabel && label.Id == ui.currentLabel.Id) labelclass += ' selectedItem';
         if (count > 0) {
           labelclass += ' unread';
           name += ' (' + count + ')';
         }
       %>
       <div id='labelBox_<%= label.Id %>' class='<%= classes %>'>
-        <div id='labelName_<%= label.Id %>' class='<%= labelclass %>'
-            onclick='ui.showLabel("<%= label.Id %>")'
-            >
-            <%- name %>
-          </div>
-          <div id='labelContent_<%= label.Id %>' class='labelContent'>
-            <%= ui.template('feedlistTemplate', { feeds: label.Feeds }) %>
-          </div>
-        </div>
+        <table style='width: 100%; text-align: left'>
+          <tr>
+            <td style='width: 1.2em'>
+              <span id='expander_<%= label.Id %>' class='ui-icon ui-icon-circle-minus'
+                onclick='ui.toggleExpanded("<%= label.Id %>")'></span>
+            </td>
+            <td>
+              <span id='labelName_<%= label.Id %>' class='<%= labelclass %>'
+                  onclick='ui.showLabel("<%= label.Id %>")'
+                  style='float: left'
+                  >
+                <%- name %>
+              </span><!-- labelName -->
+            </td>
+          </tr>
+        </table>
+        <div id='labelContent_<%= label.Id %>' class='labelContent'>
+          <%= ui.template('feedlistTemplate', { feeds: label.Feeds }) %>
+        </div><!-- labelContent -->
+      </div><!-- labelBox -->
       <%}); %>
     </script>
 
     <script id='feedlistTemplate' type='text/html'>
       <% $.each(feeds, function(i, feed) { %>
-        <div class='listRow listRow_<%= feed.Id %>' onclick='ui.showFeed("<%= feed.Id %>")'>
+        <div class='feedRow feedRow_<%= feed.Id %>' onclick='ui.showFeed("<%= feed.Id %>")'>
           <span style='float: left; overflow: hidden; text-overflow: ellipsis; width: 90%'>
             <%= ui.template('feedli', { feed: feed }) %>
           </span>

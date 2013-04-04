@@ -34,6 +34,15 @@ DONE:
   * Default feed icon
   * Labels
     * Update title
+    * Collapse/expand
+  * Refreshing a feed manually results in it getting duplicated in the feed list.
+  * Refreshing a feed seems to change all the article ids.
+  * Support for common extensions
+    * Wordpress
+    * Feedburner
+  * Support for bastard feeds (RSS + Atom)
+  * Handle double-escaped html in atom feeds.
+    * Heuristic: if it contains '<', don't unescape it again.
 	
 
 Personal:
@@ -48,16 +57,16 @@ Personal:
   * Unravel the mess of ui vs domain
   * Reset scrolling for article area when switching articles
   * User interface!
-	* Tagging / folders / labels
-    * Collapse/expand
+  * Unify atom / rss parsing
 
 
 Bugs:
-  * Refreshing a feed manually results in it getting duplicated in the feed list.
   * Adding a feed doesn't seem to close the popup or update the feed list.
   * Click on a feed in second label: highlights every copy of that feed
   * Unsubscribing from a feed doesn't clear its articles from the article list.
-  * Refreshing a feed seems to change all the article ids.
+  * Reading an article doesn't update label read counts
+  * Reading an article doesn't update title when selecting a label
+  * All labels start expanded
 
 
 Ugly:
@@ -83,6 +92,8 @@ Dissemination:
   * Update article list after updating feeds / subscribing
   * Mobile-optimized site
   * Mark all|selected read
+  * Split off old articles somehow (or just delete them... not preferred)
+  * OAuth
 
 
 Monetization:
