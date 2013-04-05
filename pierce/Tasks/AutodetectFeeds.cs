@@ -46,19 +46,6 @@ namespace pierce
             }
         }
 
-        private Uri FindShortcutIcon(HtmlDocument doc, string pageUrl)
-        {
-            var iconLink = doc.DocumentNode.SelectNodes("//link[@rel='shortcut icon'").FirstOrDefault();
-            if (iconLink == null)
-                return null;
-            Uri uri;
-            if (Uri.TryCreate(new Uri(pageUrl), iconLink.GetAttributeValue("href", "favicon.ico"), out uri))
-            {
-                return uri;
-            }
-            return null;
-        }
-
         private void FindFeeds(HtmlDocument doc, string pageUrl, List<Feed> feeds, string type)
         {
             var rssLinks = doc.DocumentNode.SelectNodes(string.Format("//link[@type='{0}']", type));
@@ -108,7 +95,6 @@ namespace pierce
                 doc.LoadHtml(text);
                 FindFeeds(doc, pageUrl, feeds, "application/rss+xml");
                 FindFeeds(doc, pageUrl, feeds, "application/atom+xml");
-                defaultIcon = FindShortcutIcon(doc, pageUrl);
             }
             catch
             {

@@ -571,13 +571,18 @@ var ui = {
     $(query).addClass('selectedItem');
   },
 
-  showFeed: function(feedId) {
+  showFeed: function(feedId, labelId) {
+    if (!labelId) {
+      if (ui.currentLabel) {
+        labelId = ui.currentLabel.Id;
+      }
+    }
     var feed = domain.getFeed(feedId);
     if (!feed) return;
     ui.currentFeed = feed;
     ui.currentLabel = null;
     ui.showArticles(feed.Articles);
-    ui.selected('.feedli_' + feedId);
+    ui.selected('#labelContent_' + labelId + ' .feedli_' + feedId);
   },
 
   showArticles: function(articles) {

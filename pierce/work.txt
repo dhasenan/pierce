@@ -11,7 +11,6 @@ DONE:
 		* Change personally visible details
 		* Change update interval
   * Atom
-  * Default icon to site's favicon
 * Frontend
   * Basic layout
   * Login
@@ -49,6 +48,7 @@ Personal:
 * Backend
   * RSS 0.92
   * Look for favicons more thoroughly -- specify precise feed, look for site favicon
+  * Default icon to site's favicon
 * Frontend
   * Feed list going all the way to the bottom
   * Keyboard shortcuts

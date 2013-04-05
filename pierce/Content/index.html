@@ -22,7 +22,7 @@
         var labelclass = 'labelName';
         var name = label.Title;
         if (ui.isExpanded(label.Id)) classes += ' expanded';
-        if (ui.currentLabel && label.Id == ui.currentLabel.Id) labelclass += ' selectedItem';
+        if (ui.currentLabel && label.Id == ui.currentLabel.Id) classes += ' selectedItem';
         if (count > 0) {
           labelclass += ' unread';
           name += ' (' + count + ')';
@@ -46,7 +46,7 @@
           </tr>
         </table>
         <div id='labelContent_<%= label.Id %>' class='labelContent'>
-          <%= ui.template('feedlistTemplate', { feeds: label.Feeds }) %>
+          <%= ui.template('feedlistTemplate', { feeds: label.Feeds, labelId: label.Id }) %>
         </div><!-- labelContent -->
       </div><!-- labelBox -->
       <%}); %>
@@ -54,7 +54,8 @@
 
     <script id='feedlistTemplate' type='text/html'>
       <% $.each(feeds, function(i, feed) { %>
-        <div class='feedRow feedRow_<%= feed.Id %>' onclick='ui.showFeed("<%= feed.Id %>")'>
+        <div class='feedRow feedRow_<%= feed.Id %>'
+          onclick='ui.showFeed("<%= feed.Id %>", "<%= labelId %>")'>
           <span style='float: left; overflow: hidden; text-overflow: ellipsis; width: 90%'>
             <%= ui.template('feedli', { feed: feed }) %>
           </span>

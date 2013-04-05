@@ -78,6 +78,7 @@
     <Compile Include="Controllers\FeedsController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Models\Author.cs" />
+    <Compile Include="Tasks\FindIcon.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Web.config" />

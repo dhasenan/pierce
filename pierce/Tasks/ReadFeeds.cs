@@ -1,3 +1,4 @@
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -60,7 +61,11 @@ namespace pierce
         }
 
         public void Read(Feed feed)
-        {
+		{
+			if (feed.IconUri == null)
+			{
+				feed.IconUri = new FindIcon().Find(feed.Uri);
+			}
             Read(feed, ReadFeedText(feed));
             feed.LastRead = DateTime.UtcNow;
             feed.NextRead = feed.LastRead + feed.ReadInterval;
