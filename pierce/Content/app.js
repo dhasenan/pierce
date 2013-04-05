@@ -199,7 +199,8 @@ var domain = {
       ui.currentLabel = domain.allList;
       console.log('showing ' + domain.allList.Feeds.length + ' feeds')
     }
-    ui.showFeed(ui.currentFeed.Id);
+    if (ui.currentFeed)
+      ui.showFeed(ui.currentFeed.Id);
   },
 
   /********* Modifying data ************/
@@ -251,13 +252,13 @@ var domain = {
     })
   },
 
-  markRead: function(feed, article) {
+  markRead: function(article) {
     article.IsRead = true;
     domain.getSubscription(article.Feed.Id).ReadArticles.push(article.Id);
     $.ajax('/Feeds/MarkRead', {
       dataType: 'json',
       data: {
-        feedId: feed.Id,
+        feedId: article.Feed.Id,
         articleId: article.Id
       }
     });
@@ -300,11 +301,11 @@ var domain = {
             domain._moveFeed(offset);
             return;
           }
-          ui.showArticle(f.Id, f.Articles[index].Id);
+          ui.showArticle(f, f.Articles[index].Id);
           return;
         }
       }
-      ui.showArticle(f.Id, f.Articles[0].Id);
+      ui.showArticle(f, f.Articles[0].Id);
     }
   },
 
@@ -326,7 +327,7 @@ var domain = {
           ui.showFeed(f.Id);
           if (f.Articles.length) {
             var ai = (offset < 0) ? f.Articles.length - 1 : 0;
-            ui.showArticle(f.Id, f.Articles[ai].Id);
+            ui.showArticle(f, f.Articles[ai].Id);
           } else {
           }
         }
@@ -357,10 +358,10 @@ var domain = {
   },
 
   /********** Misc ************/
-  showingArticle: function(feed, article) {
+  showingArticle: function(article) {
     domain.currentArticle = article;
     if (!article.IsRead) {
-      domain.markRead(feed, article);
+      domain.markRead(article);
     } 
     ui.displayFeeds();
     ui.updateTitle();
@@ -568,14 +569,16 @@ var ui = {
     console.log('selecting ' + query);
     $('.labelName').removeClass('selectedItem');
     $('.feedRow').removeClass('selectedItem');
+    $('.feedli').removeClass('selectedItem');
     $(query).addClass('selectedItem');
   },
 
   showFeed: function(feedId, labelId) {
     if (!labelId) {
-      if (ui.currentLabel) {
-        labelId = ui.currentLabel.Id;
+      if (!ui.currentLabel) {
+        ui.currentLabel = domain.allList;
       }
+      labelId = ui.currentLabel.Id;
     }
     var feed = domain.getFeed(feedId);
     if (!feed) return;
@@ -603,12 +606,12 @@ var ui = {
     ui.updateTitle();
   },
 
-  showArticle: function(feedId, artId) {
-    var feed = domain.getFeed(feedId);
-    // TODO error message?
-    if (!feed) {
-      console.log('feed ' + feedId + ' not found');
-      return;
+  showArticle: function(o, artId) {
+    var feed = null;
+    if (o.Articles) {
+      feed = o;
+    } else {
+      feed = domain.getFeed(o) || domain.getLabel(o);
     }
     var article = domain.getArticle(feed, artId);
     if (!article) {
@@ -616,7 +619,7 @@ var ui = {
       return;
     }
     $('.articleli').removeClass('selectedItem');
-    var artDiv = $('#' + util.articleId(feed, article));
+    var artDiv = $('#' + util.articleId(article));
     artDiv.addClass('selectedItem');
     artDiv.removeClass('unread');
     artDiv.addClass('read');
@@ -625,7 +628,7 @@ var ui = {
       article: article
     }));
 
-    domain.showingArticle(feed, article);
+    domain.showingArticle(article);
     ui.updateTitle();
   },
 
@@ -764,8 +767,8 @@ var util = {
     return str;
   },
 
-  articleId: function(feed, article) {
-    return 'articleli_' + feed.Id + '_' + article.Id.replace('-', '');
+  articleId: function(article) {
+    return 'articleli_' + article.Id.replace('-', '');
   },
 
   jsDate: function(aspNetDate) {

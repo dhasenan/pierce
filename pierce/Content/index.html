@@ -98,7 +98,7 @@
 
     <script id='articleli' type='text/html'>
       <div
-        id='<%- util.articleId(feed, article) %>'
+        id='<%- util.articleId(article) %>'
         class='articleli <%- article.IsRead ? "read" : "unread" %>'
         onclick='ui.showArticle("<%= feed.Id %>", "<%= article.Id %>");'>
         <img style='height: 16px; width: 16px;' src='<%= feed.IconUri %>'></img>
