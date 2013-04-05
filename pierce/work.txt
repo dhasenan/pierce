@@ -11,6 +11,7 @@ DONE:
 		* Change personally visible details
 		* Change update interval
   * Atom
+  * Default icon to site's favicon
 * Frontend
   * Basic layout
   * Login
@@ -42,6 +43,10 @@ DONE:
   * Support for bastard feeds (RSS + Atom)
   * Handle double-escaped html in atom feeds.
     * Heuristic: if it contains '<', don't unescape it again.
+  * Keyboard shortcuts
+    * Follow link in new tab
+  * Deploy
+    nginx + fastcgi server + startstopdaemon is trivial
 * Bugs:
   * Title doesn't update when reloading stuff (incl. read/unread count) from server (eg open in two
     locations)
@@ -51,20 +56,15 @@ DONE:
 	
 
 Personal:
-* Backend
   * RSS 0.92
   * Look for favicons more thoroughly -- specify precise feed, look for site favicon
-  * Default icon to site's favicon
-* Frontend
+  * Update labels
   * Feed list going all the way to the bottom
-  * Keyboard shortcuts
-    * Follow link in new tab
   * Persist layout (per browser)
   * Reset scrolling for article area when switching articles
   * Scroll to current article when using keyboard shortcuts
-  * User interface!
   * Unify atom / rss parsing
-  * Deploy
+  * Make it clear what feed an article is from
 
 
 Bugs:

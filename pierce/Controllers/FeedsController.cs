@@ -74,7 +74,7 @@ namespace pierce
             return Json(result);
         }
 
-        public ActionResult Update(string id, string title, int checkIntervalSeconds)
+        public ActionResult Update(string id, string title, int checkIntervalSeconds, string labels)
         {
             var user = GetUser();
             if (user == null)
@@ -112,6 +112,7 @@ namespace pierce
             {
                 sub.Title = title;
             }
+            sub.Labels = labels.Split(',').Select(x => x.Trim()).ToList();
             Pierce.Users.Save(user);
             return Json(new { Feed = feed, Subscription = sub });
         }
@@ -162,11 +163,6 @@ namespace pierce
                 feeds.Add(Feed.ById(sub.FeedId));
             }
             return Json(feeds);
-        }
-
-        public ActionResult List()
-        {
-            return Json(new {});
         }
     }
 }

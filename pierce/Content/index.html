@@ -21,7 +21,7 @@
         var classes = 'labelBox';
         var labelclass = 'labelName';
         var name = label.Title;
-        if (ui.isExpanded(label.Id)) classes += ' expanded';
+        if (ui.isExpanded(label.Id)) classes += ' expanded'; else classes += ' collapsed';
         if (ui.currentLabel && label.Id == ui.currentLabel.Id) classes += ' selectedItem';
         if (count > 0) {
           labelclass += ' unread';
@@ -186,7 +186,11 @@
             <td><input type='text' id='modFeedTitle' style='width: 98%' /></td>
           </tr>
           <tr>
-            <td><label for='modFeedRefreshInterval'>Refresh every:</label></td>
+            <td><label for='modFeedLabels'>Labels (separated by commas):</label></td>
+            <td><input type='text' id='modFeedLabels' style='width: 98%' /></td>
+          </tr>
+          <tr>
+            <td><label for='modFeedInterval'>Refresh every:</label></td>
             <td><input type='text' id='modFeedInterval' min='15' /> minutes</td>
           </tr>
         </table>
