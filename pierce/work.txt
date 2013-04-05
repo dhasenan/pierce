@@ -42,6 +42,12 @@ DONE:
   * Support for bastard feeds (RSS + Atom)
   * Handle double-escaped html in atom feeds.
     * Heuristic: if it contains '<', don't unescape it again.
+* Bugs:
+  * Title doesn't update when reloading stuff (incl. read/unread count) from server (eg open in two
+    locations)
+  * Click on a feed in second label: highlights every copy of that feed
+  * Reading an article doesn't update label read counts
+  * Reading an article doesn't update title when selecting a label
 	
 
 Personal:
@@ -54,19 +60,20 @@ Personal:
   * Keyboard shortcuts
     * Follow link in new tab
   * Persist layout (per browser)
-  * Unravel the mess of ui vs domain
   * Reset scrolling for article area when switching articles
+  * Scroll to current article when using keyboard shortcuts
   * User interface!
   * Unify atom / rss parsing
+  * Deploy
 
 
 Bugs:
   * Adding a feed doesn't seem to close the popup or update the feed list.
-  * Click on a feed in second label: highlights every copy of that feed
   * Unsubscribing from a feed doesn't clear its articles from the article list.
-  * Reading an article doesn't update label read counts
-  * Reading an article doesn't update title when selecting a label
   * All labels start expanded
+  * Expander button doesn't switch (plus/minus)
+  * Article nav shortcuts don't pay attention to unread filtering
+  * Article nav shortcuts don't move to next/previous label
 
 
 Ugly:

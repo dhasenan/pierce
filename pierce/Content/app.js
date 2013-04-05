@@ -201,6 +201,7 @@ var domain = {
     }
     if (ui.currentFeed)
       ui.showFeed(ui.currentFeed.Id);
+    ui.updateTitle();
   },
 
   /********* Modifying data ************/
@@ -695,9 +696,11 @@ var ui = {
         domain.nextFeed();
       } else if (evt.which == 'K'.charCodeAt(0)) {
         domain.previousFeed();
-      } else if (evt.which == 'o') {
-        var art = ui.currentArticle;
-        if (!art) return;
+      } else if (evt.which == 'o'.charCodeAt(0)) {
+        var art = domain.currentArticle;
+        if (!art) {
+          return;
+        }
         window.open(art.Link, '_blank');
       }
     })
