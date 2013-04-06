@@ -65,6 +65,7 @@ Personal:
   * Scroll to current article when using keyboard shortcuts
   * Unify atom / rss parsing
   * Make it clear what feed an article is from
+  * Save/restore expanded feeds
 
 
 Bugs:
@@ -80,6 +81,7 @@ Ugly:
   * Resize handles are 1px wide.
   * 'Articles', 'Article' labels don't update
   * Menu icon is small, not really clear what it's for
+  * Popup/icon theme doesn't mesh with rest of site
 
 
 Dissemination:

@@ -1,7 +1,5 @@
 var user;
 
-var bodyLayout;
-
 var domain = {
   // raw feeds (none of the tag-aggregated feeds)
   realFeeds: [],
@@ -379,6 +377,7 @@ var domain = {
 
 var ui = {
   _expandedLabels: [],
+  bodyLayout: null,
 
   isExpanded: function(label) {
     return ui._expandedLabels.indexOf(label) >= 0;
@@ -654,12 +653,21 @@ var ui = {
   },
 
   initialize: function() {
+    $.layout.defaults.stateManagement = {
+      enabled: true,
+      autoSave: true,
+      autoLoad: true,
+      stateKeys: 'north.size,south.size,east.size,west.size,',
+      cookie: {
+        expires: 365
+      }
+    };
     ui.resizeMainPanel();
     $(window).resize(ui.resizeMainPanel);
     // This is currently using the jquery ui layout plugin.
     // I have some annoyances with it. Consider switching to something better,
     // or at least simpler, like http://www.methvin.com/splitter/
-    bodyLayout = $('#mainPanel').layout({
+    ui.bodyLayout = $('#mainPanel').layout({
       defaults: {
         applyDefaultStyles: true,
         resizable: true,
@@ -678,7 +686,7 @@ var ui = {
       },
       center: {
         paneSelector: '.articleList'
-      },
+      }
     });
 
     $('#addFeedButton').click(function() {
@@ -712,7 +720,7 @@ var ui = {
         }
         window.open(art.Link, '_blank');
       }
-    })
+    });
   },
 
   fmtDate: function(date) {
