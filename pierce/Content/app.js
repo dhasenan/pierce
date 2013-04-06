@@ -218,41 +218,6 @@ var domain = {
     domain.buildLabels();
   },
 
-  addFeed: function() {
-    $.ajax('/Feeds/Add', {
-      dataType: 'json',
-      data: { url: $('#addFeedUrl').val() },
-      success: function(data, statusText, xhr) {
-        if (!data['FoundFeeds']) {
-          // leave window open for corrections
-          alert('I didn\'t find any feeds :(');
-        } else if (data['AddedFeed']) {
-          // TODO sorting
-          var added = data['AddedFeed'];
-          domain.mungeFeed(added);
-          $.each(added.Articles, function(i, art) {
-            console.log(typeof art.PublishDate);
-          });
-          console.log('munged feed');
-          domain.realFeeds.push(added);
-          domain.reloadFeedInfo();
-          ui.displayFeeds();
-          ui.closeFeedPopup();
-        } else {
-          $('#multifeedOptions').empty();
-          $('#addFeedUrl').val(data['DiscoveredFeeds'][0].Uri);
-          $.each(data['DiscoveredFeeds'], function(i, feed) {
-            $('#multifeedOptions')
-              .append($('<option></option>')
-                .attr('value', feed.Uri)
-                .text(feed.Title));
-          });
-          $('#multifeed').show();
-        }
-      }
-    })
-  },
-
   markRead: function(article) {
     article.IsRead = true;
     domain.getSubscription(article.Feed.Id).ReadArticles.push(article.Id);
@@ -454,7 +419,7 @@ var ui = {
                 sub.Title = res.Subscription.Title;
                 sub.CheckInterval = res.Subscription.CheckInterval.TotalSeconds;
                 feed.ReadInterval = res.Feed.ReadInterval.TotalSeconds;
-                sub.Labels = labels.split(',');
+                if (labels) sub.Labels = labels.split(',');
                 if (sub.Title) feed.Title = sub.Title;
                 $('#modifyFeedWindow').dialog('close');
                 domain.buildLabels();
@@ -637,6 +602,7 @@ var ui = {
       article: article
     }));
 
+    $('#articleTitle').text(article.Feed.Title);
     domain.showingArticle(article);
     ui.updateTitle();
   },
@@ -650,6 +616,66 @@ var ui = {
       $('#toggleUnread').text('All');
     }
     ui.showFeed(ui.currentFeed.Id);
+  },
+
+  addFeed: function() {
+    var url = $('#addFeedUrl').val();
+    var title = $('#addFeedTitle').val();
+    var labelString = $('#addFeedLabels').val();
+    $.ajax('/Feeds/Add', {
+      dataType: 'json',
+      data: {
+        url: url,
+        title: title,
+        labels: labelString
+      },
+      success: function(data, statusText, xhr) {
+        if (!data['FoundFeeds']) {
+          // leave window open for corrections
+          alert('I didn\'t find any feeds :(');
+        } else if (data['AddedFeed']) {
+          // mungeFeed requires an existing subscription. Deal with it first.
+          var sub = data['Subscription'];
+          if (sub) {
+            sub.CheckInterval = sub.CheckInterval.TotalSeconds;
+            user.Subscriptions.push(sub);
+          }
+          var added = data['AddedFeed'];
+          domain.mungeFeed(added);
+          $.each(added.Articles, function(i, art) {
+            console.log(typeof art.PublishDate);
+          });
+          domain.realFeeds.push(added);
+          domain.reloadFeedInfo();
+          ui.displayFeeds();
+          ui.closeFeedPopup();
+        } else {
+          $('#multifeedOptions').empty();
+          $('#addFeedUrl').val(data['DiscoveredFeeds'][0].Uri);
+          $.each(data['DiscoveredFeeds'], function(i, feed) {
+            $('#multifeedOptions')
+              .append($('<option></option>')
+                .attr('value', feed.Uri)
+                .text(feed.Title));
+          });
+          $('#multifeed').show();
+        }
+      }
+    })
+  },
+
+  showAddFeedWindow: function() {
+    $('#multifeed').hide();
+    $('#addFeedUrl').val('');
+    $('#addFeedTitle').val('');
+    $('#addFeedLabels').val('');
+    $('#addFeedWindow').dialog({
+      height: 'auto',
+      width: 'auto',
+      buttons: [
+    { text: 'Add feed!', click: ui.addFeed },
+      ]
+    });
   },
 
   initialize: function() {
@@ -689,37 +715,32 @@ var ui = {
       }
     });
 
-    $('#addFeedButton').click(function() {
-      $('#multifeed').hide();
-      $('#addFeedWindow').dialog({
-          height: 'auto',
-          width: 'auto',
-          buttons: [
-              { text: 'Add feed!', click: domain.addFeed },
-              { text: 'Maybe later', click: function() { $(this).dialog('close'); } }
-          ]
-      });
-    });
+    $('#addFeedButton').click(ui.showAddFeedWindow);
     $('#multifeedOptions').change(function() {
       $('#addFeedUrl').val($('#multifeedOptions').val());
     });
 
-    $(document).keypress(function(evt) {
-      if (evt.which == 'j'.charCodeAt(0)) {
-        domain.nextArticle();
-      } else if (evt.which == 'k'.charCodeAt(0)) {
-        domain.previousArticle();
-      } else if (evt.which == 'J'.charCodeAt(0)) {
-        domain.nextFeed();
-      } else if (evt.which == 'K'.charCodeAt(0)) {
-        domain.previousFeed();
-      } else if (evt.which == 'o'.charCodeAt(0)) {
+    var bindings = {
+      'j': domain.nextArticle,
+      'k': domain.previousArticle,
+      'J': domain.nextFeed,
+      'K': domain.previousFeed,
+      'o': function() {
         var art = domain.currentArticle;
         if (!art) {
           return;
         }
         window.open(art.Link, '_blank');
-      }
+      },
+      'A': ui.showAddFeedWindow,
+    };
+
+    $(document).keypress(function(evt) {
+      $.each(bindings, function(key, fn) {
+        if (evt.which == key.charCodeAt(0)) {
+          fn();
+        }
+      });
     });
   },
 

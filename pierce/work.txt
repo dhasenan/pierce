@@ -47,25 +47,26 @@ DONE:
     * Follow link in new tab
   * Deploy
     nginx + fastcgi server + startstopdaemon is trivial
+  * Update labels
 * Bugs:
   * Title doesn't update when reloading stuff (incl. read/unread count) from server (eg open in two
     locations)
   * Click on a feed in second label: highlights every copy of that feed
   * Reading an article doesn't update label read counts
   * Reading an article doesn't update title when selecting a label
+  * Look for favicons more thoroughly -- specify precise feed, look for site favicon
+  * New feed: specify title, labels
 	
 
 Personal:
   * RSS 0.92
-  * Look for favicons more thoroughly -- specify precise feed, look for site favicon
-  * Update labels
   * Feed list going all the way to the bottom
-  * Persist layout (per browser)
   * Reset scrolling for article area when switching articles
   * Scroll to current article when using keyboard shortcuts
   * Unify atom / rss parsing
-  * Make it clear what feed an article is from
   * Save/restore expanded feeds
+  * Change feed url
+  * Special youtube handling
 
 
 Bugs:
@@ -103,6 +104,7 @@ Dissemination:
   * Mark all|selected read
   * Split off old articles somehow (or just delete them... not preferred)
   * OAuth
+  * HTTPS
 
 
 Monetization:

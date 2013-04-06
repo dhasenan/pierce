@@ -133,7 +133,7 @@
     </div>
     <div id='mainPanel'>
       <div id='articleView' caption='Current article' class='articleView'>
-        <div class='paneTitle'>Article</div>
+        <div class='paneTitle' id='articleTitle'>Article</div>
         <div class='content'>
           I need an article.
         </div>
@@ -163,14 +163,25 @@
       <!-- Popups! -->
 
       <div id='addFeedWindow' title='Add a feed' class='addFeed'>
-        <div style='width: 25em'>
-          <div>
-            <label for='addFeedUrl'>Feed URL:</label>
-            <input type='text' id='addFeedUrl' style='width: 98%%' />
-          </div>
-          <div id='multifeed'>
-            <select id='multifeedOptions'></select>
-          </div>
+        <div>
+          <table style='width: 25em'>
+            <tr>
+              <td><label for='addFeedUrl'>Feed URL:</label></td>
+              <td><input type='text' id='addFeedUrl' style='width: 98%%' /></td>
+            </tr>
+            <tr id='multifeed'>
+              <td />
+                <td><select id='multifeedOptions'></select></td>
+              </tr>
+              <tr>
+                <td><label for='addFeedTitle'>Title:</label></td>
+                <td><input type='text' id='addFeedTitle' style='width: 98%%' /></td>
+              </tr>
+              <tr>
+                <td><label for='addFeedLabels'>Labels:</label></td>
+                <td><input type='text' id='addFeedLabels' style='width: 98%%' /></td>
+              </tr>
+            </table>
         </div>
         <!-- TODO tags / labels / categories -->
       </div>

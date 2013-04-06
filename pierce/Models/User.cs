@@ -25,12 +25,15 @@ namespace pierce
             return Subscriptions.Where(x => x.FeedId == objectId).FirstOrDefault();
         }
 
-        public void SubscribeTo(Feed f)
+        public Subscription SubscribeTo(Feed f)
         {
-            if (!Subscriptions.Where(x => x.FeedId == f.Id).Any())
+            var sub = Subscriptions.Where(x => x.FeedId == f.Id).FirstOrDefault();
+            if (sub == null)
             {
-                Subscriptions.Add(new Subscription { FeedUri = f.Uri, FeedId = f.Id });
+                sub = new Subscription { FeedUri = f.Uri, FeedId = f.Id };
+                Subscriptions.Add(sub);
             }
+            return sub;
         }
 
         public void Unsubscribe(string feedId)

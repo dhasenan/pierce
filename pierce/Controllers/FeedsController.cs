@@ -11,7 +11,7 @@ namespace pierce
 {
     public class FeedsController : BaseController
     {
-        public ActionResult Add(string url)
+        public ActionResult Add(string url, string title, string labels)
         {
             var user = GetUser();
             if (user == null)
@@ -35,10 +35,15 @@ namespace pierce
                     f.Id = ObjectId.GenerateNewId().ToString();
                     Pierce.Feeds.Insert(f);
                 }
-                user.SubscribeTo(f);
+                var sub = user.SubscribeTo(f);
+                sub.Labels = GetLabels(labels);
+                if (!string.IsNullOrEmpty(title))
+                {
+                    sub.Title = title;
+                }
                 Pierce.Users.Save(user);
                 Pierce.Feeds.Save(f);
-                return Json(new { FoundFeeds = true, AddedFeed = f });
+                return Json(new { FoundFeeds = true, AddedFeed = f, Subscription = sub });
             }
             if (feeds.Count > 1)
             {
@@ -72,6 +77,15 @@ namespace pierce
                 return Json(new { Error = "The requested feed was not found." });
             }
             return Json(result);
+        }
+
+        static List<string> GetLabels(string labels)
+        {
+            if (string.IsNullOrEmpty(labels))
+            {
+                return new List<string>();
+            }
+            return labels.Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToList();
         }
 
         public ActionResult Update(string id, string title, int checkIntervalSeconds, string labels)
@@ -112,7 +126,7 @@ namespace pierce
             {
                 sub.Title = title;
             }
-            sub.Labels = labels.Split(',').Select(x => x.Trim()).ToList();
+            sub.Labels = GetLabels(labels);
             Pierce.Users.Save(user);
             return Json(new { Feed = feed, Subscription = sub });
         }
