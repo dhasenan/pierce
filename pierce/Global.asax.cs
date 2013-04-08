@@ -6,6 +6,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
 using MongoDB.Driver;
+using log4net;
 
 namespace pierce
 {
@@ -33,21 +34,22 @@ namespace pierce
         }
 
         public static MongoDatabase Cluster;
+
         public static MongoCollection<User> Users { get { return Cluster.GetCollection<User>("users"); } }
+
         public static MongoCollection<Feed> Feeds { get { return Cluster.GetCollection<Feed>("feeds"); } }
 
-        protected void Application_Start()
+        private static void OpenDatabase()
         {
-            AreaRegistration.RegisterAllAreas();
-            RegisterRoutes(RouteTable.Routes);
-
             var client = new MongoClient("mongodb://localhost/pierce");
             var server = client.GetServer();
             server.Connect();
             Cluster = server.GetDatabase("pierce");
+        }
 
-            CreateDatabaseIfNecessary();
-            new Thread(() =>
+        private static void StartPeriodicTasks()
+        {
+            new Thread(() => 
             {
                 while (true)
                 {
@@ -57,15 +59,45 @@ namespace pierce
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("while updating feeds {0}", ex);
+                        logger.Error("while updating feeds", ex);
                     }
                     Thread.Sleep(TimeSpan.FromSeconds(60));
                 }
-            }).Start();
+            }
+            ).Start();
         }
 
-        private void CreateDatabaseIfNecessary()
+        protected void Application_Start()
         {
+            SetupLogging();
+            AreaRegistration.RegisterAllAreas();
+            RegisterRoutes(RouteTable.Routes);
+            OpenDatabase();
+            StartPeriodicTasks();
+            logger.Error("application started");
+        }
+
+        private static ILog logger = LogManager.GetLogger("pierce");
+
+        protected void Application_Error(object sender, EventArgs args)
+        {
+            logger.Error("Unhandled exception", Server.GetLastError());
+        }
+
+        private void SetupLogging()
+        {
+            log4net.Config.XmlConfigurator.ConfigureAndWatch(new System.IO.FileInfo("log4net.config"));
+            /*
+            log4net.Repository.Hierarchy.Hierarchy repository = (log4net.Repository.Hierarchy.Hierarchy) LogManager.GetRepository();
+            if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                repository.Root.AddAppender(new log4net.Appender.AnsiColorTerminalAppender());
+            }
+            else
+            {
+                repository.Root.AddAppender(new log4net.Appender.ColoredConsoleAppender());
+            }
+            */
         }
     }
 }

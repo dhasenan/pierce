@@ -48,34 +48,41 @@ DONE:
   * Deploy
     nginx + fastcgi server + startstopdaemon is trivial
   * Update labels
+  * Change password
+  * New feed: specify title, labels
+  * Look for favicons more thoroughly -- specify precise feed, look for site favicon
+  * Logging
 * Bugs:
   * Title doesn't update when reloading stuff (incl. read/unread count) from server (eg open in two
     locations)
   * Click on a feed in second label: highlights every copy of that feed
   * Reading an article doesn't update label read counts
   * Reading an article doesn't update title when selecting a label
-  * Look for favicons more thoroughly -- specify precise feed, look for site favicon
-  * New feed: specify title, labels
+  * Keyboard shortcuts interfere with popup inputs
+  * RSS feed can't be read: xml parse error (feed contains ASCII 0x10 "data link escape")
 	
 
 Personal:
-  * RSS 0.92
+  * RSS 0.92?
   * Feed list going all the way to the bottom
   * Reset scrolling for article area when switching articles
   * Scroll to current article when using keyboard shortcuts
   * Unify atom / rss parsing
   * Save/restore expanded feeds
-  * Change feed url
+  * Change feed url?
+    Youtube feeds specifically.
   * Special youtube handling
 
 
 Bugs:
   * Adding a feed doesn't seem to close the popup or update the feed list.
   * Unsubscribing from a feed doesn't clear its articles from the article list.
-  * All labels start expanded
   * Expander button doesn't switch (plus/minus)
   * Article nav shortcuts don't pay attention to unread filtering
   * Article nav shortcuts don't move to next/previous label
+  * Selected item sometimes loses selection styling.
+    Is this fixed? Verify.
+  * All/unread filtering doesn't work with labels
 
 
 Ugly:
@@ -83,28 +90,48 @@ Ugly:
   * 'Articles', 'Article' labels don't update
   * Menu icon is small, not really clear what it's for
   * Popup/icon theme doesn't mesh with rest of site
+  * 'Uncategorized' shows up even when all feeds have labels.
+  * On load, all popups are briefly visible.
 
 
-Dissemination:
-	* Article search
+Public launch:
+  * Uncaught exceptions to SMTP appender
+    I think it's coded properly, but I have yet to see an exception email incoming.
   * Ajax loading gifs
-  * Packaging and deployment
-	* Authentication required everywhere (except login, registration, content)
-  * Documentation
-    * Setup
-    * Usage
-      * Help menu
-      * Butter bar stuff
+  * OAuth
+  * HTTPS
+	* Article search
+	* Authentication double-check
   * Error handling / feedback
     * Butter bar!
     * Don't show login window when we fail to contact server
+  * Documentation
+    * Usage
+      * Help menu
+      * Butter bar stuff
   * Nicer timespan editor than 'X minutes'
-  * Update article list after updating feeds / subscribing
+  * Update article list after updating feeds / subscribing (check)
   * Mobile-optimized site
   * Mark all|selected read
-  * Split off old articles somehow (or just delete them... not preferred)
-  * OAuth
-  * HTTPS
+  * Reduce initialization network usage
+    Send less data.
+      Trim each feed to entries from the past 60 days, up to 100; or the past 25 articles from all
+      time (for instance). Maybe give an option to fetch older data (up to 1 year / 1000 articles?).
+    Send more compact data.
+      Gzip it.
+      Remove unused fields -- though the major component is the description, which we can't fully
+      eliminate.
+    Send less data initially.
+      Send a list of everything but the articles at first, and add in the unread count.
+      Click on something, you get it loaded from the server.
+  * Reduce ongoing network usage.
+    Only return the stuff that's newer than the last article you have.
+    Only update stats etc.
+
+
+Dissemination:
+  * Packaging and deployment
+  * Setup docs
 
 
 Monetization:

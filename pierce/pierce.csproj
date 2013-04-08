@@ -55,6 +55,9 @@
     <Reference Include="MongoDB.Driver">
       <HintPath>..\lib\mongo\MongoDB.Driver.dll</HintPath>
     </Reference>
+    <Reference Include="log4net">
+      <HintPath>..\lib\log4net\log4net.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Content\" />
@@ -92,6 +95,7 @@
     <Content Include="Content\jquery-ui-1.10.2.js" />
     <Content Include="Content\sunny.css" />
     <Content Include="Content\underscore-min.js" />
+    <Content Include="log4net.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" />

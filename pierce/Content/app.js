@@ -396,7 +396,9 @@ var ui = {
     if (sub.Labels) {
       $('#modFeedLabels').val(sub.Labels.join(', '));
     }
+    ui.showingPopup = true;
     $('#modifyFeedWindow').dialog({
+      close: function() { ui.showingPopup = false; },
       height: 'auto',
       width: 'auto',
       buttons: [
@@ -467,7 +469,9 @@ var ui = {
   },
 
   showLoginWindow: function() {
+    ui.showingPopup = true;
     $('#loginWindow').dialog({
+      close: function() { ui.showingPopup = false; },
       height: 'auto',
       width: 'auto',
       buttons: [
@@ -664,16 +668,58 @@ var ui = {
     })
   },
 
+  showSettingsWindow: function() {
+    ui.showingPopup = true;
+    $('#settingsEmail').val(user.Email);
+    $('#settingsCurrPassword').val('');
+    $('#settingsPassword').val('');
+    $('#settingsPasswordConf').val('');
+    $('#settingsWindow').dialog({
+      close: function() { ui.showingPopup = false; },
+      height: 'auto',
+      width: 'auto',
+      buttons: [
+        {
+          text: 'Okay go!',
+          click: function() {
+            var newPass1 = $('#settingsPassword').val();
+            var newPass2 = $('#settingsPasswordConf').val();
+            if (newPass1 != newPass2) {
+              alert('Passwords do not match :( -- ' + newPass1 + ' vs ' + newPass2);
+              return;
+            }
+            $.ajax('/Users/Update', {
+              data: {
+                email: $('#settingsEmail').val(),
+                currentPassword: $('#settingsCurrPassword').val(),
+                newPassword: $('#settingsPassword').val()
+              },
+              success: function(data) {
+                if (data['Error']) {
+                  alert(data['Error']);
+                } else {
+                  $('#settingsWindow').dialog('close');
+                }
+              }
+            });
+          }
+        },
+      ]
+    });
+  },
+
   showAddFeedWindow: function() {
     $('#multifeed').hide();
     $('#addFeedUrl').val('');
     $('#addFeedTitle').val('');
     $('#addFeedLabels').val('');
+    ui.showingPopup = true;
     $('#addFeedWindow').dialog({
+      close: function() { ui.showingPopup = false; },
       height: 'auto',
       width: 'auto',
       buttons: [
-    { text: 'Add feed!', click: ui.addFeed },
+        { text: 'Add feed!', click: ui.addFeed },
       ]
     });
   },
@@ -719,7 +765,11 @@ var ui = {
     $('#multifeedOptions').change(function() {
       $('#addFeedUrl').val($('#multifeedOptions').val());
     });
+    ui.setupKeybindings();
+    ui.showingPopup = false;
+  },
 
+  setupKeybindings: function() {
     var bindings = {
       'j': domain.nextArticle,
       'k': domain.previousArticle,
@@ -736,11 +786,13 @@ var ui = {
     };
 
     $(document).keypress(function(evt) {
-      $.each(bindings, function(key, fn) {
-        if (evt.which == key.charCodeAt(0)) {
-          fn();
-        }
-      });
+      if (!ui.showingPopup) {
+        $.each(bindings, function(key, fn) {
+          if (evt.which == key.charCodeAt(0)) {
+            fn();
+          }
+        });
+      }
     });
   },
 

@@ -7,11 +7,19 @@ using System.Web.Mvc.Ajax;
 using MongoDB.Bson;
 using MongoDB.Driver.Builders;
 using System.Web.Security;
+using log4net;
 
 namespace pierce
 {
     public class BaseController : Controller
     {
+        protected ILog log;
+
+        public BaseController()
+        {
+            log = LogManager.GetLogger(this.GetType());
+        }
+
         protected new ActionResult Json(object o)
         {
             return Json(o, JsonRequestBehavior.AllowGet);

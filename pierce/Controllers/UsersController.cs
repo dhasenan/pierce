@@ -59,7 +59,35 @@ namespace pierce
             }
 
             FormsAuthentication.SetAuthCookie(user.Id, true);
+            log.Info("registered new user");
             return Json(user);
+        }
+
+        public ActionResult Update(string email, string currentPassword, string newPassword)
+        {
+            var user = GetUser();
+            if (user == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new {});
+            }
+            var hashedCurrent = pierce.User.HashedPassword(currentPassword);
+            if (hashedCurrent != user.PasswordHash)
+            {
+                return Json(new { Error = "Current password does not match." });
+            }
+            if (email != user.Email)
+            {
+                var result = Pierce.Users.Find(Query.EQ("Email", email));
+                if (result.Size() > 0)
+                {
+                    return Json(new { Error = "That email address is already in use." });
+                }
+            }
+            user.Password = newPassword;
+            user.Email = email;
+            Pierce.Users.Save(user);
+            return Json(new {});
         }
 
         public ActionResult Logout()

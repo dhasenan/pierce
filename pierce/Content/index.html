@@ -22,7 +22,7 @@
         var labelclass = 'labelName';
         var name = label.Title;
         if (ui.isExpanded(label.Id)) classes += ' expanded'; else classes += ' collapsed';
-        if (ui.currentLabel && label.Id == ui.currentLabel.Id) classes += ' selectedItem';
+        if (ui.currentLabel && label.Id == ui.currentLabel.Id) labelclass += ' selectedItem';
         if (count > 0) {
           labelclass += ' unread';
           name += ' (' + count + ')';
@@ -129,7 +129,8 @@
   <body>
     <div id='headerBar'>
       <span id='userName'>Not logged in</span>
-      <span style='float: right'>Settings</span>
+      <span style='float: right'><a href='#' onclick='ui.showSettingsWindow()'
+          style='color: black'>Settings</a></span>
     </div>
     <div id='mainPanel'>
       <div id='articleView' caption='Current article' class='articleView'>
@@ -211,14 +212,35 @@
         <table style='width: 25em'>
           <tr>
             <td><label for='email'>Email address:</label></td>
-            <td><input id='email' type='text' value='dhasenan@gmail.com' /></td>
+            <td><input id='email' type='text' /></td>
           </tr>
           <tr>
             <td><label for='password'>Password:</label></td>
-            <td><input id='password' type='password' value='password' /></td>
+            <td><input id='password' type='password' /></td>
           </tr>
         </table>
       </div>
+    </div>
+
+    <div id='settingsWindow' title='Settings'>
+      <table>
+        <tr>
+          <td><label for='settingsEmail'>Email address:</label></td>
+          <td><input type='text' id='settingsEmail' /></td>
+        </tr>
+        <tr>
+          <td><label for='settingsCurrPassword'>Current password:</label></td>
+          <td><input type='password' id='settingsCurrPassword' /></td>
+        </tr>
+        <tr>
+          <td><label for='settingsPassword'>New password:</label></td>
+          <td><input type='password' id='settingsPassword' /></td>
+        </tr>
+        <tr>
+          <td><label for='settingsPasswordConf'>Confirm new password:</label></td>
+          <td><input type='password' id='settingsPasswordConf' /></td>
+        </tr>
+      </table>
     </div>
   </body>
 </html>

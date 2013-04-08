@@ -22,6 +22,11 @@ namespace pierce
                 else
                 {
                     feed.Uri = new Uri(new Uri(pageUrl), targetAttribute.Value);
+                    // Some people in the wild use a "feed" scheme. IANA doesn't recognize this, though.
+                    if (feed.Uri.Scheme == "feed")
+                    {
+                        feed.Uri = new Uri("http" + feed.Uri.ToString().Substring(4));
+                    }
                     var existing = Feed.ByUri(feed.Uri.ToString());
                     if (existing != null)
                     {

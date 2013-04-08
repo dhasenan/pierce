@@ -10,12 +10,19 @@ using System.Xml.XPath;
 using MongoDB.Driver.Builders;
 using System.Globalization;
 using MongoDB.Bson;
+using log4net;
 
 namespace pierce
 {
-    // TODO(dhasenan): Atom feeds; RSS1.0
     public class ReadFeeds
     {
+        private readonly ILog log;
+
+        public ReadFeeds()
+        {
+            log = LogManager.GetLogger(GetType());
+        }
+
         public void Execute()
         {
             var list = Pierce.Feeds.Find(Query.LT("NextRead", DateTime.UtcNow));
@@ -36,7 +43,7 @@ namespace pierce
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("while handling feed {0}: {1}", feed.Uri, ex);
+                    log.WarnFormat("while handling feed {0}: {1}", feed.Uri, ex);
                     feed.Errors++;
                 }
                 Pierce.Feeds.Save(feed);
@@ -104,14 +111,30 @@ namespace pierce
                 date = d;
                 return true;
             }
-            Console.WriteLine("bad date found: {0}", v);
+            log.InfoFormat("bad date found: {0}", v);
+            return false;
+        }
+
+        private bool IsXmlChar(char c)
+        {
+            // Implementing this ourselves because mono hasn't.
+            uint i = (uint) c;
+            if (c == 0x9 || c == 0xa || c == 0xd) return true;
+            if (c >= 0x0020 && c <= 0xd7ff) return true;
+            if (c >= 0xe000 && c <= 0xfffd) return true;
+            if (c >= 0x10000 && c <= 0x10fff) return true;
             return false;
         }
 
         public void Read(Feed feed, TextReader feedText)
         {
             var text = feedText.ReadToEnd();
-            Console.WriteLine("reading feed {0}", feed.Uri);
+            log.InfoFormat("reading feed {0}", feed.Uri);
+            // I've seen people trying to put a data link escape character in their feeds. Bozhe moi!
+            if (text.Any(c => !IsXmlChar(c)))
+            {
+                text = new string(text.Where(IsXmlChar).ToArray());
+            }
             XDocument x = XDocument.Parse(text);
             var rss = x.Descendants("rss").FirstOrDefault();
             XName atomFeedName = atom + "feed";
