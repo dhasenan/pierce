@@ -60,6 +60,8 @@ DONE:
   * Reading an article doesn't update title when selecting a label
   * Keyboard shortcuts interfere with popup inputs
   * RSS feed can't be read: xml parse error (feed contains ASCII 0x10 "data link escape")
+  * Selected item sometimes loses selection styling.
+  * All/unread filtering doesn't work with labels
 	
 
 Personal:
@@ -77,15 +79,12 @@ Personal:
 Bugs:
   * Adding a feed doesn't seem to close the popup or update the feed list.
   * Unsubscribing from a feed doesn't clear its articles from the article list.
-  * Expander button doesn't switch (plus/minus)
   * Article nav shortcuts don't pay attention to unread filtering
   * Article nav shortcuts don't move to next/previous label
-  * Selected item sometimes loses selection styling.
-    Is this fixed? Verify.
-  * All/unread filtering doesn't work with labels
 
 
 Ugly:
+  * Expander button doesn't switch (plus/minus)
   * Resize handles are 1px wide.
   * 'Articles', 'Article' labels don't update
   * Menu icon is small, not really clear what it's for

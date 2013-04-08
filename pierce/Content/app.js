@@ -576,8 +576,6 @@ var ui = {
       }
       var dom = ui.template('articleli', {
         article: article,
-          feed: article.Feed,
-          readClass: article.IsRead ? 'read' : 'unread'
       });
       $('#articleList .content').append(dom);
     });
@@ -615,9 +613,11 @@ var ui = {
     if (ui.showingUnreadOnly) {
       ui.showingUnreadOnly = false;
       $('#toggleUnread').text('Unread');
+      $('.read').show();
     } else {
       ui.showingUnreadOnly = true;
       $('#toggleUnread').text('All');
+      $('.read').hide();
     }
     ui.showFeed(ui.currentFeed.Id);
   },

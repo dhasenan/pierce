@@ -100,8 +100,8 @@
       <div
         id='<%- util.articleId(article) %>'
         class='articleli <%- article.IsRead ? "read" : "unread" %>'
-        onclick='ui.showArticle("<%= feed.Id %>", "<%= article.Id %>");'>
-        <img style='height: 16px; width: 16px;' src='<%= feed.IconUri %>'></img>
+        onclick='ui.showArticle("<%= article.Feed.Id %>", "<%= article.Id %>");'>
+        <img style='height: 16px; width: 16px;' src='<%= article.Feed.IconUri %>'></img>
         <%- ui.fmtDate(article.PublishDate) %>
         <%- article.Title %>
       </div>
