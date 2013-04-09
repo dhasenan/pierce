@@ -65,11 +65,9 @@ DONE:
 	
 
 Personal:
-  * RSS 0.92?
   * Feed list going all the way to the bottom
   * Reset scrolling for article area when switching articles
   * Scroll to current article when using keyboard shortcuts
-  * Unify atom / rss parsing
   * Save/restore expanded feeds
   * Change feed url?
     Youtube feeds specifically.
@@ -91,6 +89,11 @@ Ugly:
   * Popup/icon theme doesn't mesh with rest of site
   * 'Uncategorized' shows up even when all feeds have labels.
   * On load, all popups are briefly visible.
+
+
+Code quality:
+  * Unify atom / rss parsing
+  * Clean up ui/domain
 
 
 Public launch:

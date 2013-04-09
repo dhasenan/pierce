@@ -166,6 +166,25 @@ namespace pierce
             return Json(new { Success = true });
         }
 
+        public ActionResult List()
+        {
+            var user = GetUser();
+            if (user == null)
+                return Json(new {Error = "you are not logged in"});
+            var feeds = new List<Feed>();
+            foreach (var sub in user.Subscriptions)
+            {
+                feeds.Add(Feed.ById(sub.FeedId));
+            }
+            feeds = feeds.Where(x => x != null).Select(x => x.ToHeader()).ToList();
+            return Json(new { Feeds = feeds });
+        }
+
+        public ActionResult Get(string id)
+        {
+            return Json(new { Feed = Feed.ById(id) });
+        }
+
         public ActionResult All()
         {
             var user = GetUser();

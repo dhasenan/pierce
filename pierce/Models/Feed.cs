@@ -53,6 +53,13 @@ namespace pierce
             Articles.Add(article);
         }
 
+        public Feed ToHeader()
+        {
+            var header = (Feed) this.MemberwiseClone();
+            header.Articles = null;
+            return header;
+        }
+
         public override string ToString()
         {
             return string.Format("[Feed: Id={0}, Uri={1}, Title={2}]", Id, Uri, Title);
