@@ -134,8 +134,12 @@ Public launch:
       Send a list of everything but the articles at first, and add in the unread count.
       Click on something, you get it loaded from the server.
   * Reduce ongoing network usage.
-    Only return the stuff that's newer than the last article you have.
-    Only update stats etc.
+    Right now, it only reloads stuff that's been reread recently. That means an hour sitting idle
+    will reload all your feeds with default settings. But a lot of feeds only get new articles once
+    a day, or less often.
+    * Only return the stuff that's newer than the last article you have.
+    * Only update the minimum necessary to render the current view. Server-side maintenance of
+      unread counts, for instance.
 
 
 Dissemination:
