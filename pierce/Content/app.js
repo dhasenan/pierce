@@ -640,6 +640,7 @@ var ui = {
     $('#articleTitle').text(article.Feed.Title);
     domain.showingArticle(article);
     ui.updateTitle();
+    $('#articleContent').focus();
   },
 
   toggleUnreadOnly: function() {
