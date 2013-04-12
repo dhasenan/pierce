@@ -4,11 +4,26 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using HtmlAgilityPack;
+using Castle.Core.Logging;
+using System.Xml.Linq;
 
 namespace pierce
 {
     public class AutodetectFeeds
     {
+        private readonly Wget _wget;
+        private readonly FeedParser _parser;
+        private readonly ILogger _logger;
+        private readonly ReadFeeds _reader;
+
+        public AutodetectFeeds(Wget wget, FeedParser parser, ReadFeeds reader, ILogger logger)
+        {
+            _wget = wget;
+            _parser = parser;
+            _reader = reader;
+            _logger = logger;
+        }
+
         private Feed ReadRss(string pageUrl, HtmlNode link)
         {
             try
@@ -69,7 +84,6 @@ namespace pierce
 
         public List<Feed> FromHtmlPage(string pageUrl)
         {
-            string text;
             var feeds = new List<Feed>();
             var existing = Feed.ByUri(pageUrl);
             if (existing != null)
@@ -77,20 +91,11 @@ namespace pierce
                 feeds.Add(existing);
                 return feeds;
             }
-            try
+            string text = _wget.Text(new Uri(pageUrl));
+            if (text == null)
             {
-                WebRequest wr = WebRequest.Create(pageUrl);
-                wr.Method = "GET";
-                TextReader tr = new StreamReader(wr.GetResponse().GetResponseStream());
-                text = tr.ReadToEnd();
-            }
-            catch
-            {
-                // invalid url
                 return feeds;
             }
-
-            Uri defaultIcon = null;
 
             // Is this an rss feed or an html page?
             try
@@ -104,14 +109,14 @@ namespace pierce
             catch
             {
             }
+
             try
             {
-                // my parsing is lax enough that it might parse some
-                // invalid xhtml as an rss feed, maybe
                 var feed = new Feed();
                 feed.Uri = new Uri(pageUrl);
-                new ReadFeeds().Read(feed, new StringReader(text));
-                // This supercedes the html stuff.
+                var xdoc = XDocument.Parse(text);
+                _parser.Read(feed, xdoc);
+                // This supercedes the html stuff, on the off chance someone put <link> elements in their feed.
                 feeds.Clear();
                 feeds.Add(feed);
             }
@@ -119,17 +124,9 @@ namespace pierce
             {
             }
 
-            foreach (var feed in feeds)
-            {
-                if (feed.IconUri == null)
-                {
-                    feed.IconUri = defaultIcon;
-                }
-            }
-
             if (feeds.Count == 1 && feeds [0].Articles.Count == 0)
             {
-                new ReadFeeds().Read(feeds [0]);
+                _reader.Read(feeds [0]);
             }
             return feeds;
         }

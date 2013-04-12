@@ -3,12 +3,21 @@ using NUnit.Framework;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using Castle.Core.Logging;
 
 namespace pierce.test
 {
     [TestFixture]
     public class ReadAtomTest
     {
+        FeedParser _target;
+
+        [SetUp]
+        public void Setup()
+        {
+            _target = new FeedParser(NullLogger.Instance);
+        }
+
         [Test]
         public void ReadFeedData()
         {
@@ -27,7 +36,7 @@ namespace pierce.test
                 "  <id>urn:uuid:60a76c80-d399-11d9-b93C-0003939e0af6</id>" +
                 "</feed>";
             var feed = new Feed();
-            new ReadFeeds().Read(feed, new StringReader(feedXml));
+            _target.Read(feed, XDocument.Parse(feedXml));
             Assert.That(feed.Title, Is.EqualTo("Example Feed"));
             Assert.That(feed.Link, Is.EqualTo(new Uri("http://example.org")));
             Assert.That(feed.IconUri, Is.EqualTo(new Uri("http://example.org/feed/icon.png")));
@@ -60,7 +69,7 @@ namespace pierce.test
                 "  </entry>" +
                 "</feed>";
             var feed = new Feed();
-            new ReadFeeds().Read(feed, new StringReader(feedXml));
+            _target.Read(feed, XDocument.Parse(feedXml));
             Assert.That(feed.Articles.Count, Is.EqualTo(1));
             var art = feed.Articles.First();
             Assert.That(art.Title, Is.EqualTo("Atom-Powered Robots Run Amok"));
@@ -92,8 +101,8 @@ namespace pierce.test
                 "  </entry>" +
                 "</feed>";
             var feed = new Feed();
-            new ReadFeeds().Read(feed, new StringReader(feedXml));
-            new ReadFeeds().Read(feed, new StringReader(feedXml));
+            _target.Read(feed, XDocument.Parse(feedXml));
+            _target.Read(feed, XDocument.Parse(feedXml));
             Assert.That(feed.Articles.Count, Is.EqualTo(1));
         }
 
@@ -118,7 +127,7 @@ namespace pierce.test
                 "  </entry>" +
                 "</feed>";
             var feed = new Feed();
-            new ReadFeeds().Read(feed, new StringReader(feedXml));
+            _target.Read(feed, XDocument.Parse(feedXml));
             var art = feed.Articles.First();
             Assert.That(art.PublishDate, Is.EqualTo(new DateTime(2004, 1, 13, 18, 30, 2)));
         }

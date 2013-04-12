@@ -11,6 +11,15 @@ namespace pierce
 {
     public class FeedsController : BaseController
     {
+        AutodetectFeeds _detector;
+        ReadFeeds _reader;
+
+        public FeedsController(AutodetectFeeds detector, ReadFeeds reader)
+        {
+            _detector = detector;
+            _reader = reader;
+        }
+
         public ActionResult Add(string url, string title, string labels)
         {
             var user = GetUser();
@@ -20,7 +29,7 @@ namespace pierce
                 return Json(new { Error = "Not authenticated" });
             }
             
-            var feeds = new AutodetectFeeds().FromHtmlPage(url);
+            var feeds = _detector.FromHtmlPage(url);
             if (feeds.Count == 1)
             {
                 var f = feeds [0];
@@ -150,7 +159,7 @@ namespace pierce
                 Response.StatusCode = 404;
                 return Json(new { Error = "Feed not found" });
             }
-            new ReadFeeds().Read(feed);
+            _reader.Read(feed);
             Pierce.Feeds.Save(feed);
             return Json(feed);
         }

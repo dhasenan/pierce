@@ -7,9 +7,39 @@ using System.Web.Mvc;
 using System.Web.Routing;
 using MongoDB.Driver;
 using log4net;
+using Castle.Windsor;
+using Castle.MicroKernel.Registration;
+using System.Reflection;
+using Castle.MicroKernel;
+using Castle.Windsor.Installer;
 
 namespace pierce
 {
+    // This class taken pretty much directly from the Windsor docs.
+    public class WindsorControllerFactory : DefaultControllerFactory
+    {
+        private readonly IKernel kernel;
+ 
+        public WindsorControllerFactory(IKernel kernel)
+        {
+            this.kernel = kernel;
+        }
+ 
+        public override void ReleaseController(IController controller)
+        {
+            kernel.ReleaseComponent(controller);
+        }
+ 
+        protected override IController GetControllerInstance(RequestContext requestContext, Type controllerType)
+        {
+            if (controllerType == null)
+            {
+                throw new HttpException(404, string.Format("The controller for path '{0}' could not be found.", requestContext.HttpContext.Request.Path));
+            }
+            return (IController)kernel.Resolve(controllerType);
+        }
+    }
+
     public class Pierce : System.Web.HttpApplication
     {
         public static void RegisterRoutes(RouteCollection routes)
@@ -23,6 +53,8 @@ namespace pierce
             );
 
         }
+
+        public static WindsorContainer Container;
 
         public override void Init()
         {
@@ -49,13 +81,14 @@ namespace pierce
 
         private static void StartPeriodicTasks()
         {
+            var feedReader = Container.Resolve<ReadFeeds>();
             new Thread(() => 
             {
                 while (true)
                 {
                     try
                     {
-                        new ReadFeeds().Execute();
+                        feedReader.Execute();
                     }
                     catch (Exception ex)
                     {
@@ -70,11 +103,30 @@ namespace pierce
         protected void Application_Start()
         {
             SetupLogging();
-            AreaRegistration.RegisterAllAreas();
-            RegisterRoutes(RouteTable.Routes);
-            OpenDatabase();
-            StartPeriodicTasks();
-            logger.Error("application started");
+            try
+            {
+                logger.Info("setting up windsor");
+                Container = new WindsorContainer();
+                Container.AddFacility<Castle.Facilities.Logging.LoggingFacility>();
+                Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController))).BasedOn<IController>().WithServiceSelf().LifestyleTransient());
+                Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController))).Where(x => !typeof(IController).IsAssignableFrom(x)).WithServiceSelf());
+                foreach (var handler in Container.Kernel.GetAssignableHandlers(typeof(object))) {
+                    logger.DebugFormat("{0}: {1}", handler.ComponentModel.Services.FirstOrDefault(), handler.ComponentModel.Implementation);
+                }
+                ControllerBuilder.Current.SetControllerFactory(new WindsorControllerFactory(Container.Kernel));
+                logger.Info("registering areas and routes");
+                AreaRegistration.RegisterAllAreas();
+                RegisterRoutes(RouteTable.Routes);
+                logger.Info("opening database");
+                OpenDatabase();
+                logger.Info("starting periodic tasks");
+                StartPeriodicTasks();
+                logger.Info("initialization complete!");
+            }
+            catch (Exception ex)
+            {
+                logger.Fatal("unable to set up server!", ex);
+            }
         }
 
         private static ILog logger = LogManager.GetLogger("pierce");
@@ -87,17 +139,6 @@ namespace pierce
         private void SetupLogging()
         {
             log4net.Config.XmlConfigurator.ConfigureAndWatch(new System.IO.FileInfo("log4net.config"));
-            /*
-            log4net.Repository.Hierarchy.Hierarchy repository = (log4net.Repository.Hierarchy.Hierarchy) LogManager.GetRepository();
-            if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.Unix)
-            {
-                repository.Root.AddAppender(new log4net.Appender.AnsiColorTerminalAppender());
-            }
-            else
-            {
-                repository.Root.AddAppender(new log4net.Appender.ColoredConsoleAppender());
-            }
-            */
         }
     }
 }

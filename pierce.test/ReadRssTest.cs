@@ -2,12 +2,22 @@ using System;
 using NUnit.Framework;
 using System.IO;
 using System.Linq;
+using Castle.Core.Logging;
+using System.Xml.Linq;
 
 namespace pierce.test
 {
     [TestFixture]
     public class ReadRssTest
     {
+        FeedParser _target;
+
+        [SetUp]
+        public void Setup()
+        {
+            _target = new FeedParser(NullLogger.Instance);
+        }
+
         [Test]
         public void FeedData()
         {
@@ -26,7 +36,7 @@ namespace pierce.test
                 "  </channel>" +
                 "</rss>";
             var feed = new Feed();
-            new ReadFeeds().Read(feed, new StringReader(feedText));
+            _target.Read(feed, XDocument.Parse(feedText));
             Assert.That(feed.Title, Is.EqualTo("StrongBad!!!1"));
             Assert.That(feed.Description, Is.EqualTo("Kangaroo Jack's colby jack"));
             Assert.That(feed.LogoUri, Is.EqualTo(new Uri("http://strongbad.example.org/content/sb.png")));
@@ -54,7 +64,7 @@ namespace pierce.test
                 "  </channel>" +
                 "</rss>";
             var feed = new Feed();
-            new ReadFeeds().Read(feed, new StringReader(feedText));
+            _target.Read(feed, XDocument.Parse(feedText));
             var article = feed.Articles.First();
             Assert.That(article.Title, Is.EqualTo("Incredipede"));
             Assert.That(article.Description, Is.EqualTo("This is a multiline sequence possibly containing HTML."));

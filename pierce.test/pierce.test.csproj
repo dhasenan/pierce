@@ -37,6 +37,9 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="Castle.Core">
+      <HintPath>..\lib\castle\Castle.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ReadAtomTest.cs" />

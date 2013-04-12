@@ -52,6 +52,7 @@ DONE:
   * New feed: specify title, labels
   * Look for favicons more thoroughly -- specify precise feed, look for site favicon
   * Logging
+  * Integrate Castle Windsor
 * Bugs:
   * Title doesn't update when reloading stuff (incl. read/unread count) from server (eg open in two
     locations)
@@ -99,7 +100,6 @@ Ugly:
 Code quality:
   * Unify atom / rss parsing
   * Clean up ui/domain
-  * Integrate Castle Windsor
 
 
 Public launch:
