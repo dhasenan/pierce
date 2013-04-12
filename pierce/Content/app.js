@@ -649,6 +649,24 @@ var ui = {
     artDiv.addClass('selectedItem');
     artDiv.removeClass('unread');
     artDiv.addClass('read');
+
+    // pos: position *relative to scrolled viewport*
+    var pos = artDiv.position();
+    var par = artDiv.parent();
+    var margin = 2;
+    if (pos.top < margin) {
+      var alreadyHidden = par.scrollTop();
+      // we're hiding 300px
+      // relative to hidden, item is at -50
+      // need to scroll to 250 hidden, and a bit further up for margin
+      par.scrollTop(par.scrollTop() + pos.top - margin);
+    } else if (pos.top > par.height()) {
+      // now we want the entry as the last thing there
+      // that means we hide fewer pixels -- par.height() fewer means our entry is the first thing
+      // below the fold, so we raise it up by one artDiv height
+      par.scrollTop(par.scrollTop() - par.height() + pos.top - margin + artDiv.height());
+    }
+
     $('#articleView .content').html(ui.template('articlefull', {
       feed: article.Feed,
       article: article
@@ -849,7 +867,6 @@ var ui = {
 
   isArticleVisible: function(artId) {
     var count = $('#' + util.articleId(artId) + ':visible').length;
-    console.log(util.articleId(artId) + ':visible -- ' + count);
     return count > 0;
   },
 

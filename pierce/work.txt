@@ -69,11 +69,11 @@ DONE:
 * Ugly:
   * On load, all popups are briefly visible.
   * Reset scrolling for article area when switching articles
+  * Scroll to current article when using keyboard shortcuts
 	
 
 Personal:
   * Feed list going all the way to the bottom
-  * Scroll to current article when using keyboard shortcuts
   * Save/restore expanded feeds
   * Change feed url?
     Youtube feeds specifically.
