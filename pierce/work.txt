@@ -68,11 +68,11 @@ DONE:
   * Article nav shortcuts don't pay attention to unread filtering
 * Ugly:
   * On load, all popups are briefly visible.
+  * Reset scrolling for article area when switching articles
 	
 
 Personal:
   * Feed list going all the way to the bottom
-  * Reset scrolling for article area when switching articles
   * Scroll to current article when using keyboard shortcuts
   * Save/restore expanded feeds
   * Change feed url?
