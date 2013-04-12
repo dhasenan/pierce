@@ -11,7 +11,7 @@ namespace pierce
         ILog log;
 
 
-        public FindIcon() 
+        public FindIcon()
         {
             log = LogManager.GetLogger(GetType());
         }
@@ -27,12 +27,13 @@ namespace pierce
                 var text = tr.ReadToEnd();
                 var doc = new HtmlAgilityPack.HtmlDocument();
                 doc.LoadHtml(text);
-                var iconLink = doc.DocumentNode.SelectNodes("//link[@rel='shortcut icon']").FirstOrDefault();
-                if (iconLink == null)
+                var iconLinks = doc.DocumentNode.SelectNodes("//link[@rel='shortcut icon']");
+                if (iconLinks == null || !iconLinks.Any())
                 {
                     log.InfoFormat("failed to find icon link");
                     return null;
                 }
+                var iconLink = iconLinks.FirstOrDefault();
                 log.InfoFormat("found link at base url {0}", baseUrl);
                 Uri uri;
                 if (Uri.TryCreate(baseUrl, iconLink.GetAttributeValue("href", "favicon.ico"), out uri))

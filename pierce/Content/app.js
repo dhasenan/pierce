@@ -287,23 +287,35 @@ var domain = {
       if (!f) return;
     }
     if (!f.Articles) {
-      // TODO should move anyway
+      domain._moveFeed(offset);
       return;
     }
+    var articleIndex = null;
     var currentArticle = domain.currentArticle;
     if (currentArticle) {
       for (var i = 0; i < f.Articles.length; i++) {
         if (f.Articles[i].Id == currentArticle.Id) {
-          var index = i + offset;
-          if (index < 0 || index >= f.Articles.length) {
-            domain._moveFeed(offset);
-            return;
-          }
-          ui.showArticle(f, f.Articles[index].Id);
-          return;
+          articleIndex = i;
+          break;
         }
       }
-      ui.showArticle(f, f.Articles[0].Id);
+      if (articleIndex === null) {
+        ui.showArticle(f, f.Articles[0].Id);
+        return;
+      }
+      var index = articleIndex + offset;
+      while (true) {
+        if (index < 0 || index >= f.Articles.length) {
+          domain._moveFeed(offset);
+          return;
+        }
+        if (!ui.isArticleVisible(f.Articles[index])) {
+          index += offset;
+          continue;
+        }
+        ui.showArticle(f, f.Articles[index].Id);
+        return;
+      }
     }
   },
 
@@ -325,6 +337,11 @@ var domain = {
           ui.showFeed(f.Id);
           if (f.Articles.length) {
             var ai = (offset < 0) ? f.Articles.length - 1 : 0;
+            while (ai >= 0
+                && ai < f.Articles.length
+                && !ui.isArticleVisible(f.Articles[ai])) {
+              ai += offset;
+            }
             ui.showArticle(f, f.Articles[ai].Id);
           } else {
           }
@@ -830,6 +847,12 @@ var ui = {
     });
   },
 
+  isArticleVisible: function(artId) {
+    var count = $('#' + util.articleId(artId) + ':visible').length;
+    console.log(util.articleId(artId) + ':visible -- ' + count);
+    return count > 0;
+  },
+
   fmtDate: function(date) {
     return date.toISOString().replace('T', ' ').substring(0, 16);
   },
@@ -895,7 +918,8 @@ var util = {
   },
 
   articleId: function(article) {
-    return 'articleli_' + article.Id.replace('-', '');
+    // Should probably scrub [^a-zA-Z_] from this...
+    return 'articleli_' + article.Id;
   },
 
   jsDate: function(aspNetDate) {

@@ -160,9 +160,10 @@
           <a id='addFeedButton' href='#'>Add a feed</a>
         </div>
       </div>
+    </div>
 
+    <div id='popupContainer' style='display: none'>
       <!-- Popups! -->
-
       <div id='addFeedWindow' title='Add a feed' class='addFeed'>
         <div>
           <table style='width: 25em'>
@@ -184,7 +185,6 @@
               </tr>
             </table>
         </div>
-        <!-- TODO tags / labels / categories -->
       </div>
 
       <div id='modifyFeedWindow' title='Modify your feed'>
@@ -220,27 +220,27 @@
           </tr>
         </table>
       </div>
-    </div>
 
-    <div id='settingsWindow' title='Settings'>
-      <table>
-        <tr>
-          <td><label for='settingsEmail'>Email address:</label></td>
-          <td><input type='text' id='settingsEmail' /></td>
-        </tr>
-        <tr>
-          <td><label for='settingsCurrPassword'>Current password:</label></td>
-          <td><input type='password' id='settingsCurrPassword' /></td>
-        </tr>
-        <tr>
-          <td><label for='settingsPassword'>New password:</label></td>
-          <td><input type='password' id='settingsPassword' /></td>
-        </tr>
-        <tr>
-          <td><label for='settingsPasswordConf'>Confirm new password:</label></td>
-          <td><input type='password' id='settingsPasswordConf' /></td>
-        </tr>
-      </table>
+      <div id='settingsWindow' title='Settings'>
+        <table>
+          <tr>
+            <td><label for='settingsEmail'>Email address:</label></td>
+            <td><input type='text' id='settingsEmail' /></td>
+          </tr>
+          <tr>
+            <td><label for='settingsCurrPassword'>Current password:</label></td>
+            <td><input type='password' id='settingsCurrPassword' /></td>
+          </tr>
+          <tr>
+            <td><label for='settingsPassword'>New password:</label></td>
+            <td><input type='password' id='settingsPassword' /></td>
+          </tr>
+          <tr>
+            <td><label for='settingsPasswordConf'>Confirm new password:</label></td>
+            <td><input type='password' id='settingsPasswordConf' /></td>
+          </tr>
+        </table>
+      </div>
     </div>
   </body>
 </html>
