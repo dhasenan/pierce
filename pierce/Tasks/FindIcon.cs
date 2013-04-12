@@ -23,6 +23,10 @@ namespace pierce
             {
                 var baseUrl = new Uri(feedUrl, "/");
                 var doc = _wget.Html(baseUrl);
+                if (doc == null)
+                {
+                    return null;
+                }
                 var iconLinks = doc.DocumentNode.SelectNodes("//link[@rel='shortcut icon']");
                 if (iconLinks == null || !iconLinks.Any())
                 {

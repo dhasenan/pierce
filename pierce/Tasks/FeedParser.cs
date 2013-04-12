@@ -89,7 +89,7 @@ namespace pierce
         // they reimplement feed attributes that I need.
         private static readonly XNamespace atom = "http://www.w3.org/2005/Atom";
         private static readonly XNamespace content = "http://purl.org/rss/1.0/modules/content/";
-        //private static readonly XNamespace elements = "http://purl.org/dc/elements/1.1/";
+        private static readonly XNamespace elements = "http://purl.org/dc/elements/1.1/";
 
         private void Elem(XElement element, XName descendant, params Action<string>[] setter)
         {
@@ -195,6 +195,7 @@ namespace pierce
             // RSS stuffs
             Elem(xentry, "title", v => article.Title = v);
             Elem(xentry, "author", v => article.Authors.Add(new Author { Name = v }));
+            Elem(xentry, elements + "creator", v => article.Authors.Add(new Author { Name = v }));
             Elem(xentry, "description", v => article.Description = v);
             Elem(xentry, "guid", v => article.UniqueId = v);
             Elem(xentry, "pubDate", v => article.PublishDate = DateTime.Parse(v), v => TryParseRfc1123(v, ref article.PublishDate));

@@ -99,6 +99,7 @@
     <Compile Include="Tasks\FindIcon.cs" />
     <Compile Include="Tasks\Wget.cs" />
     <Compile Include="Tasks\FeedParser.cs" />
+    <Compile Include="Logging.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Web.config" />

@@ -12,6 +12,7 @@ using Castle.MicroKernel.Registration;
 using System.Reflection;
 using Castle.MicroKernel;
 using Castle.Windsor.Installer;
+using Castle.Facilities.Logging;
 
 namespace pierce
 {
@@ -107,7 +108,7 @@ namespace pierce
             {
                 logger.Info("setting up windsor");
                 Container = new WindsorContainer();
-                Container.AddFacility<Castle.Facilities.Logging.LoggingFacility>();
+                Container.Kernel.Resolver.AddSubResolver(new LoggerResolver(new MyLoggerFactory()));
                 Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController))).BasedOn<IController>().WithServiceSelf().LifestyleTransient());
                 Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController))).Where(x => !typeof(IController).IsAssignableFrom(x)).WithServiceSelf());
                 foreach (var handler in Container.Kernel.GetAssignableHandlers(typeof(object))) {
