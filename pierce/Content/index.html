@@ -101,7 +101,7 @@
         id='<%- util.articleId(article) %>'
         class='articleli <%- article.IsRead ? "read" : "unread" %>'
         onclick='ui.showArticle("<%= article.Feed.Id %>", "<%= article.Id %>");'>
-        <img style='height: 16px; width: 16px;' src='<%= article.Feed.IconUri %>'></img>
+        <img style='height: 16px; width: 16px;' src='<%= ui.iconUrl(article.Feed) %>'></img>
         <%- ui.fmtDate(article.PublishDate) %>
         <%- article.Title %>
       </div>

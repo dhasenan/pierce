@@ -902,6 +902,13 @@ var ui = {
     }
   },
 
+  iconUrl: function(feed) {
+    if (feed.IconUri) {
+      return feed.IconUri;
+    }
+    return '/Content/no-icon.png';
+  },
+
   // this is so everything can end with a comma
   _barrier: null
 };
