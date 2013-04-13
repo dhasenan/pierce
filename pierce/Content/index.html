@@ -17,7 +17,7 @@
     <!-- underscore templates! -->
     <script id='labelListTemplate' type='text/html'>
       <% $.each(labels, function(i, label) { 
-        var count = domain.unreadCount(label);
+        var count = label.UnreadCount;
         var classes = 'labelBox';
         var labelclass = 'labelName';
         var name = label.Title;
@@ -79,7 +79,7 @@
 
     <script id='feedli' type='text/html'>
       <span class='feedli_<%- feed.Id %> feedli<%
-        var unreadc = domain.unreadCount(feed);
+        var unreadc = feed.UnreadCount;
         if (unreadc > 0) print(' unread'); %>'
         >
         <% if (feed.IconUri) { %>

@@ -111,6 +111,7 @@ var domain = {
       return 0;
     });
     lablist = [domain.allList].concat(lablist);
+    domain.updateLabelUnreadCounts(lablist);
 
     domain.uncategorizedList = {
       Title: 'Uncategorized',
@@ -153,6 +154,7 @@ var domain = {
       });
       util.sortArticles(feed.Articles);
     }
+    feed.UnreadCount = domain.unreadCount(feed);
     if (sub && sub.Title) {
       feed.Title = sub.Title;
     }
@@ -250,8 +252,20 @@ var domain = {
     domain.buildLabels();
   },
 
+  updateLabelUnreadCounts: function(labels) {
+    $.each(labels, function(i, label) {
+      var unread = 0;
+      $.each(label.Feeds, function(j, feed) {
+        unread += feed.UnreadCount;
+      });
+      label.UnreadCount = unread;
+    })
+  },
+
   markRead: function(article) {
     article.IsRead = true;
+    article.Feed.UnreadCount--;
+    domain.updateLabelUnreadCounts(domain.labels);
     domain.getSubscription(article.Feed.Id).ReadArticles.push(article.Id);
     $.ajax('/Feeds/MarkRead', {
       dataType: 'json',
@@ -339,21 +353,29 @@ var domain = {
         }
       }
     }
-    if (index < 0 || index >= label.Feeds.length) {
-      console.log('got index ' + index + ' which is out of bounds')
-      domain._moveLabel(offset);
-      return;
-    }
-    var f = label.Feeds[index];
-    ui.showFeed(f.Id, label.Id);
-    if (f.Articles.length) {
+    while (true) {
+      if (index < 0 || index >= label.Feeds.length) {
+        console.log('got index ' + index + ' which is out of bounds')
+        domain._moveLabel(offset);
+        return;
+      }
+      var f = label.Feeds[index];
+      if (f.UnreadCount == 0 && ui.showingUnreadOnly) {
+        index += offset;
+        continue;
+      }
+      ui.showFeed(f.Id, label.Id);
       var ai = (offset < 0) ? f.Articles.length - 1 : 0;
       while (ai >= 0
           && ai < f.Articles.length
-          && !ui.isArticleVisible(f.Articles[ai])) {
+          && (f.Articles[ai].IsRead || !ui.showingUnreadOnly)) {
         ai += offset;
       }
-      ui.showArticle(f, f.Articles[ai].Id);
+      var art = f.Articles[ai];
+      if (art) {
+        ui.showArticle(f, f.Articles[ai].Id);
+      }
+      return;
     }
   },
 
@@ -412,9 +434,9 @@ var domain = {
     domain.currentArticle = article;
     if (!article.IsRead) {
       domain.markRead(article);
+      ui.displayFeeds();
+      ui.updateTitle();
     } 
-    ui.displayFeeds();
-    ui.updateTitle();
   },
   
   initialize: function() {
@@ -629,7 +651,6 @@ var ui = {
   },
 
   selected: function(query) {
-    console.log('selecting ' + query);
     $('.labelName').removeClass('selectedItem');
     $('.feedRow').removeClass('selectedItem');
     $('.feedli').removeClass('selectedItem');
@@ -933,7 +954,7 @@ var ui = {
       window.document.title = 'Pierce RSS Reader';
       return;
     }
-    var unread = domain.unreadCount(f);
+    var unread = f.UnreadCount;
     var topic = f.Title;
     if (unread) {
       window.document.title = topic + ' (' + unread + ') - Pierce RSS Reader';

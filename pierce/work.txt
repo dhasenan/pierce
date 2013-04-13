@@ -88,6 +88,8 @@ Bugs:
   * Unsubscribing from a feed doesn't clear its articles from the article list.
   * Article nav shortcuts don't ensure the selected article is visible when moving between feeds
     And js errors
+  * Article nav is terribly slow.
+    It's noticeable.
 
 
 Ugly:
