@@ -22,7 +22,9 @@
         var labelclass = 'labelName';
         var name = label.Title;
         if (ui.isExpanded(label.Id)) classes += ' expanded'; else classes += ' collapsed';
-        if (ui.currentLabel && label.Id == ui.currentLabel.Id) labelclass += ' selectedItem';
+        if (ui.currentLabel && label.Id == ui.currentLabel.Id && !ui.currentFeed) {
+          labelclass += ' selectedItem';
+        }
         if (count > 0) {
           labelclass += ' unread';
           name += ' (' + count + ')';
@@ -54,7 +56,14 @@
 
     <script id='feedlistTemplate' type='text/html'>
       <% $.each(feeds, function(i, feed) { %>
-        <div class='feedRow feedRow_<%= feed.Id %>'
+        <div class='feedRow feedRow_<%= feed.Id %> lf_<%= feed.Id %><%= labelId %><%
+          if (ui.currentLabel
+              && ui.currentLabel.Id == labelId
+              && ui.currentFeed
+              && ui.currentFeed.Id == feed.Id) {
+            print(' selectedItem'); 
+          }
+          %>'
           onclick='ui.showFeed("<%= feed.Id %>", "<%= labelId %>")'>
           <span style='float: left; overflow: hidden; text-overflow: ellipsis; width: 90%'>
             <%= ui.template('feedli', { feed: feed }) %>
@@ -71,14 +80,12 @@
     <script id='feedli' type='text/html'>
       <span class='feedli_<%- feed.Id %> feedli<%
         var unreadc = domain.unreadCount(feed);
-        if (unreadc > 0) print(' unread');
-        if (ui.currentFeed && ui.currentFeed.Id == feed.Id) {
-          print(' selectedItem');
-        } %>'>
+        if (unreadc > 0) print(' unread'); %>'
+        >
         <% if (feed.IconUri) { %>
-          <img style='height: 16px; width: 16px;' src='<%- feed.IconUri %>'></img>
+          <img style='height: 16px; width: 16px;' src='<%- feed.IconUri %>' />
         <% } else { %>
-          <img style='height: 16px; width: 16px;' src='/Content/no-icon.png'></img>
+          <img style='height: 16px; width: 16px;' src='/Content/no-icon.png' />
         <% } %>
         <%-  feed.Title  %>
         <%
@@ -101,7 +108,7 @@
         id='<%- util.articleId(article) %>'
         class='articleli <%- article.IsRead ? "read" : "unread" %>'
         onclick='ui.showArticle("<%= article.Feed.Id %>", "<%= article.Id %>");'>
-        <img style='height: 16px; width: 16px;' src='<%= ui.iconUrl(article.Feed) %>'></img>
+        <img style='height: 16px; width: 16px;' src='<%= ui.iconUrl(article.Feed) %>' />
         <%- ui.fmtDate(article.PublishDate) %>
         <%- article.Title %>
       </div>
@@ -109,7 +116,7 @@
 
     <script id='articlefull' type='text/html'>
       <div>
-        <img style='float: left' src='<%= feed.ImageUri %>'></img>
+        <img style='float: left' src='<%= feed.ImageUri %>' />
         <h3><a href="<%= article.Link %>"><%- article.Title %></a> - <%- feed.Title %></h3>
         <div><%- ui.fmtDate(article.PublishDate) %>
           <% if (ui.authors(article)) { %> -- by <%= ui.authors(article) %><% } %></div>

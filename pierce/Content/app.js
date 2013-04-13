@@ -319,9 +319,9 @@ var domain = {
     }
   },
 
-  _moveFeed: function(offset, startFeed) {
+  _moveFeed: function(offset, movingLabel) {
     var currentFeed = ui.currentFeed;
-    if (!currentFeed) {
+    if (!currentFeed && !movingLabel) {
       domain._moveLabel(offset);
       return;
     }
@@ -330,33 +330,64 @@ var domain = {
       label = domain.allList;
     }
     // We *need* to track what label we're in. This is going to go in a strange order.
-    for (var i = 0; i < label.Feeds.length; i++) {
-      if (label.Feeds[i].Id == currentFeed.Id) {
-        var index = i + offset;
-        if (index < 0 || index >= label.Feeds.length) {
-          domain._moveLabel(offset);
+    var index = offset < 0 ? label.Feeds.length - 1 : 0;
+    if (currentFeed) {
+      for (var i = 0; i < label.Feeds.length; i++) {
+        if (label.Feeds[i].Id == currentFeed.Id) {
+          index = i + offset;
+          break;
+        }
+      }
+    }
+    if (index < 0 || index >= label.Feeds.length) {
+      console.log('got index ' + index + ' which is out of bounds')
+      domain._moveLabel(offset);
+      return;
+    }
+    var f = label.Feeds[index];
+    ui.showFeed(f.Id, label.Id);
+    if (f.Articles.length) {
+      var ai = (offset < 0) ? f.Articles.length - 1 : 0;
+      while (ai >= 0
+          && ai < f.Articles.length
+          && !ui.isArticleVisible(f.Articles[ai])) {
+        ai += offset;
+      }
+      ui.showArticle(f, f.Articles[ai].Id);
+    }
+  },
+
+  _moveLabel: function(offset) {
+    if (!ui.currentLabel) {
+      ui.showLabel(domain.allList);
+      return;
+    }
+    var moveFeed = ui.currentFeed != null;
+    var curr = ui.currentLabel.Id;
+    for (var i = 0; i < domain.labels.length; i++) {
+      if (curr == domain.labels[i].Id) {
+        console.log('starting label ' + i);
+        var k = i + offset;
+        while (k >= 0 && k < domain.labels.length && !domain.labels[k].Articles) {
+          console.log('skipping label ' + k);
+          k += offset;
+        }
+        if (k < 0 || k >= domain.labels.length) {
+          console.log('got too far; quitting');
           return;
-        } else {
-          var f = label.Feeds[index];
-          ui.showFeed(f.Id);
-          if (f.Articles.length) {
-            var ai = (offset < 0) ? f.Articles.length - 1 : 0;
-            while (ai >= 0
-                && ai < f.Articles.length
-                && !ui.isArticleVisible(f.Articles[ai])) {
-              ai += offset;
-            }
-            ui.showArticle(f, f.Articles[ai].Id);
-          } else {
-          }
+        }
+        var label = domain.labels[k];
+        ui.showLabel(label.Id);
+        if (!ui.isExpanded(label.Id)) {
+          ui.toggleExpanded(label.Id);
+        }
+        if (moveFeed) {
+          console.log('okay, moving feed');
+          domain._moveFeed(offset, true);
         }
         return;
       }
     }
-    domain._moveLabel(offset);
-  },
-
-  _moveLabel: function(offset) {
     console.log('YOLO');
   },
 
@@ -576,7 +607,8 @@ var ui = {
     if (!ui.currentFeed && !ui.currentLabel) {
       ui.currentLabel = domain.allLabel;
     }
-    $('.feedList .content').html(ui.template('labelListTemplate', {labels: domain.labels}));
+    var contents = ui.template('labelListTemplate', {labels: domain.labels});
+    $('.feedList .content').html(contents);
     ui.updateTitle();
   },
 
@@ -617,7 +649,7 @@ var ui = {
     ui.currentLabel = domain.getLabel(labelId);
     if (feed.Articles)
       ui.showArticles(feed.Articles);
-    ui.selected('#labelContent_' + labelId + ' .feedli_' + feedId);
+    ui.selected('.lf_' + feedId + labelId);
   },
 
   showArticles: function(articles) {
