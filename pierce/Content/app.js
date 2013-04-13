@@ -810,7 +810,7 @@ var ui = {
     // or at least simpler, like http://www.methvin.com/splitter/
     ui.bodyLayout = $('#mainPanel').layout({
       defaults: {
-        applyDefaultStyles: true,
+        applyDefaultStyles: false,
         resizable: true,
         closable: false,
         slidable: true,

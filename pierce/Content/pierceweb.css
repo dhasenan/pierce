@@ -115,3 +115,11 @@ a {
   text-decoration: none;
 }
 
+.content {
+  overflow: auto;
+  padding: 0.4em;
+}
+
+.pane {
+  border: 1px solid gray;
+}
