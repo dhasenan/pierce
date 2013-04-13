@@ -818,15 +818,19 @@ var ui = {
         spacing_open: 4,
         spacing_closed: 4
       },
-      south: {
-        paneSelector: '.articleView',
-        size: 400,
-      },
       west: {
         paneSelector: '.feedList'
       },
       center: {
-        paneSelector: '.articleList'
+        paneSelector: '#mainPanelCenter',
+        childOptions: {
+          center: {
+            paneSelector: '#articleList'
+          },
+          south: {
+            paneSelector: '#articleView'
+          }
+        }
       }
     });
 

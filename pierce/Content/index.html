@@ -133,25 +133,28 @@
           style='color: black'>Settings</a></span>
     </div>
     <div id='mainPanel'>
-      <div id='articleView' caption='Current article' class='articleView pane'>
-        <div class='paneTitle' id='articleTitle'>Article</div>
-        <div class='content' id='articleContent' tabindex='-1'>
-          I need an article.
+      <div id='mainPanelCenter'>
+        <div id='articleList' caption='Articles' class='articleList pane ui-layout-center'>
+          <div class='paneTitle'>
+            <span>Articles</span>
+            <span style='float: right'>
+              <a id='toggleUnread' href='#' onclick='ui.toggleUnreadOnly()'>Unread</a>
+            </span>
+          </div>
+          <div class='content'>
+            A list of articles, natch.
+          </div>
         </div>
-      </div>
-      <div id='articleList' caption='Articles' class='articleList pane'>
-        <div class='paneTitle'>
-          <span>Articles</span>
-          <span style='float: right'>
-            <a id='toggleUnread' href='#' onclick='ui.toggleUnreadOnly()'>Unread</a>
-          </span>
-        </div>
-        <div class='content'>
-          A list of articles, natch.
+
+        <div id='articleView' caption='Current article' class='articleView pane ui-layout-south'>
+          <div class='paneTitle' id='articleTitle'>Article</div>
+          <div class='content' id='articleContent' tabindex='-1'>
+            I need an article.
+          </div>
         </div>
       </div>
 
-      <div id='feedList' caption='Feeds' class='feedList pane'>
+      <div id='feedList' caption='Feeds' class='feedList pane ui-layout-west'>
         <div class='paneTitle'>Feeds</div>
         <div class='content'>
           I need some feeds.

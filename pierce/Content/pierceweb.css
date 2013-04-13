@@ -115,11 +115,24 @@ a {
   text-decoration: none;
 }
 
+/* I don't rightly understand why the nested ones aren't acting like
+ * the non-nested one, but this seems to make everything happy.
+ */
 .content {
   overflow: auto;
   padding: 0.4em;
+  position: absolute;
+  top: 1.6em;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
+#feedList .content {
+  top: 0px;
 }
 
 .pane {
+  overflow: hidden;
   border: 1px solid gray;
 }

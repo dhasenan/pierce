@@ -53,6 +53,7 @@ DONE:
   * Look for favicons more thoroughly -- specify precise feed, look for site favicon
   * Logging
   * Integrate Castle Windsor
+  * Feed list going all the way to the bottom
 * Bugs:
   * Title doesn't update when reloading stuff (incl. read/unread count) from server (eg open in two
     locations)
@@ -73,7 +74,6 @@ DONE:
 	
 
 Personal:
-  * Feed list going all the way to the bottom
   * Save/restore expanded feeds
   * Change feed url?
     Youtube feeds specifically.
