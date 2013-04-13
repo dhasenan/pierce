@@ -325,15 +325,19 @@ var domain = {
       domain._moveLabel(offset);
       return;
     }
+    var label = ui.currentLabel;
+    if (!label) {
+      label = domain.allList;
+    }
     // We *need* to track what label we're in. This is going to go in a strange order.
-    for (var i = 0; i < domain.feeds.length; i++) {
-      if (domain.feeds[i].Id == currentFeed.Id) {
+    for (var i = 0; i < label.Feeds.length; i++) {
+      if (label.Feeds[i].Id == currentFeed.Id) {
         var index = i + offset;
-        if (index < 0 || index >= domain.feeds.length) {
+        if (index < 0 || index >= label.Feeds.length) {
           domain._moveLabel(offset);
           return;
         } else {
-          var f = domain.feeds[index];
+          var f = label.Feeds[index];
           ui.showFeed(f.Id);
           if (f.Articles.length) {
             var ai = (offset < 0) ? f.Articles.length - 1 : 0;
@@ -610,7 +614,7 @@ var ui = {
     var feed = domain.getFeed(feedId);
     if (!feed) return;
     ui.currentFeed = feed;
-    ui.currentLabel = null;
+    ui.currentLabel = domain.getLabel(labelId);
     if (feed.Articles)
       ui.showArticles(feed.Articles);
     ui.selected('#labelContent_' + labelId + ' .feedli_' + feedId);
