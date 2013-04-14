@@ -68,6 +68,9 @@ DONE:
     work
   * Article nav shortcuts don't pay attention to unread filtering
   * Article nav shortcuts don't move to next/previous label
+  * Article nav shortcuts don't ensure the selected article is visible when moving between feeds
+  * Article nav is terribly slow.
+  * URLs without a scheme specified result in an exception.
 * Ugly:
   * On load, all popups are briefly visible.
   * Reset scrolling for article area when switching articles
@@ -86,10 +89,7 @@ Bugs:
   * Adding a feed doesn't seem to update the feed list.
   * Clicking on articles whose feeds have been updated seems not to mark those articles as read
   * Unsubscribing from a feed doesn't clear its articles from the article list.
-  * Article nav shortcuts don't ensure the selected article is visible when moving between feeds
-    And js errors
-  * Article nav is terribly slow.
-    It's noticeable.
+  * Sessions are ephemeral and die whenever the server dies.
 
 
 Ugly:

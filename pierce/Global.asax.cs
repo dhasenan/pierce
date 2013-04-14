@@ -64,6 +64,9 @@ namespace pierce
                 Context.Response.AppendHeader("Access-Control-Allow-Headers", "Content-Type,Origin");
                 Context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
             };
+            this.Error += (sender, e) => {
+                logger.Error("Unhandled exception", Server.GetLastError());
+            };
         }
 
         public static MongoDatabase Cluster;

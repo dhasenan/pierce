@@ -24,7 +24,7 @@ namespace pierce
             _logger = logger;
         }
 
-        private Feed ReadRss(string pageUrl, HtmlNode link)
+        private Feed ReadRss(Uri pageUrl, HtmlNode link)
         {
             try
             {
@@ -36,7 +36,7 @@ namespace pierce
                 }
                 else
                 {
-                    feed.Uri = new Uri(new Uri(pageUrl), targetAttribute.Value);
+                    feed.Uri = new Uri(pageUrl, targetAttribute.Value);
                     // Some people in the wild use a "feed" scheme. IANA doesn't recognize this, though.
                     if (feed.Uri.Scheme == "feed")
                     {
@@ -66,7 +66,7 @@ namespace pierce
             }
         }
 
-        private void FindFeeds(HtmlDocument doc, string pageUrl, List<Feed> feeds, string type)
+        private void FindFeeds(HtmlDocument doc, Uri pageUrl, List<Feed> feeds, string type)
         {
             var rssLinks = doc.DocumentNode.SelectNodes(string.Format("//link[@type='{0}']", type));
             if (rssLinks != null)
@@ -84,14 +84,25 @@ namespace pierce
 
         public List<Feed> FromHtmlPage(string pageUrl)
         {
+            Uri uri;
+            if (pageUrl.StartsWith("feed://"))
+            {
+                pageUrl = "http" + pageUrl.Substring(4);
+            }
+            else if (!pageUrl.StartsWith("http"))
+            {
+                // We don't support gopher links.
+                pageUrl = "http://" + pageUrl;
+            }
+            uri = new Uri(pageUrl);
             var feeds = new List<Feed>();
-            var existing = Feed.ByUri(pageUrl);
+            var existing = Feed.ByUri(uri.ToString());
             if (existing != null)
             {
                 feeds.Add(existing);
                 return feeds;
             }
-            string text = _wget.Text(new Uri(pageUrl));
+            string text = _wget.Text(uri);
             if (text == null)
             {
                 return feeds;
@@ -103,8 +114,8 @@ namespace pierce
                 // rss feed definitely shouldn't parse as html
                 var doc = new HtmlDocument();
                 doc.LoadHtml(text);
-                FindFeeds(doc, pageUrl, feeds, "application/rss+xml");
-                FindFeeds(doc, pageUrl, feeds, "application/atom+xml");
+                FindFeeds(doc, uri, feeds, "application/rss+xml");
+                FindFeeds(doc, uri, feeds, "application/atom+xml");
             }
             catch
             {
@@ -113,7 +124,7 @@ namespace pierce
             try
             {
                 var feed = new Feed();
-                feed.Uri = new Uri(pageUrl);
+                feed.Uri = uri;
                 var xdoc = XDocument.Parse(text);
                 _parser.Read(feed, xdoc);
                 // This supercedes the html stuff, on the off chance someone put <link> elements in their feed.

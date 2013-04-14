@@ -314,7 +314,8 @@ var domain = {
         }
       }
       if (articleIndex === null) {
-        ui.showArticle(f, f.Articles[0].Id);
+        // No, really, what the hell?
+        domain._moveFeed(offset);
         return;
       }
       var index = articleIndex + offset;
@@ -745,7 +746,9 @@ var ui = {
       $('#toggleUnread').text('All');
       $('.read').hide();
     }
-    ui.showFeed(ui.currentFeed.Id);
+    if (ui.currentFeed) {
+      ui.showFeed(ui.currentFeed.Id);
+    }
   },
 
   addFeed: function() {
