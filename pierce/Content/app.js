@@ -774,14 +774,12 @@ var ui = {
             user.Subscriptions.push(sub);
           }
           var added = data['AddedFeed'];
+          ui.closeFeedPopup();
+          if (domain.getFeed(added.Id)) return;
           domain.mungeFeed(added);
-          $.each(added.Articles, function(i, art) {
-            console.log(typeof art.PublishDate);
-          });
           domain.realFeeds.push(added);
           domain.reloadFeedInfo();
           ui.displayFeeds();
-          ui.closeFeedPopup();
         } else {
           $('#multifeedOptions').empty();
           $('#addFeedUrl').val(data['DiscoveredFeeds'][0].Uri);

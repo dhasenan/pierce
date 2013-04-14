@@ -71,6 +71,7 @@ DONE:
   * Article nav shortcuts don't ensure the selected article is visible when moving between feeds
   * Article nav is terribly slow.
   * URLs without a scheme specified result in an exception.
+  * Subscribing to a feed when you're already subscribed: shows up twice in the feed list
 * Ugly:
   * On load, all popups are briefly visible.
   * Reset scrolling for article area when switching articles
