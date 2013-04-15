@@ -54,6 +54,8 @@ DONE:
   * Logging
   * Integrate Castle Windsor
   * Feed list going all the way to the bottom
+  * Save/restore expanded feeds
+  * Ajax loading gifs
 * Bugs:
   * Title doesn't update when reloading stuff (incl. read/unread count) from server (eg open in two
     locations)
@@ -72,6 +74,8 @@ DONE:
   * Article nav is terribly slow.
   * URLs without a scheme specified result in an exception.
   * Subscribing to a feed when you're already subscribed: shows up twice in the feed list
+  * Adding a feed doesn't seem to update the feed list.
+  * Auth tokens are ephemeral and die whenever the server dies.
 * Ugly:
   * On load, all popups are briefly visible.
   * Reset scrolling for article area when switching articles
@@ -80,17 +84,20 @@ DONE:
 	
 
 Personal:
-  * Save/restore expanded feeds
-  * Change feed url?
-    Youtube feeds specifically.
+  * Change feed url? Youtube feeds specifically.
+    Clone feed to new ID.
+    Update subscription to that ID.
+    Change URL.
   * Special youtube handling
+  * Mark unread
 
 
 Bugs:
-  * Adding a feed doesn't seem to update the feed list.
   * Clicking on articles whose feeds have been updated seems not to mark those articles as read
   * Unsubscribing from a feed doesn't clear its articles from the article list.
-  * Sessions are ephemeral and die whenever the server dies.
+  * Items removed from a feed (eg TB uploads a video, we see that, he removes it) still show up.
+    Mark articles as removed if they disappear from the feed while there are older articles still
+    there? Reflect that in the UI somehow?
 
 
 Ugly:
@@ -99,17 +106,18 @@ Ugly:
   * Menu icon is small, not really clear what it's for
   * Popup/icon theme doesn't mesh with rest of site
   * 'Uncategorized' shows up even when all feeds have labels.
+  * Ajax loading gifs are ugly
 
 
 Code quality:
   * Unify atom / rss parsing
   * Clean up ui/domain
+  * Switch layout state from cookie to local storage.
 
 
 Public launch:
   * Uncaught exceptions to SMTP appender
     log4net is configured at this point, but my ec2 instance isn't getting stuff to my gmail account
-  * Ajax loading gifs
   * OAuth
   * HTTPS
 	* Article search

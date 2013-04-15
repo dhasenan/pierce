@@ -144,3 +144,12 @@ a {
   overflow: hidden;
   border: 1px solid gray;
 }
+
+.ajaxLoader {
+  height: 100%;
+  float: left;
+}
+
+.ajaxLoader img {
+  vertical-align: middle;
+}

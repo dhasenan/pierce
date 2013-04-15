@@ -450,6 +450,7 @@ var domain = {
 var ui = {
   _expandedLabels: [],
   bodyLayout: null,
+  showingPopup: false,
 
   isExpanded: function(label) {
     return ui._expandedLabels.indexOf(label) >= 0;
@@ -466,6 +467,7 @@ var ui = {
       $('#labelBox_' + labelId).removeClass('collapsed');
       console.log('expanded ' + labelId);
     }
+    localStorage.expandedLabels = JSON.stringify({ labels: ui._expandedLabels });
   },
 
   closeFeedPopup: function() {
@@ -744,7 +746,7 @@ var ui = {
     } else {
       ui.showingUnreadOnly = true;
       $('#toggleUnread').text('All');
-      $('.read').hide();
+      $('.read:not(.selectedItem)').hide();
     }
     if (ui.currentFeed) {
       ui.showFeed(ui.currentFeed.Id);
@@ -852,6 +854,23 @@ var ui = {
   },
 
   initialize: function() {
+    // Set up ajax loaders.
+    $(document).ajaxStart(function() {
+      $('.ajaxLoader').show();
+      console.log('tried to show');
+    }).ajaxStop(function() {
+      $('.ajaxLoader').hide();
+      console.log('tried to hide');
+    });
+
+    // Load label expansion.
+    ui._expandedLabels = [];
+    var labelObj = localStorage.expandedLabels;
+    if (labelObj) {
+      ui._expandedLabels = JSON.parse(labelObj).labels;
+    }
+
+    // Set up main layout.
     $.layout.defaults.stateManagement = {
       enabled: true,
       autoSave: true,
@@ -892,12 +911,13 @@ var ui = {
       }
     });
 
+    // Some minor databinding stuff.
     $('#addFeedButton').click(ui.showAddFeedWindow);
     $('#multifeedOptions').change(function() {
       $('#addFeedUrl').val($('#multifeedOptions').val());
     });
+
     ui.setupKeybindings();
-    ui.showingPopup = false;
   },
 
   setupKeybindings: function() {
