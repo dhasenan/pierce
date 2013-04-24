@@ -23,24 +23,31 @@ namespace pierce
             var list = Pierce.Feeds.Find(Query.LT("NextRead", DateTime.UtcNow));
             foreach (var feed in list)
             {
-                foreach (var task in _tasks)
+                ExecuteSingle(feed);
+            }
+        }
+
+        private void ExecuteSingle(Feed feed)
+        {
+            foreach (var task in _tasks)
+            {
+                try
                 {
-                    try
+                    _logger.InfoFormat("running task {0} on feed {1}", task, feed);
+                    if (!task.Update(feed))
                     {
-                        _logger.InfoFormat("running task {0} on feed {1}", task, feed);
-                        if (!task.Update(feed))
-                        {
-                            break;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.ErrorFormat("failed to run task {0} on feed {1}", task, feed, ex);
-                        feed.Errors++;
-                        Pierce.Feeds.Save(feed);
+                        return;
                     }
                 }
+                catch (Exception ex)
+                {
+                    _logger.ErrorFormat("failed to run task {0} on feed {1}", task, feed, ex);
+                    feed.Errors++;
+                }
             }
+            feed.LastRead = DateTime.UtcNow;
+            feed.NextRead = feed.LastRead + feed.ReadInterval;
+            Pierce.Feeds.Save(feed);
         }
     }
 }
