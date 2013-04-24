@@ -100,6 +100,13 @@
     <Compile Include="Tasks\Wget.cs" />
     <Compile Include="Tasks\FeedParser.cs" />
     <Compile Include="Logging.cs" />
+    <Compile Include="Models\Chunk.cs" />
+    <Compile Include="Tasks\GarbageCollector.cs" />
+    <Compile Include="Tasks\IFeedTask.cs" />
+    <Compile Include="Tasks\ChunkShuffler.cs" />
+    <Compile Include="Tasks\FeedIconFinder.cs" />
+    <Compile Include="Tasks\FeedMaintenance.cs" />
+    <Compile Include="Tasks\FeedChunkUpgrader.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Web.config" />

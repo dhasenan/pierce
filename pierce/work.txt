@@ -90,6 +90,27 @@ Personal:
     Change URL.
   * Special youtube handling
   * Mark unread
+  * Mark all|selected read
+  * Reduce initialization network usage
+    I've jumped us past the one hurdle of loading all feeds in one request, but we still need to
+      load everything in order to render the UI initially.
+    Send less data.
+      Trim each feed to entries from the past 60 days, up to 100; or the past 25 articles from all
+      time (for instance). Maybe give an option to fetch older data (up to 1 year / 1000 articles?).
+    Send more compact data.
+      Gzip it.
+      Remove unused fields -- though the major component is the description, which we can't fully
+      eliminate.
+    Send less data initially.
+      Send a list of everything but the articles at first, and add in the unread count.
+      Click on something, you get it loaded from the server.
+  * Reduce ongoing network usage.
+    Right now, it only reloads stuff that's been reread recently. That means an hour sitting idle
+    will reload all your feeds with default settings. But a lot of feeds only get new articles once
+    a day, or less often.
+    * Only return the stuff that's newer than the last article you have.
+    * Only update the minimum necessary to render the current view. Server-side maintenance of
+      unread counts, for instance.
 
 
 Bugs:
@@ -115,12 +136,11 @@ Code quality:
   * Switch layout state from cookie to local storage.
 
 
-Public launch:
+Public launch needs:
   * Uncaught exceptions to SMTP appender
     log4net is configured at this point, but my ec2 instance isn't getting stuff to my gmail account
   * OAuth
   * HTTPS
-	* Article search
 	* Authentication double-check
   * Error handling / feedback
     * Butter bar!
@@ -129,30 +149,13 @@ Public launch:
     * Usage
       * Help menu
       * Butter bar stuff
+
+
+Public wants:
+	* Article search
   * Nicer timespan editor than 'X minutes'
   * Update article list after updating feeds / subscribing (check)
   * Mobile-optimized site
-  * Mark all|selected read
-  * Reduce initialization network usage
-    I've jumped us past the one hurdle of loading all feeds in one request, but we still need to
-      load everything in order to render the UI initially.
-    Send less data.
-      Trim each feed to entries from the past 60 days, up to 100; or the past 25 articles from all
-      time (for instance). Maybe give an option to fetch older data (up to 1 year / 1000 articles?).
-    Send more compact data.
-      Gzip it.
-      Remove unused fields -- though the major component is the description, which we can't fully
-      eliminate.
-    Send less data initially.
-      Send a list of everything but the articles at first, and add in the unread count.
-      Click on something, you get it loaded from the server.
-  * Reduce ongoing network usage.
-    Right now, it only reloads stuff that's been reread recently. That means an hour sitting idle
-    will reload all your feeds with default settings. But a lot of feeds only get new articles once
-    a day, or less often.
-    * Only return the stuff that's newer than the last article you have.
-    * Only update the minimum necessary to render the current view. Server-side maintenance of
-      unread counts, for instance.
 
 
 Dissemination:

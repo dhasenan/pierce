@@ -13,6 +13,8 @@ using System.Reflection;
 using Castle.MicroKernel;
 using Castle.Windsor.Installer;
 using Castle.Facilities.Logging;
+using Castle.MicroKernel.Context;
+using Castle.Core;
 
 namespace pierce
 {
@@ -38,6 +40,32 @@ namespace pierce
                 throw new HttpException(404, string.Format("The controller for path '{0}' could not be found.", requestContext.HttpContext.Request.Path));
             }
             return (IController)kernel.Resolve(controllerType);
+        }
+    }
+
+    public class ArrayResolver : ISubDependencyResolver
+    {
+        private readonly IKernel kernel;
+
+        public ArrayResolver(IKernel kernel)
+        {
+            this.kernel = kernel;
+        }
+
+        public object Resolve(CreationContext context, ISubDependencyResolver parentResolver, 
+                              ComponentModel model,
+                              DependencyModel dependency)
+        {
+            return kernel.ResolveAll(dependency.TargetType.GetElementType(), null);
+        }
+
+        public bool CanResolve(CreationContext context, ISubDependencyResolver parentResolver, 
+                              ComponentModel model,
+                              DependencyModel dependency)
+        {
+            return dependency.TargetType != null && 
+                dependency.TargetType.IsArray && 
+                dependency.TargetType.GetElementType().IsInterface;
         }
     }
 
@@ -72,8 +100,10 @@ namespace pierce
         public static MongoDatabase Cluster;
 
         public static MongoCollection<User> Users { get { return Cluster.GetCollection<User>("users"); } }
-
+        
         public static MongoCollection<Feed> Feeds { get { return Cluster.GetCollection<Feed>("feeds"); } }
+
+        public static MongoCollection<Chunk> Chunks { get { return Cluster.GetCollection<Chunk>("chunks"); } }
 
         private static void OpenDatabase()
         {
@@ -85,7 +115,7 @@ namespace pierce
 
         private static void StartPeriodicTasks()
         {
-            var feedReader = Container.Resolve<ReadFeeds>();
+            var feedReader = Container.Resolve<FeedMaintenance>();
             new Thread(() => 
             {
                 while (true)
@@ -112,11 +142,9 @@ namespace pierce
                 logger.Info("setting up windsor");
                 Container = new WindsorContainer();
                 Container.Kernel.Resolver.AddSubResolver(new LoggerResolver(new MyLoggerFactory()));
-                Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController))).BasedOn<IController>().WithServiceSelf().LifestyleTransient());
-                Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController))).Where(x => !typeof(IController).IsAssignableFrom(x)).WithServiceSelf());
-                foreach (var handler in Container.Kernel.GetAssignableHandlers(typeof(object))) {
-                    logger.DebugFormat("{0}: {1}", handler.ComponentModel.Services.FirstOrDefault(), handler.ComponentModel.Implementation);
-                }
+                Container.Kernel.Resolver.AddSubResolver(new ArrayResolver(Container.Kernel));
+                Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController))).Pick().Unless(x => typeof(IFeedTask).IsAssignableFrom(x)).WithServiceSelf().LifestyleTransient());
+                Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(ChunkShuffler))).BasedOn<IFeedTask>().WithServiceFirstInterface());
                 ControllerBuilder.Current.SetControllerFactory(new WindsorControllerFactory(Container.Kernel));
                 logger.Info("registering areas and routes");
                 AreaRegistration.RegisterAllAreas();

@@ -159,7 +159,7 @@ namespace pierce
                 Response.StatusCode = 404;
                 return Json(new { Error = "Feed not found" });
             }
-            _reader.Read(feed);
+            _reader.Update(feed);
             Pierce.Feeds.Save(feed);
             return Json(feed);
         }
@@ -192,6 +192,12 @@ namespace pierce
         public ActionResult Get(string id)
         {
             return Json(new { Feed = Feed.ById(id) });
+        }
+
+        public ActionResult GetChunk(string feedId, string chunkId)
+        {
+            var chunk = Chunk.ById(chunkId);
+            return Json(new { Chunk = chunk });
         }
 
         public ActionResult All()

@@ -13,7 +13,8 @@ namespace pierce
         public static readonly TimeSpan MaxUpdateInterval = TimeSpan.FromDays(14);
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id;
+        public string
+            Id;
         
         // URL for the RSS feed -- where we get the actual XML document.
         public Uri Uri;
@@ -29,10 +30,13 @@ namespace pierce
         public string ImageTitle;
         public ICollection<Article> Articles = new HashSet<Article>();
         public ICollection<Author> Authors = new HashSet<Author>();
+        public ICollection<string> ChunkIds = new HashSet<string>();
+        public Chunk Head = new Chunk();
         public DateTime LastRead = DateTime.MinValue;
         public TimeSpan ReadInterval = TimeSpan.FromHours(1);
         public DateTime NextRead = DateTime.MinValue;
         public int Errors = 0;
+        public int ArticleCount = 0;
         
         public Article GetArticle(string uniqueId)
         {
@@ -41,21 +45,24 @@ namespace pierce
 
         public void AddArticle(Article article)
         {
-            if (!string.IsNullOrWhiteSpace(article.UniqueId))
+            if (article.PublishDate < Head.Articles.Select(x => x.PublishDate).Min())
             {
-                foreach (var existing in Articles.Where(x => x.UniqueId == article.UniqueId).ToList())
-                {
-                    Articles.Remove(existing);
-                    article.Id = existing.Id;
-                    article.PublishDate = existing.PublishDate;
-                }
+                return;
             }
-            Articles.Add(article);
+            foreach (var existing in Head.Articles.Where(x => x.UniqueId == article.UniqueId).ToList())
+            {
+                ArticleCount--;
+                Head.Articles.Remove(existing);
+                article.Id = existing.Id;
+                article.PublishDate = existing.PublishDate;
+            }
+            ArticleCount++;
+            Head.Articles.Add(article);
         }
 
         public Feed ToHeader()
         {
-            var header = (Feed) this.MemberwiseClone();
+            var header = (Feed)this.MemberwiseClone();
             header.Articles = null;
             return header;
         }
