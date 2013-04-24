@@ -159,7 +159,7 @@ namespace pierce
                 Response.StatusCode = 404;
                 return Json(new { Error = "Feed not found" });
             }
-            _reader.Update(feed);
+            _reader.Read(feed);
             Pierce.Feeds.Save(feed);
             return Json(feed);
         }

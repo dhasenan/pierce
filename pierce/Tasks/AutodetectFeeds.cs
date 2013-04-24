@@ -137,7 +137,9 @@ namespace pierce
 
             if (feeds.Count == 1 && feeds [0].Articles.Count == 0)
             {
-                _reader.Update(feeds [0]);
+                var f = feeds [0];
+                _reader.Read(f);
+                Pierce.Feeds.Save(f);
             }
             return feeds;
         }

@@ -107,6 +107,7 @@
     <Compile Include="Tasks\FeedIconFinder.cs" />
     <Compile Include="Tasks\FeedMaintenance.cs" />
     <Compile Include="Tasks\FeedChunkUpgrader.cs" />
+    <Compile Include="Tasks\ReadFeedsTask.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Web.config" />

@@ -3,7 +3,7 @@ using Castle.Core.Logging;
 
 namespace pierce
 {
-    public class ReadFeeds : IFeedTask
+    public class ReadFeeds
     {
         private readonly ILogger _logger;
         private readonly Wget _wget;
@@ -16,15 +16,12 @@ namespace pierce
             _logger = logger;
         }
 
-        public float Priority { get { return 500; } }
-
-        public bool Update(Feed feed)
+        public void Read(Feed feed)
         {
             _logger.InfoFormat("reading feed {0} from {1}", feed.Id, feed.Uri);
             var xml = _wget.Xml(feed.Uri);
             _parser.Read(feed, xml);
             Pierce.Feeds.Save(feed);
-            return true;
         }
     }
 }
