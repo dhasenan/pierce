@@ -181,42 +181,25 @@ var domain = {
   },
 
   refreshFeeds: function() {
-    $.ajax('/Feeds/List', {
-      dataType: 'json',
-      success: function(data, statusText, xhr) {
-        var updatesPending = 0;
-        var feeds = data['Feeds'];
-        // We just got the new canonical list of feeds.
-        // We're going to replace our existing list.
-        // But the new stuff doesn't include the article lists for any of these.
-        // We'll determine which ones might have updated since last time and
-        // reload them from the source. For the remainder, we'll just copy the
-        // articles from what we already have.
-        $.each(feeds, function(i, feed) {
-          domain.mungeFeed(feed);
-          // This is O(n**2) because I'm lazy.
-          var existing = domain.getFeed(feed.Id);
-          if (existing && existing.LastRead == feed.LastRead) {
-            feed.Articles = existing.Articles;
-          } else {
-            updatesPending++;
-            $.ajax('/Feeds/Get', {
-              data: {
-                'id': feed.Id
-              },
-              success: function(data) {
-                feeds[i] = data['Feed'];
-                domain.mungeFeed(feeds[i]);
-                updatesPending--;
-                if (updatesPending <= 0) {
-                  domain.realFeeds = feeds;
-                  domain.reloadFeedInfo();
-                }
-              }
-            });
+    var updatesPending = 0;
+    var feeds = [];
+    $.each(user.Subscriptions, function(i, sub) {
+      feeds.push(null);
+      updatesPending++;
+      $.ajax('/Feeds/Get', {
+        data: {
+          'id': sub.FeedId
+        },
+        success: function(data) {
+          feeds[i] = data['Feed'];
+          domain.mungeFeed(feeds[i]);
+          updatesPending--;
+          if (updatesPending <= 0) {
+            domain.realFeeds = feeds;
+            domain.reloadFeedInfo();
           }
-        });
-      }
+        }
+      });
     });
   },
 
