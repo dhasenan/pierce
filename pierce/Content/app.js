@@ -184,13 +184,21 @@ var domain = {
     var feeds = [];
     $.each(user.Subscriptions, function(i, sub) {
       feeds.push(null);
+      var existing = domain.getFeed(sub.FeedId);
+      var lastRead = existing ? existing.LastRead.toISOString() : null;
       updatesPending++;
       $.ajax('/Feeds/Get', {
         data: {
-          'id': sub.FeedId
+          'id': sub.FeedId,
+          'lastRead': lastRead
         },
         success: function(data) {
           feeds[i] = data['Feed'];
+          if (data['UpToDate']) {
+            // already munged
+            feeds[i] = existing;
+            return;
+          }
           domain.mungeFeed(feeds[i]);
           updatesPending--;
           if (updatesPending <= 0) {

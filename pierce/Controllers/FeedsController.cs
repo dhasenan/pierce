@@ -174,9 +174,18 @@ namespace pierce
             return Json(new { Success = true });
         }
 
-        public ActionResult Get(string id)
+        public ActionResult Get(string id, string lastRead)
         {
-            return Json(new { Feed = Feed.ById(id) });
+            var feed = Feed.ById(id);
+            if (!string.IsNullOrEmpty(lastRead))
+            {
+                DateTime read;
+                if (DateTime.TryParse(lastRead, out read) && feed.LastRead <= read)
+                {
+                    return Json(new { UpToDate = true });
+                }
+            }
+            return Json(new { Feed = feed });
         }
 
         public ActionResult GetChunk(string feedId, string chunkId)

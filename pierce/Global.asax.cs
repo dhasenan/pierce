@@ -116,7 +116,7 @@ namespace pierce
         private static void StartPeriodicTasks()
         {
             var feedReader = Container.Resolve<FeedMaintenance>();
-            new Thread(() => 
+            var thread = new Thread(() => 
             {
                 while (true)
                 {
@@ -131,7 +131,9 @@ namespace pierce
                     Thread.Sleep(TimeSpan.FromSeconds(60));
                 }
             }
-            ).Start();
+            );
+            thread.Priority = ThreadPriority.Lowest;
+            thread.Start();
         }
 
         protected void Application_Start()

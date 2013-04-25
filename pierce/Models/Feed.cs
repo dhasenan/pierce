@@ -13,8 +13,7 @@ namespace pierce
         public static readonly TimeSpan MinUpdateInterval = TimeSpan.FromMinutes(15);
         public static readonly TimeSpan MaxUpdateInterval = TimeSpan.FromDays(14);
         [BsonId, BsonRepresentation(BsonType.ObjectId)]
-        public string
-            Id;
+        public string Id;
         public string HeadChunkId;
         
         // URL for the RSS feed -- where we get the actual XML document.
@@ -38,11 +37,9 @@ namespace pierce
         public int Errors = 0;
         public int ArticleCount = 0;
         [BsonIgnore]
-        private List<Chunk>
-            _chunkCache = new List<Chunk>();
+        private List<Chunk> _chunkCache = new List<Chunk>();
         [BsonIgnore]
-        private Chunk
-            _head;
+        private Chunk _head;
 
         // Deprecated.
         public Chunk Head;
@@ -124,13 +121,18 @@ namespace pierce
                 // Ensure we have an id that we can set for our chunks.
                 Pierce.Feeds.Save(this);
             }
+            // shouldn't happen...
+            if (_head != null && !_chunkCache.Contains(_head))
+            {
+                _chunkCache.Add(_head);
+            }
             foreach (var chunk in _chunkCache.Where(x => !x.Articles.Any()))
             {
                 ChunkIds.Remove(chunk.Id);
             }
             foreach (var chunk in _chunkCache.Where(x => x.Articles.Any()).OrderBy(x => x.Articles.First().PublishDate))
             {
-                Console.WriteLine("saving chunk {0}", chunk.Id);
+                Console.WriteLine("saving chunk {0} with {1} articles", chunk.Id, chunk.Articles.Count);
                 chunk.FeedId = this.Id;
                 chunk.Save();
                 if (!ChunkIds.Contains(chunk.Id))
