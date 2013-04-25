@@ -10,10 +10,13 @@ namespace pierce
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id;
+        public string
+            Id;
         public List<Article> Articles = new List<Article>();
         public string FeedId;
         public DateTime Start = DateTime.MinValue;
+        [BsonIgnore]
+        private Guid objectId = Guid.NewGuid();
 
         public Article GetArticle(string uniqueId)
         {
@@ -38,6 +41,7 @@ namespace pierce
                 article.PublishDate = existing.PublishDate;
             }
             Articles.Add(article);
+            article.ChunkId = Id;
             if (Articles.Any(x => x.PublishDate > article.PublishDate))
             {
                 Articles = Articles.OrderBy(x => x.PublishDate).ToList();
@@ -50,7 +54,16 @@ namespace pierce
             {
                 Start = Articles [0].PublishDate;
             }
+            bool noId = string.IsNullOrEmpty(Id);
             Pierce.Chunks.Save(this);
+            if (noId)
+            {
+                foreach (var article in Articles)
+                {
+                    article.ChunkId = Id;
+                }
+                Pierce.Chunks.Save(this);
+            }
         }
     }
 }

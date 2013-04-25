@@ -284,7 +284,6 @@ namespace pierce
                 }
                 headChunk.AddArticle(a);
             }
-            feed.CacheChunk(headChunk);
             _logger.DebugFormat("saved chunk {0}", headChunk.Id);
         }
     }

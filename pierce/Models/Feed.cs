@@ -12,10 +12,9 @@ namespace pierce
     {
         public static readonly TimeSpan MinUpdateInterval = TimeSpan.FromMinutes(15);
         public static readonly TimeSpan MaxUpdateInterval = TimeSpan.FromDays(14);
-
-
         [BsonId, BsonRepresentation(BsonType.ObjectId)]
-        public string Id;
+        public string
+            Id;
         public string HeadChunkId;
         
         // URL for the RSS feed -- where we get the actual XML document.
@@ -39,9 +38,11 @@ namespace pierce
         public int Errors = 0;
         public int ArticleCount = 0;
         [BsonIgnore]
-        private List<Chunk> _chunkCache = new List<Chunk>();
+        private List<Chunk>
+            _chunkCache = new List<Chunk>();
         [BsonIgnore]
-        private Chunk _head;
+        private Chunk
+            _head;
 
         // Deprecated.
         public Chunk Head;
@@ -51,25 +52,27 @@ namespace pierce
         {
             get
             {
+                if (_head != null)
+                {
+                    return _head;
+                }
                 if (string.IsNullOrEmpty(HeadChunkId))
                 {
                     HeadChunkId = ChunkIds.LastOrDefault();
                     if (string.IsNullOrEmpty(HeadChunkId))
                     {
-                        var headChunk = new Chunk { FeedId = Id };
-                        CacheChunk(headChunk);
-                        HeadChunkId = headChunk.Id;
-                        return headChunk;
+                        _head = new Chunk { FeedId = Id };
+                        CacheChunk(_head);
+                        return _head;
                     }
                 }
-                var chunk = GetChunk(HeadChunkId);
-                if (chunk == null)
+                _head = GetChunk(HeadChunkId);
+                if (_head == null)
                 {
-                    chunk = new Chunk { FeedId = Id };
-                    HeadChunk = chunk;
-                    return chunk;
+                    _head = new Chunk { FeedId = Id };
+                    CacheChunk(_head);
                 }
-                return chunk;
+                return _head;
             }
             set
             {
@@ -80,6 +83,9 @@ namespace pierce
 
             }
         }
+
+        [BsonIgnore]
+        public int CachedChunkCount { get { return _chunkCache.Count; } }
         
         public Article GetArticle(string uniqueId)
         {
@@ -104,6 +110,10 @@ namespace pierce
             {
                 throw new InvalidOperationException(string.Format("Attempted to re-cache cached chunk {0}", chunk.Id));
             }
+            if (_chunkCache.Contains(chunk))
+            {
+                throw new InvalidOperationException("Attempted to re-cache unsaved chunk");
+            }
             _chunkCache.Add(chunk);
         }
 
@@ -120,6 +130,7 @@ namespace pierce
             }
             foreach (var chunk in _chunkCache.Where(x => x.Articles.Any()).OrderBy(x => x.Articles.First().PublishDate))
             {
+                Console.WriteLine("saving chunk {0}", chunk.Id);
                 chunk.FeedId = this.Id;
                 chunk.Save();
                 if (!ChunkIds.Contains(chunk.Id))

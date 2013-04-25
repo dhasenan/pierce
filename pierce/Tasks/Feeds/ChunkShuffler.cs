@@ -23,6 +23,7 @@ namespace pierce
             // These have been added to the head chunk, which might be oversized.
             // Let's say they haven't been added to feed.Articles.
             var headChunk = feed.HeadChunk;
+            _logger.DebugFormat("incoming feed has {0} saved chunks and {1} cached chunks already", feed.ChunkIds.Count, feed.CachedChunkCount);
             while (headChunk.Articles.Count > MaxArticlesPerChunk)
             {
                 _logger.InfoFormat("reshuffling chunks for feed {0}", feed);
@@ -59,6 +60,7 @@ namespace pierce
             feed.ChunkIds.RemoveAll(x => missingChunks.Contains(x));
             feed.Articles = feed.Articles.OrderBy(x => x.PublishDate).Reverse().Take(MaxArticlesPerChunk).Reverse().ToList();
             feed.Save();
+            _logger.DebugFormat("outgoing feed has {0} saved chunks", feed.ChunkIds.Count);
             return true;
         }
     }

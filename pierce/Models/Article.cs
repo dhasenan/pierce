@@ -20,6 +20,7 @@ namespace pierce
         public ICollection<Author> Authors = new HashSet<Author>();
         public string UniqueId;
         public string Summary;
+        public string ChunkId;
         
         public override string ToString()
         {
