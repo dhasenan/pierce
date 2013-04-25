@@ -11,6 +11,15 @@ namespace pierce
 {
     public class Subscription
     {
+        public struct ReadArticle
+        {
+            public string ArticleId;
+            public DateTime ArticleDate;
+            public string ChunkId;
+        }
+
+        // For software upgrades. We want to be able to roll out upgrades as needed, 
+        public uint Version = 0;
         public Uri FeedUri;
 
         // User-set title, defaulting to feed title.
@@ -18,9 +27,10 @@ namespace pierce
         [BsonRepresentation(BsonType.ObjectId)]
         public string FeedId;
         public TimeSpan CheckInterval = TimeSpan.FromHours(1);
+        // TODO: remove ReadArticles
         public ICollection<string> ReadArticles = new HashSet<string>();
+        public IList<ReadArticle> ReadItems = new List<ReadArticle>();
         public ICollection<string> Labels = new HashSet<string>();
-        // TODO(dhasenan) how many historical ones to keep, how old in the past, etc
 
         public void Read(string article)
         {

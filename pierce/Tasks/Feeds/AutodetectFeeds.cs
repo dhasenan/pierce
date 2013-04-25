@@ -139,7 +139,7 @@ namespace pierce
             {
                 var f = feeds [0];
                 _reader.Read(f);
-                Pierce.Feeds.Save(f);
+                f.Save();
             }
             return feeds;
         }

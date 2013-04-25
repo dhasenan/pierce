@@ -27,7 +27,7 @@ namespace pierce
             }
         }
 
-        private void ExecuteSingle(Feed feed)
+        public void ExecuteSingle(Feed feed)
         {
             foreach (var task in _tasks)
             {
@@ -41,13 +41,13 @@ namespace pierce
                 }
                 catch (Exception ex)
                 {
-                    _logger.ErrorFormat("failed to run task {0} on feed {1}", task, feed, ex);
+                    _logger.ErrorFormat("failed to run task {0} on feed {1}: {2}", task, feed, ex);
                     feed.Errors++;
                 }
             }
             feed.LastRead = DateTime.UtcNow;
             feed.NextRead = feed.LastRead + feed.ReadInterval;
-            Pierce.Feeds.Save(feed);
+            feed.Save();
         }
     }
 }

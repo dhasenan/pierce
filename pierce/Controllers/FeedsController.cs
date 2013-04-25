@@ -12,9 +12,9 @@ namespace pierce
     public class FeedsController : BaseController
     {
         AutodetectFeeds _detector;
-        ReadFeeds _reader;
+        FeedMaintenance _reader;
 
-        public FeedsController(AutodetectFeeds detector, ReadFeeds reader)
+        public FeedsController(AutodetectFeeds detector, FeedMaintenance reader)
         {
             _detector = detector;
             _reader = reader;
@@ -51,7 +51,7 @@ namespace pierce
                     sub.Title = title;
                 }
                 Pierce.Users.Save(user);
-                Pierce.Feeds.Save(f);
+                f.Save();
                 return Json(new { FoundFeeds = true, AddedFeed = f, Subscription = sub });
             }
             if (feeds.Count > 1)
@@ -129,7 +129,7 @@ namespace pierce
             {
                 feed.ReadInterval = sub.CheckInterval;
                 feed.NextRead = feed.LastRead + feed.ReadInterval;
-                Pierce.Feeds.Save(feed);
+                feed.Save();
             }
             if (title != feed.Title)
             {
@@ -159,8 +159,7 @@ namespace pierce
                 Response.StatusCode = 404;
                 return Json(new { Error = "Feed not found" });
             }
-            _reader.Read(feed);
-            Pierce.Feeds.Save(feed);
+            _reader.ExecuteSingle(feed);
             return Json(feed);
         }
 
@@ -173,20 +172,6 @@ namespace pierce
             sub.Read(articleId);
             Pierce.Users.Save(user);
             return Json(new { Success = true });
-        }
-
-        public ActionResult List()
-        {
-            var user = GetUser();
-            if (user == null)
-                return Json(new {Error = "you are not logged in"});
-            var feeds = new List<Feed>();
-            foreach (var sub in user.Subscriptions)
-            {
-                feeds.Add(Feed.ById(sub.FeedId));
-            }
-            feeds = feeds.Where(x => x != null).Select(x => x.ToHeader()).ToList();
-            return Json(new { Feeds = feeds });
         }
 
         public ActionResult Get(string id)

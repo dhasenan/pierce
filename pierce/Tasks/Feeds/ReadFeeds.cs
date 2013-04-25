@@ -21,7 +21,6 @@ namespace pierce
             _logger.InfoFormat("reading feed {0} from {1}", feed.Id, feed.Uri);
             var xml = _wget.Xml(feed.Uri);
             _parser.Read(feed, xml);
-            Pierce.Feeds.Save(feed);
         }
     }
 }

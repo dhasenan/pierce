@@ -1,0 +1,6 @@
+test-results
+pierce/pierce.log*
+pierce/bin
+pierce.userprefs
+pierce.test/bin
+pierce.test/test-results

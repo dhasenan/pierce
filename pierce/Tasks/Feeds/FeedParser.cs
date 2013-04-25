@@ -12,7 +12,6 @@ namespace pierce
     {
         ILogger _logger;
 
-
         public FeedParser(ILogger logger)
         {
             _logger = logger;
@@ -177,15 +176,7 @@ namespace pierce
             ElemLink(xfeed, atom + "logo", v => feed.LogoUri = v);
             ReadAuthors(xfeed, "author", feed.Authors);
             ReadAuthors(xfeed, "contributor", feed.Authors);
-            foreach (var xentry in xfeed.Elements(atom + "entry"))
-            {
-                var article = ReadArticle(xentry);
-                if (article.UniqueId == null)
-                {
-                    article.UniqueId = article.Link.ToString();
-                }
-                feed.AddArticle(article);
-            }
+            ReadArticles(feed, xfeed.Elements(atom + "entry"));
         }
 
         private Article ReadArticle(XElement xentry)
@@ -278,15 +269,23 @@ namespace pierce
                 );
                 ElemLink(img, "link", v => feed.ImageLinkTarget = v);
             }
-            foreach (var item in channel.Elements("item").AsEnumerable())
+            ReadArticles(feed, channel.Elements("item").AsEnumerable());
+        }
+
+        private void ReadArticles(Feed feed, IEnumerable<XElement> elements)
+        {
+            var headChunk = feed.HeadChunk;
+            foreach (var item in elements)
             {
                 var a = ReadArticle(item);
                 if (a.UniqueId == null)
                 {
                     a.UniqueId = a.Link.ToString();
                 }
-                feed.AddArticle(a);
+                headChunk.AddArticle(a);
             }
+            feed.CacheChunk(headChunk);
+            _logger.DebugFormat("saved chunk {0}", headChunk.Id);
         }
     }
 }

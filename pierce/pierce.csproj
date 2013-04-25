@@ -80,34 +80,38 @@
     <Folder Include="Scripts\" />
     <Folder Include="Tasks\" />
     <Folder Include="Views\" />
+    <Folder Include="Tasks\Feeds\" />
+    <Folder Include="Tasks\Users\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Tasks\ReadFeeds.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Models\Feed.cs" />
     <Compile Include="Models\Article.cs" />
-    <Compile Include="Tasks\AutodetectFeeds.cs" />
     <Compile Include="Controllers\UsersController.cs" />
     <Compile Include="Models\Subscription.cs" />
     <Compile Include="Controllers\BaseController.cs" />
     <Compile Include="Controllers\FeedsController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Models\Author.cs" />
-    <Compile Include="Tasks\FindIcon.cs" />
     <Compile Include="Tasks\Wget.cs" />
-    <Compile Include="Tasks\FeedParser.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="Models\Chunk.cs" />
-    <Compile Include="Tasks\GarbageCollector.cs" />
-    <Compile Include="Tasks\IFeedTask.cs" />
-    <Compile Include="Tasks\ChunkShuffler.cs" />
-    <Compile Include="Tasks\FeedIconFinder.cs" />
-    <Compile Include="Tasks\FeedMaintenance.cs" />
-    <Compile Include="Tasks\FeedChunkUpgrader.cs" />
-    <Compile Include="Tasks\ReadFeedsTask.cs" />
+    <Compile Include="Tasks\Feeds\AutodetectFeeds.cs" />
+    <Compile Include="Tasks\Feeds\ChunkShuffler.cs" />
+    <Compile Include="Tasks\Feeds\FeedIconFinder.cs" />
+    <Compile Include="Tasks\Feeds\FeedMaintenance.cs" />
+    <Compile Include="Tasks\Feeds\FeedParser.cs" />
+    <Compile Include="Tasks\Feeds\FindIcon.cs" />
+    <Compile Include="Tasks\Feeds\GarbageCollector.cs" />
+    <Compile Include="Tasks\Feeds\IFeedTask.cs" />
+    <Compile Include="Tasks\Feeds\ReadFeeds.cs" />
+    <Compile Include="Tasks\Feeds\ReadFeedsTask.cs" />
+    <Compile Include="Tasks\Users\UserMaintenance.cs" />
+    <Compile Include="Tasks\Feeds\OrphanChunkKiller.cs" />
+    <Compile Include="Tasks\Feeds\FeedChunkUpgrader.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Web.config" />
