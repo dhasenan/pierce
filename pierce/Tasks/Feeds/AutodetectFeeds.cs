@@ -15,12 +15,14 @@ namespace pierce
         private readonly FeedParser _parser;
         private readonly ILogger _logger;
         private readonly ReadFeeds _reader;
+        private readonly Mongo _db;
 
-        public AutodetectFeeds(Wget wget, FeedParser parser, ReadFeeds reader, ILogger logger)
+        public AutodetectFeeds(Wget wget, FeedParser parser, ReadFeeds reader, Mongo db, ILogger logger)
         {
             _wget = wget;
             _parser = parser;
             _reader = reader;
+            _db = db;
             _logger = logger;
         }
 
@@ -42,7 +44,7 @@ namespace pierce
                     {
                         feed.Uri = new Uri("http" + feed.Uri.ToString().Substring(4));
                     }
-                    var existing = Feed.ByUri(feed.Uri.ToString());
+                    var existing = Feed.ByUri(feed.Uri.ToString(), _db);
                     if (existing != null)
                     {
                         return existing;
@@ -96,7 +98,7 @@ namespace pierce
             }
             uri = new Uri(pageUrl);
             var feeds = new List<Feed>();
-            var existing = Feed.ByUri(uri.ToString());
+            var existing = Feed.ByUri(uri.ToString(), _db);
             if (existing != null)
             {
                 feeds.Add(existing);
@@ -139,7 +141,7 @@ namespace pierce
             {
                 var f = feeds [0];
                 _reader.Read(f);
-                f.Save();
+                f.Save(_db);
             }
             return feeds;
         }

@@ -8,9 +8,11 @@ namespace pierce
     public class OrphanChunkKiller : IFeedTask
     {
         private readonly ILogger _logger;
+        private readonly Mongo _db;
 
-        public OrphanChunkKiller(ILogger logger)
+        public OrphanChunkKiller(Mongo db, ILogger logger)
         {
+            _db = db;
             _logger = logger;
         }
 
@@ -23,18 +25,18 @@ namespace pierce
             //  * We added a new chunk.
             //  * We haven't yet saved the new feed, but we saved the chunks.
             // Might be appropriate to have an assigned id for chunks.
-            foreach (var chunk in Pierce.Chunks.Find(Query.EQ("FeedId", feed.Id)))
+            foreach (var chunk in _db.Chunks.Find(Query.EQ("FeedId", feed.Id)))
             {
                 if (!feed.ChunkIds.Contains(chunk.Id) && feed.HeadChunkId != chunk.Id)
                 {
                     _logger.InfoFormat("removing orphan chunk {0}", chunk.Id);
-                    Pierce.Chunks.Remove(Query.EQ("_id", new ObjectId(chunk.Id)));
+                    _db.Chunks.Remove(Query.EQ("_id", new ObjectId(chunk.Id)));
                 }
                 else if (chunk.Articles.Count == 0)
                 {
                     _logger.InfoFormat("removing empty chunk {0}", chunk.Id);
                     feed.ChunkIds.Remove(chunk.Id);
-                    Pierce.Chunks.Remove(Query.EQ("_id", new ObjectId(chunk.Id)));
+                    _db.Chunks.Remove(Query.EQ("_id", new ObjectId(chunk.Id)));
                 }
             }
             return true;

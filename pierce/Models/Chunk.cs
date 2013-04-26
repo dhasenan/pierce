@@ -23,9 +23,9 @@ namespace pierce
             return Articles.Where(x => x.UniqueId == uniqueId).FirstOrDefault();
         }
 
-        public static Chunk ById(string chunkId)
+        public static Chunk ById(string chunkId, Mongo db)
         {
-            return Pierce.Chunks.FindOneById(new ObjectId(chunkId));
+            return db.Chunks.FindOneById(new ObjectId(chunkId));
         }
         
         public void AddArticle(Article article)
@@ -48,21 +48,21 @@ namespace pierce
             }
         }
 
-        public void Save()
+        public void Save(Mongo db)
         {
             if (Articles.Any())
             {
                 Start = Articles [0].PublishDate;
             }
             bool noId = string.IsNullOrEmpty(Id);
-            Pierce.Chunks.Save(this);
+            db.Chunks.Save(this);
             if (noId)
             {
                 foreach (var article in Articles)
                 {
                     article.ChunkId = Id;
                 }
-                Pierce.Chunks.Save(this);
+                db.Chunks.Save(this);
             }
         }
     }

@@ -14,7 +14,7 @@ namespace pierce
         AutodetectFeeds _detector;
         FeedMaintenance _reader;
 
-        public FeedsController(AutodetectFeeds detector, FeedMaintenance reader)
+        public FeedsController(AutodetectFeeds detector, FeedMaintenance reader, Mongo db): base(db)
         {
             _detector = detector;
             _reader = reader;
@@ -34,7 +34,7 @@ namespace pierce
             {
                 var f = feeds [0];
                 var uri = f.Uri.ToString();
-                var existing = Pierce.Feeds.Find(Query.EQ("Uri", uri));
+                var existing = db.Feeds.Find(Query.EQ("Uri", uri));
                 if (existing.Any())
                 {
                     f = existing.First();
@@ -42,7 +42,7 @@ namespace pierce
                 else
                 {
                     f.Id = ObjectId.GenerateNewId().ToString();
-                    Pierce.Feeds.Insert(f);
+                    db.Feeds.Insert(f);
                 }
                 var sub = user.SubscribeTo(f);
                 sub.Labels = GetLabels(labels);
@@ -50,8 +50,8 @@ namespace pierce
                 {
                     sub.Title = title;
                 }
-                Pierce.Users.Save(user);
-                f.Save();
+                db.Users.Save(user);
+                f.Save(db);
                 return Json(new { FoundFeeds = true, AddedFeed = f, Subscription = sub });
             }
             if (feeds.Count > 1)
@@ -74,13 +74,13 @@ namespace pierce
             {
                 user.Subscriptions.Remove(sub);
             }
-            Pierce.Users.Save(user);
+            db.Users.Save(user);
             return Json(new object());
         }
 
         public ActionResult Read(string id)
         {
-            var result = Feed.ById(id);
+            var result = Feed.ById(id, db);
             if (result == null)
             {
                 return Json(new { Error = "The requested feed was not found." });
@@ -113,7 +113,7 @@ namespace pierce
             if (checkInterval < Feed.MinUpdateInterval)
                 checkInterval = Feed.MinUpdateInterval;
             var sub = user.GetSubscription(id);
-            var feed = Feed.ById(id);
+            var feed = Feed.ById(id, db);
             if (feed == null)
             {
                 return Json(new { Error = "We couldn't find your feed! We tried recreating it for you, but we couldn't. Is the site working?" });
@@ -129,14 +129,14 @@ namespace pierce
             {
                 feed.ReadInterval = sub.CheckInterval;
                 feed.NextRead = feed.LastRead + feed.ReadInterval;
-                feed.Save();
+                feed.Save(db);
             }
             if (title != feed.Title)
             {
                 sub.Title = title;
             }
             sub.Labels = GetLabels(labels);
-            Pierce.Users.Save(user);
+            db.Users.Save(user);
             return Json(new { Feed = feed, Subscription = sub });
         }
 
@@ -153,7 +153,7 @@ namespace pierce
                 Response.StatusCode = 404;
                 return Json(new { Error = "Feed not found" });
             }
-            var feed = Feed.ById(id);
+            var feed = Feed.ById(id, db);
             if (feed == null)
             {
                 Response.StatusCode = 404;
@@ -170,13 +170,13 @@ namespace pierce
             if (sub == null)
                 return Json(new { Error = "Feed not found" });
             sub.Read(articleId);
-            Pierce.Users.Save(user);
+            db.Users.Save(user);
             return Json(new { Success = true });
         }
 
         public ActionResult Get(string id, string lastRead)
         {
-            var feed = Feed.ById(id);
+            var feed = Feed.ById(id, db);
             if (!string.IsNullOrEmpty(lastRead))
             {
                 DateTime read;
@@ -190,7 +190,7 @@ namespace pierce
 
         public ActionResult GetChunk(string feedId, string chunkId)
         {
-            var chunk = Chunk.ById(chunkId);
+            var chunk = Chunk.ById(chunkId, db);
             return Json(new { Chunk = chunk });
         }
 
@@ -202,7 +202,7 @@ namespace pierce
             var feeds = new List<Feed>();
             foreach (var sub in user.Subscriptions)
             {
-                feeds.Add(Feed.ById(sub.FeedId));
+                feeds.Add(Feed.ById(sub.FeedId, db));
             }
             return Json(feeds);
         }

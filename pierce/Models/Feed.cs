@@ -44,41 +44,37 @@ namespace pierce
         // Deprecated.
         public Chunk Head;
 
-        [BsonIgnore]
-        public Chunk HeadChunk
+        public Chunk GetHeadChunk(Mongo db)
         {
-            get
+            if (_head != null)
             {
-                if (_head != null)
-                {
-                    return _head;
-                }
+                return _head;
+            }
+            if (string.IsNullOrEmpty(HeadChunkId))
+            {
+                HeadChunkId = ChunkIds.LastOrDefault();
                 if (string.IsNullOrEmpty(HeadChunkId))
-                {
-                    HeadChunkId = ChunkIds.LastOrDefault();
-                    if (string.IsNullOrEmpty(HeadChunkId))
-                    {
-                        _head = new Chunk { FeedId = Id };
-                        CacheChunk(_head);
-                        return _head;
-                    }
-                }
-                _head = GetChunk(HeadChunkId);
-                if (_head == null)
                 {
                     _head = new Chunk { FeedId = Id };
                     CacheChunk(_head);
+                    return _head;
                 }
-                return _head;
             }
-            set
+            _head = GetChunk(HeadChunkId, db);
+            if (_head == null)
             {
-                _head = value;
-                // TODO set Start to a sensible value
-                HeadChunkId = value.Id;
-                CacheChunk(value);
-
+                _head = new Chunk { FeedId = Id };
+                CacheChunk(_head);
             }
+            return _head;
+        }
+
+        public void SetHeadChunk(Chunk value)
+        {
+            _head = value;
+            // TODO set Start to a sensible value
+            HeadChunkId = value.Id;
+            CacheChunk(value);
         }
 
         [BsonIgnore]
@@ -96,9 +92,9 @@ namespace pierce
             return header;
         }
 
-        public Chunk GetChunk(string id)
+        public Chunk GetChunk(string id, Mongo db)
         {
-            return _chunkCache.Where(x => x.Id == id).FirstOrDefault() ?? Chunk.ById(id);
+            return _chunkCache.Where(x => x.Id == id).FirstOrDefault() ?? Chunk.ById(id, db);
         }
 
         public void CacheChunk(Chunk chunk)
@@ -114,12 +110,12 @@ namespace pierce
             _chunkCache.Add(chunk);
         }
 
-        public void Save()
+        public void Save(Mongo db)
         {
             if (string.IsNullOrEmpty(Id))
             {
                 // Ensure we have an id that we can set for our chunks.
-                Pierce.Feeds.Save(this);
+                db.Feeds.Save(this);
             }
             // shouldn't happen...
             if (_head != null && !_chunkCache.Contains(_head))
@@ -134,7 +130,7 @@ namespace pierce
             {
                 Console.WriteLine("saving chunk {0} with {1} articles", chunk.Id, chunk.Articles.Count);
                 chunk.FeedId = this.Id;
-                chunk.Save();
+                chunk.Save(db);
                 if (!ChunkIds.Contains(chunk.Id))
                 {
                     ChunkIds.Add(chunk.Id);
@@ -152,7 +148,7 @@ namespace pierce
                     HeadChunkId = _head.Id;
                 }
             }
-            Pierce.Feeds.Save(this);
+            db.Feeds.Save(this);
         }
 
         public override string ToString()
@@ -160,14 +156,14 @@ namespace pierce
             return string.Format("[Feed: Id={0}, Uri={1}, Title={2}]", Id, Uri, Title);
         }
 
-        public static Feed ById(string id)
+        public static Feed ById(string id, Mongo db)
         {
-            return Pierce.Feeds.Find(Query.EQ("_id", new ObjectId(id))).FirstOrDefault();
+            return db.Feeds.Find(Query.EQ("_id", new ObjectId(id))).FirstOrDefault();
         }
  
-        public static Feed ByUri(string uri)
+        public static Feed ByUri(string uri, Mongo db)
         {
-            return Pierce.Feeds.Find(Query.EQ("Uri", uri)).FirstOrDefault();
+            return db.Feeds.Find(Query.EQ("Uri", uri)).FirstOrDefault();
         }
     }
 }

@@ -11,6 +11,8 @@ namespace pierce
 {
     public class UsersController : BaseController
     {
+        public UsersController(Mongo db) : base(db) {}
+
         public ActionResult Login(string email, string password)
         {
             if (string.IsNullOrEmpty(email))
@@ -19,7 +21,7 @@ namespace pierce
                 return Json(new {});
             }
             password = pierce.User.HashedPassword(password);
-            var result = Pierce.Users.Find(Query.EQ("Email", email));
+            var result = db.Users.Find(Query.EQ("Email", email));
             if (result.Size() == 1)
             {
                 var user = result.First();
@@ -46,13 +48,13 @@ namespace pierce
 
         public ActionResult Register(string email, string password)
         {
-            var result = Pierce.Users.Find(Query.EQ("Email", email));
+            var result = db.Users.Find(Query.EQ("Email", email));
             if (result.Size() >= 1)
             {
                 return Json(new { Error = "An account already exists with that email address." });
             }
             var user = new User { Email = email, Password = password };
-            var saved = Pierce.Users.Insert(user);
+            var saved = db.Users.Insert(user);
             if (!saved.Ok)
             {
                 return Json(new { Error = "failed to save user: " + saved.ErrorMessage });
@@ -78,7 +80,7 @@ namespace pierce
             }
             if (email != user.Email)
             {
-                var result = Pierce.Users.Find(Query.EQ("Email", email));
+                var result = db.Users.Find(Query.EQ("Email", email));
                 if (result.Size() > 0)
                 {
                     return Json(new { Error = "That email address is already in use." });
@@ -86,7 +88,7 @@ namespace pierce
             }
             user.Password = newPassword;
             user.Email = email;
-            Pierce.Users.Save(user);
+            db.Users.Save(user);
             return Json(new {});
         }
 

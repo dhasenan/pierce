@@ -9,18 +9,20 @@ namespace pierce
     public class FeedMaintenance
     {
         ICollection<IFeedTask> _tasks;
+        private readonly Mongo _db;
         ILogger _logger;
 
-        public FeedMaintenance(IFeedTask[] tasks, ILogger logger)
+        public FeedMaintenance(IFeedTask[] tasks, Mongo db, ILogger logger)
         {
             _tasks = tasks.OrderBy(task => task.Priority).ToList();
+            _db = db;
             _logger = logger;
         }
         
         public void Execute()
         {
             // TODO batch these rather than reading everything
-            var list = Pierce.Feeds.Find(Query.LT("NextRead", DateTime.UtcNow));
+            var list = _db.Feeds.Find(Query.LT("NextRead", DateTime.UtcNow));
             foreach (var feed in list)
             {
                 ExecuteSingle(feed);
@@ -47,7 +49,7 @@ namespace pierce
             }
             feed.LastRead = DateTime.UtcNow;
             feed.NextRead = feed.LastRead + feed.ReadInterval;
-            feed.Save();
+            feed.Save(_db);
         }
     }
 }

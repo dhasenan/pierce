@@ -112,6 +112,7 @@
     <Compile Include="Tasks\Users\UserMaintenance.cs" />
     <Compile Include="Tasks\Feeds\OrphanChunkKiller.cs" />
     <Compile Include="Tasks\Feeds\FeedChunkUpgrader.cs" />
+    <Compile Include="Mongo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Web.config" />

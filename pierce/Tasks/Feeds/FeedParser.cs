@@ -10,10 +10,12 @@ namespace pierce
 {
     public class FeedParser
     {
+        Mongo _db;
         ILogger _logger;
 
-        public FeedParser(ILogger logger)
+        public FeedParser(Mongo db, ILogger logger)
         {
+            _db = db;
             _logger = logger;
         }
         
@@ -274,7 +276,7 @@ namespace pierce
 
         private void ReadArticles(Feed feed, IEnumerable<XElement> elements)
         {
-            var headChunk = feed.HeadChunk;
+            var headChunk = feed.GetHeadChunk(_db);
             foreach (var item in elements)
             {
                 var a = ReadArticle(item);

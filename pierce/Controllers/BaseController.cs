@@ -14,9 +14,11 @@ namespace pierce
     public class BaseController : Controller
     {
         protected ILog log;
+        protected Mongo db;
 
-        public BaseController()
+        public BaseController(Mongo db)
         {
+            this.db = db;
             log = LogManager.GetLogger(this.GetType());
         }
 
@@ -31,7 +33,7 @@ namespace pierce
             try
             {
                 var id = new ObjectId(User.Identity.Name);
-                return Pierce.Users.Find(Query.EQ("_id", id)).FirstOrDefault();
+                return db.Users.Find(Query.EQ("_id", id)).FirstOrDefault();
             }
             catch (Exception ex)
             {

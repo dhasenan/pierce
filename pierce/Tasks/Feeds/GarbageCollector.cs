@@ -7,15 +7,18 @@ namespace pierce
 {
     public class GarbageCollector : IFeedTask
     {
+        private readonly Mongo _db;
+        public GarbageCollector(Mongo db) { _db = db; }
+
         public float Priority { get { return 0; } }
 
         public bool Update(Feed feed)
         {
-            var users = Pierce.Users.Find(Query.ElemMatch("Subscriptions", Query.EQ("FeedId", new ObjectId(feed.Id)))).ToList();
+            var users = _db.Users.Find(Query.ElemMatch("Subscriptions", Query.EQ("FeedId", new ObjectId(feed.Id)))).ToList();
             if (!users.Any())
             {
-                Pierce.Feeds.Remove(Query.EQ("_id", new ObjectId(feed.Id)));
-                Pierce.Chunks.Remove(Query.EQ("FeedId", new ObjectId(feed.Id)));
+                _db.Feeds.Remove(Query.EQ("_id", new ObjectId(feed.Id)));
+                _db.Chunks.Remove(Query.EQ("FeedId", new ObjectId(feed.Id)));
                 return false;
             }
             var interval = users

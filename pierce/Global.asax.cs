@@ -18,14 +18,29 @@ using Castle.Core;
 
 namespace pierce
 {
+    // We don't use TempData, and SessionStateInProcHandler dies constantly in Mono, so disable it (and SessionState).
+    public class SessionlessTempDataProvider : ITempDataProvider
+    {
+        public IDictionary<string, object> LoadTempData(ControllerContext controllerContext)
+        {
+            return new Dictionary<string, object>();
+        }
+
+        public void SaveTempData(ControllerContext controllerContext, IDictionary<string, object> values)
+        {
+        }
+    }
+
     // This class taken pretty much directly from the Windsor docs.
     public class WindsorControllerFactory : DefaultControllerFactory
     {
         private readonly IKernel kernel;
+        private readonly ITempDataProvider dataProvider;
  
         public WindsorControllerFactory(IKernel kernel)
         {
             this.kernel = kernel;
+            dataProvider = new SessionlessTempDataProvider();
         }
  
         public override void ReleaseController(IController controller)
@@ -39,7 +54,9 @@ namespace pierce
             {
                 throw new HttpException(404, string.Format("The controller for path '{0}' could not be found.", requestContext.HttpContext.Request.Path));
             }
-            return (IController)kernel.Resolve(controllerType);
+            var controller = (Controller)kernel.Resolve(controllerType);
+            controller.TempDataProvider = dataProvider;
+            return controller;
         }
     }
 
@@ -97,31 +114,15 @@ namespace pierce
             };
         }
 
-        public static MongoDatabase Cluster;
-
-        public static MongoCollection<User> Users { get { return Cluster.GetCollection<User>("users"); } }
-        
-        public static MongoCollection<Feed> Feeds { get { return Cluster.GetCollection<Feed>("feeds"); } }
-
-        public static MongoCollection<Chunk> Chunks { get { return Cluster.GetCollection<Chunk>("chunks"); } }
-
-        private static void OpenDatabase()
-        {
-            var client = new MongoClient("mongodb://localhost/pierce");
-            var server = client.GetServer();
-            server.Connect();
-            Cluster = server.GetDatabase("pierce");
-        }
-
         private static void StartPeriodicTasks()
         {
-            var feedReader = Container.Resolve<FeedMaintenance>();
             var thread = new Thread(() => 
             {
                 while (true)
                 {
                     try
                     {
+                        var feedReader = Container.Resolve<FeedMaintenance>();
                         feedReader.Execute();
                     }
                     catch (Exception ex)
@@ -146,13 +147,11 @@ namespace pierce
                 Container.Kernel.Resolver.AddSubResolver(new LoggerResolver(new MyLoggerFactory()));
                 Container.Kernel.Resolver.AddSubResolver(new ArrayResolver(Container.Kernel));
                 Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController))).Pick().Unless(x => typeof(IFeedTask).IsAssignableFrom(x)).WithServiceSelf().LifestyleTransient());
-                Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(ChunkShuffler))).BasedOn<IFeedTask>().WithServiceFirstInterface());
+                Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(ChunkShuffler))).BasedOn<IFeedTask>().WithServiceFirstInterface().LifestyleTransient());
                 ControllerBuilder.Current.SetControllerFactory(new WindsorControllerFactory(Container.Kernel));
                 logger.Info("registering areas and routes");
                 AreaRegistration.RegisterAllAreas();
                 RegisterRoutes(RouteTable.Routes);
-                logger.Info("opening database");
-                OpenDatabase();
                 logger.Info("starting periodic tasks");
                 StartPeriodicTasks();
                 logger.Info("initialization complete!");

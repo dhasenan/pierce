@@ -22,7 +22,7 @@ namespace pierce
                 var head = feed.Head;
                 feed.Head = null;
                 // This should munge things about appropriately...I think.
-                feed.HeadChunk = head;
+                feed.SetHeadChunk(head);
             }
             return true;
         }

@@ -15,7 +15,7 @@ namespace pierce.test
         [SetUp]
         public void Setup()
         {
-            _target = new FeedParser(NullLogger.Instance);
+            _target = new FeedParser(null, NullLogger.Instance);
         }
 
         [Test]
