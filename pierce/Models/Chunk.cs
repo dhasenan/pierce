@@ -14,9 +14,22 @@ namespace pierce
             Id;
         public List<Article> Articles = new List<Article>();
         public string FeedId;
-        public DateTime Start = DateTime.MinValue;
         [BsonIgnore]
-        private Guid objectId = Guid.NewGuid();
+        private Guid
+            objectId = Guid.NewGuid();
+
+        public DateTime Start
+        {
+            get
+            {
+                if (Articles.Any())
+                {
+                    return Articles.Min(x => x.PublishDate);
+                }
+                return DateTime.MinValue;
+            }
+            set {}
+        }
 
         public Article GetArticle(string uniqueId)
         {
@@ -50,10 +63,6 @@ namespace pierce
 
         public void Save(Mongo db)
         {
-            if (Articles.Any())
-            {
-                Start = Articles [0].PublishDate;
-            }
             bool noId = string.IsNullOrEmpty(Id);
             db.Chunks.Save(this);
             if (noId)

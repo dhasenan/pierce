@@ -32,35 +32,25 @@ namespace pierce
                 var oldHead = headChunk;
                 headChunk = new Chunk();
                 feed.SetHeadChunk(headChunk);
-                oldHead.Articles = headChunk.Articles.OrderBy(x => x.PublishDate).Take(MaxArticlesPerChunk).ToList();
-                headChunk.Articles = headChunk.Articles.OrderBy(x => x.PublishDate).Skip(MaxArticlesPerChunk).ToList();
+                headChunk.Articles = oldHead.Articles.OrderBy(x => x.PublishDate).Skip(MaxArticlesPerChunk).ToList();
+                oldHead.Articles = oldHead.Articles.OrderBy(x => x.PublishDate).Take(MaxArticlesPerChunk).ToList();
                 _logger.DebugFormat("old head has {0} articles; new has {1}", oldHead.Articles.Count, headChunk.Articles.Count);
             }
-            // Okay, let's rebuild feed.Articles.
             feed.Save(_db);
+            // Okay, let's rebuild feed.Articles.
+            // This is loading way too much data...
             feed.Articles.Clear();
-            List<string> missingChunks = new List<string>();
-            foreach (var id in feed.ChunkIds.Where(x => true).Reverse())
+            foreach (var id in feed.ChunkIds)
             {
-                if (feed.Articles.Count >= MaxArticlesPerChunk)
-                {
-                    _logger.DebugFormat("feed has as much stuff as I really need");
-                    break;
-                }
                 var chunk = feed.GetChunk(id, _db);
-                if (chunk != null)
-                {
-                    _logger.DebugFormat("adding {0} articles from {1}", chunk.Articles.Count, id);
-                    feed.Articles.AddRange(chunk.Articles);
+                if (chunk == null) {
+                    _logger.WarnFormat("feed {0} missing chunk {1}", feed.Id, id);
+                    continue;
                 }
-                else
-                {
-                    _logger.DebugFormat("failed to find chunk {0}", id);
-                    missingChunks.Add(id);
-                }
+                feed.Articles.AddRange(chunk.Articles);
             }
-            feed.ChunkIds.RemoveAll(x => missingChunks.Contains(x));
-            feed.Articles = feed.Articles.OrderBy(x => x.PublishDate).Reverse().Take(MaxArticlesPerChunk).Reverse().ToList();
+            feed.Articles = feed.Articles.OrderByDescending(x => x.PublishDate).Reverse().ToList();
+            //feed.Articles = feed.ChunkIds.Select(x => feed.GetChunk(x, _db)).Where(x => x != null).SelectMany(x => x.Articles).OrderByDescending(x => x.PublishDate).Take(MaxArticlesPerChunk).Reverse().ToList();
             feed.Save(_db);
             _logger.DebugFormat("outgoing feed has {0} saved chunks", feed.ChunkIds.Count);
             return true;

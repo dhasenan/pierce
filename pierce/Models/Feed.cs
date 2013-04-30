@@ -124,6 +124,7 @@ namespace pierce
             }
             foreach (var chunk in _chunkCache.Where(x => !x.Articles.Any()))
             {
+                Console.WriteLine("removing chunk {0} because it has {1} articles", chunk.Id, chunk.Articles.Count);
                 ChunkIds.Remove(chunk.Id);
             }
             foreach (var chunk in _chunkCache.Where(x => x.Articles.Any()).OrderBy(x => x.Articles.First().PublishDate))

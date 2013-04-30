@@ -37,7 +37,7 @@ namespace pierce
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                log.Info(ex);
                 return null;
             }
         }

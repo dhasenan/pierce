@@ -41,8 +41,7 @@ namespace pierce
                 }
                 else
                 {
-                    f.Id = ObjectId.GenerateNewId().ToString();
-                    db.Feeds.Insert(f);
+                    _reader.ExecuteSingle(f);
                 }
                 var sub = user.SubscribeTo(f);
                 sub.Labels = GetLabels(labels);

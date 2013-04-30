@@ -119,6 +119,7 @@ Bugs:
   * Items removed from a feed (eg TB uploads a video, we see that, he removes it) still show up.
     Mark articles as removed if they disappear from the feed while there are older articles still
     there? Reflect that in the UI somehow?
+  * Navigation horked if you're moving between labels/feeds
 
 
 Ugly:
