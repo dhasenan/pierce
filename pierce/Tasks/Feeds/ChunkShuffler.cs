@@ -49,7 +49,7 @@ namespace pierce
                 }
                 feed.Articles.AddRange(chunk.Articles);
             }
-            feed.Articles = feed.Articles.OrderByDescending(x => x.PublishDate).Reverse().ToList();
+            feed.Articles = feed.Articles.OrderByDescending(x => x.PublishDate).Take(MaxArticlesPerChunk).Reverse().ToList();
             //feed.Articles = feed.ChunkIds.Select(x => feed.GetChunk(x, _db)).Where(x => x != null).SelectMany(x => x.Articles).OrderByDescending(x => x.PublishDate).Take(MaxArticlesPerChunk).Reverse().ToList();
             feed.Save(_db);
             _logger.DebugFormat("outgoing feed has {0} saved chunks", feed.ChunkIds.Count);
