@@ -113,12 +113,13 @@ var domain = {
     lablist = [domain.allList].concat(lablist);
     domain.updateLabelUnreadCounts(lablist);
 
-    domain.uncategorizedList = {
-      Title: 'Uncategorized',
-      Id: 'special_label_Uncategorized',
-      Feeds: unlisted
-    };
-    lablist.push(domain.uncategorizedList);
+    if (unlisted.length) {
+      lablist.push({
+        Title: 'Uncategorized',
+        Id: 'special_label_Uncategorized',
+        Feeds: unlisted
+      });
+    }
     $.each(lablist, function(k, label) {
       util.sortFeeds(label.Feeds);
       label.Articles = domain.buildCombinedArticles(label.Feeds);

@@ -56,6 +56,8 @@ DONE:
   * Feed list going all the way to the bottom
   * Save/restore expanded feeds
   * Ajax loading gifs
+  * Mobile-optimized site
+  * Clean up ui/domain
 * Bugs:
   * Title doesn't update when reloading stuff (incl. read/unread count) from server (eg open in two
     locations)
@@ -81,6 +83,7 @@ DONE:
   * Reset scrolling for article area when switching articles
   * Scroll to current article when using keyboard shortcuts
   * 'Articles' label doesn't update (should have the feed/label name)
+  * 'Uncategorized' shows up even when all feeds have labels.
 	
 
 Personal:
@@ -111,6 +114,10 @@ Personal:
     * Only return the stuff that's newer than the last article you have.
     * Only update the minimum necessary to render the current view. Server-side maintenance of
       unread counts, for instance.
+    Additionally, we keep the read message list for all time for all subscriptions.
+    * Only keep the most recent 2*head_length in the subscription. (2MB limit; about 40 bytes per;
+      that's 4KB + some overhead per subscription, meaning a person can have 450 subscriptions.)
+    * Same head-and-chunk arrangement. This lets us track historical read/unread stuffs.
 
 
 Bugs:
@@ -120,6 +127,7 @@ Bugs:
     Mark articles as removed if they disappear from the feed while there are older articles still
     there? Reflect that in the UI somehow?
   * Navigation horked if you're moving between labels/feeds
+  * Updates are slow at getting between two tabs open to the site.
 
 
 Ugly:
@@ -127,13 +135,11 @@ Ugly:
   * Resize handles are 1px wide.
   * Menu icon is small, not really clear what it's for
   * Popup/icon theme doesn't mesh with rest of site
-  * 'Uncategorized' shows up even when all feeds have labels.
   * Ajax loading gifs are ugly
 
 
 Code quality:
-  * Unify atom / rss parsing
-  * Clean up ui/domain
+  * Unify atom / rss parsing EVEN MORE (hybrid feeds)
   * Switch layout state from cookie to local storage.
 
 
@@ -143,6 +149,11 @@ Public launch needs:
   * OAuth
   * HTTPS
 	* Authentication double-check
+  * Security testing
+  * Personal name
+  * Update name / email / etc
+  * Registration tracking
+  * Performance tracking (request latency, etc) + alarms
   * Error handling / feedback
     * Butter bar!
     * Don't show login window when we fail to contact server
@@ -150,13 +161,13 @@ Public launch needs:
     * Usage
       * Help menu
       * Butter bar stuff
+  * Limit feeds per account
 
 
 Public wants:
 	* Article search
   * Nicer timespan editor than 'X minutes'
   * Update article list after updating feeds / subscribing (check)
-  * Mobile-optimized site
 
 
 Dissemination:
@@ -166,16 +177,8 @@ Dissemination:
 
 Monetization:
 * Need:
-  * Better splash screen (login/register)
-    Requires someone else to help.
+  * Splash screen (login/register)
   * Payment integration
-  * Personal name
-  * Update name / email / etc
-  * Logging (SMTP appender for high severity errors)
-  * Registration tracking
-  * Performance tracking (request latency, etc) + alarms
-  * Help
-  * Security testing
 * Interesting:
   * Youtube user following
   * Twitter following
