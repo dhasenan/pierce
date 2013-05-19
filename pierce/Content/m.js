@@ -7,8 +7,8 @@ view = {
   _resizeArticleBit: function() {
     var totalWidth = $('#mainContent').width();
     var leftWidth = $('#feedColumn').width() + $('#articleColumn').width();
-    $('#articleViewColumn').width(totalWidth - leftWidth - 10);
-    $('#articleView').width(totalWidth - leftWidth - 15);
+    $('#articleViewColumn').width(totalWidth - leftWidth);
+    $('#articleView').width(totalWidth - leftWidth);
   },
 
   showUpdateFeedWindow: function(feed, sub) {

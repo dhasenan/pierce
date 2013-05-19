@@ -91,11 +91,16 @@ body {
   padding: 0.25em;
 }
 
+.feedli img {
+  position: relative;
+  top: 2px;
+}
+
 div.feedRow {
   border-bottom: 1px dotted gray;
-  margin-bottom: 0.2em;
   margin-top: 0.2em;
   margin-left: 1em;
+  padding-bottom: 0.2em;
 }
 
 .unread {
