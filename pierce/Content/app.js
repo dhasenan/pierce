@@ -502,9 +502,9 @@ var domain = {
       domain.markRead(article);
       ui.displayFeeds();
       ui.updateTitle();
-    } 
+    }
   },
-  
+
   initialize: function() {
 
     // Every 5 minutes
@@ -669,6 +669,8 @@ var ui = {
       feed: article.Feed,
       article: article
     }));
+
+    $('#articleView a').attr('target', '_blank');
 
     $('#articleTitle').text(article.Feed.Title);
     domain.showingArticle(article);

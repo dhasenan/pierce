@@ -123,6 +123,11 @@ a {
   text-decoration: none;
 }
 
+#articleContent a {
+  target-name: "new";
+  target-new: "tab";
+}
+
 /* I don't rightly understand why the nested ones aren't acting like
  * the non-nested one, but this seems to make everything happy.
  */
