@@ -6,13 +6,11 @@ namespace pierce
     public class ReadFeedsTask : IFeedTask
     {
         
-        private readonly ILogger _logger;
         private readonly ReadFeeds _reader;
 
-        public ReadFeedsTask(ReadFeeds reader, ILogger logger)
+        public ReadFeedsTask(ReadFeeds reader)
         {
             _reader = reader;
-            _logger = logger;
         }
 
         public float Priority { get { return 500; } }

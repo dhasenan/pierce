@@ -173,6 +173,17 @@ namespace pierce
             return Json(new { Success = true });
         }
 
+		public ActionResult MarkUnread(string feedId, string articleId)
+		{
+			var user = GetUser();
+			Subscription sub = user.GetSubscription(feedId);
+			if (sub == null)
+				return Json(new { Error = "Feed not found" });
+			sub.Unread(articleId);
+			db.Users.Save(user);
+			return Json(new { Success = true });
+		}
+
         public ActionResult Get(string id, string lastRead)
         {
             var feed = Feed.ById(id, db);

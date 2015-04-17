@@ -39,6 +39,11 @@ namespace pierce
                 ReadArticles.Add(article);
             }
         }
+
+		public void Unread(string articleId)
+		{
+			ReadArticles.Remove(articleId);
+		}
     }
 
 }

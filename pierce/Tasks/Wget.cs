@@ -67,8 +67,6 @@ namespace pierce
                 return true;
             if (c >= 0xe000 && c <= 0xfffd)
                 return true;
-            if (c >= 0x10000 && c <= 0x10fff)
-                return true;
             return false;
         }
     }

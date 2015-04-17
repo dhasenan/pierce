@@ -14,9 +14,6 @@ namespace pierce
             Id;
         public List<Article> Articles = new List<Article>();
         public string FeedId;
-        [BsonIgnore]
-        private Guid
-            objectId = Guid.NewGuid();
 
         public DateTime Start
         {

@@ -184,8 +184,25 @@ view = {
 
   hideLoginWindow: function() {
     $('#loginWindow').dialog('close');
+    ui.showingPopup = false;
   },
 
+  showUnknownError: function() {
+    ui.showingPopup = true;
+    $('#unknownError').dialog({
+      close: function() { ui.showingPopup = false; },
+      buttons: [
+        {
+          text: "Okay",
+          click: function() { $('#unknownError').dialog('close'); }
+        }
+      ]
+    });
+  },
+  
+  hideUnknownError: function() {
+    $('#unknownError').dialog('close');
+  },
 
   _barrier: null
 };

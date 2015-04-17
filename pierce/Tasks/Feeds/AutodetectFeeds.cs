@@ -57,7 +57,8 @@ namespace pierce
                 }
                 else
                 {
-                    feed.Title = "RSS";
+					_logger.InfoFormat("no page title and no feed found from page at {0}", pageUrl);
+                    feed.Title = pageUrl.Host;
                 }
                 return feed;
             }
