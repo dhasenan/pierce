@@ -158,3 +158,16 @@ a {
 .ajaxLoader img {
   vertical-align: middle;
 }
+
+.expander {
+  float: left;
+  clear: both;
+}
+
+.label {
+  clear: both;
+}
+
+.labelContent {
+  clear: both;
+}

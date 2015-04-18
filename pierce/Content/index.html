@@ -32,22 +32,13 @@
         }
       %>
       <div id='labelBox_<%= label.Id %>' class='<%= classes %>'>
-        <table style='width: 100%; text-align: left'>
-          <tr>
-            <td style='width: 1.2em'>
-              <span id='expander_<%= label.Id %>' class='ui-icon ui-icon-circle-minus'
-                onclick='ui.toggleExpanded("<%= label.Id %>")'></span>
-            </td>
-            <td>
-              <span id='labelName_<%= label.Id %>' class='<%= labelclass %>'
-                  onclick='ui.showLabel("<%= label.Id %>")'
-                  style='float: left'
-                  >
-                <%- name %>
-              </span><!-- labelName -->
-            </td>
-          </tr>
-        </table>
+        <!-- The label title and expand button. -->
+        <div class='label'>
+          <span id='expander_<%= label.Id %>' class='ui-icon ui-icon-circle-minus expander' onclick='ui.toggleExpanded("<%= label.Id %>")'></span>
+          <span id='labelName_<%= label.Id %>' class='<%= labelclass %>'
+              onclick='ui.showLabel("<%= label.Id %>")'><%- name %></span>
+        </div>
+        <!-- The child feed list. -->
         <div id='labelContent_<%= label.Id %>' class='labelContent'>
           <%= ui.template('feedlistTemplate', { feeds: label.Feeds, labelId: label.Id }) %>
         </div><!-- labelContent -->
