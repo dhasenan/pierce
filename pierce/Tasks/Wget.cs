@@ -4,11 +4,19 @@ using System.Linq;
 using System.Net;
 using System.Xml.Linq;
 using HtmlAgilityPack;
+using Castle.Core.Logging;
 
 namespace pierce
 {
     public class Wget
     {
+		private readonly ILogger _logger;
+
+		public Wget(ILogger _logger)
+    	{
+    		this._logger = _logger;
+    	}
+    	
         public string Text(Uri uri)
         {
             var str = Stream(uri);
@@ -50,10 +58,13 @@ namespace pierce
             {
                 WebRequest wr = WebRequest.Create(uri);
                 wr.Method = "GET";
+				var response = (HttpWebResponse)wr.GetResponse();
+				_logger.InfoFormat("wget {0}: response {1} ({2})", uri, response.StatusCode, response.StatusDescription);
                 return new StreamReader(wr.GetResponse().GetResponseStream());
             }
-            catch
+            catch (Exception ex)
             {
+				_logger.InfoFormat(ex, "failed to get response from URL {0}", uri);
                 return null;
             }
         }

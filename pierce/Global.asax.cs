@@ -15,6 +15,9 @@ using Castle.Windsor.Installer;
 using Castle.Facilities.Logging;
 using Castle.MicroKernel.Context;
 using Castle.Core;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 namespace pierce
 {
@@ -137,21 +140,33 @@ namespace pierce
             thread.Start();
         }
 
+		private static void SetupWindsor()
+		{
+			Container = new WindsorContainer();
+			Container.Kernel.Resolver.AddSubResolver(new LoggerResolver(new MyLoggerFactory()));
+			Container.Kernel.Resolver.AddSubResolver(new ArrayResolver(Container.Kernel));
+			Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController))).Pick().Unless(x => typeof(IFeedTask).IsAssignableFrom(x)).WithServiceSelf().LifestyleTransient());
+			Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(ChunkShuffler))).BasedOn<IFeedTask>().WithServiceFirstInterface().LifestyleTransient());
+			ControllerBuilder.Current.SetControllerFactory(new WindsorControllerFactory(Container.Kernel));
+		}
+
+		private static void SetupHttpsPolicy()
+		{
+
+		}
+
         protected void Application_Start()
         {
             SetupLogging();
             try
             {
                 logger.Info("setting up windsor");
-                Container = new WindsorContainer();
-                Container.Kernel.Resolver.AddSubResolver(new LoggerResolver(new MyLoggerFactory()));
-                Container.Kernel.Resolver.AddSubResolver(new ArrayResolver(Container.Kernel));
-                Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController))).Pick().Unless(x => typeof(IFeedTask).IsAssignableFrom(x)).WithServiceSelf().LifestyleTransient());
-                Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(ChunkShuffler))).BasedOn<IFeedTask>().WithServiceFirstInterface().LifestyleTransient());
-                ControllerBuilder.Current.SetControllerFactory(new WindsorControllerFactory(Container.Kernel));
+                SetupWindsor();
                 logger.Info("registering areas and routes");
                 AreaRegistration.RegisterAllAreas();
                 RegisterRoutes(RouteTable.Routes);
+				logger.Info("setting up HTTPS policy");
+				SetupHttpsPolicy();
                 logger.Info("starting periodic tasks");
                 StartPeriodicTasks();
                 logger.Info("initialization complete!");

@@ -58,6 +58,7 @@ DONE:
   * Ajax loading gifs
   * Mobile-optimized site
   * Clean up ui/domain
+  * Mark unread
 * Bugs:
   * Title doesn't update when reloading stuff (incl. read/unread count) from server (eg open in two
     locations)
@@ -87,26 +88,6 @@ DONE:
 	
 
 Personal:
-  * Change feed url? Youtube feeds specifically.
-    Clone feed to new ID.
-    Update subscription to that ID.
-    Change URL.
-  * Special youtube handling
-  * Mark unread
-  * Mark all|selected read
-  * Reduce initialization network usage
-    I've jumped us past the one hurdle of loading all feeds in one request, but we still need to
-      load everything in order to render the UI initially.
-    Send less data.
-      Trim each feed to entries from the past 60 days, up to 100; or the past 25 articles from all
-      time (for instance). Maybe give an option to fetch older data (up to 1 year / 1000 articles?).
-    Send more compact data.
-      Gzip it.
-      Remove unused fields -- though the major component is the description, which we can't fully
-      eliminate.
-    Send less data initially.
-      Send a list of everything but the articles at first, and add in the unread count.
-      Click on something, you get it loaded from the server.
   * Reduce ongoing network usage.
     Right now, it only reloads stuff that's been reread recently. That means an hour sitting idle
     will reload all your feeds with default settings. But a lot of feeds only get new articles once
@@ -123,7 +104,7 @@ Personal:
 Bugs:
   * Clicking on articles whose feeds have been updated seems not to mark those articles as read
   * Unsubscribing from a feed doesn't clear its articles from the article list.
-  * Items removed from a feed (eg TB uploads a video, we see that, he removes it) still show up.
+  * Items removed from a feed (eg Erutan uploads a video, we see that, she removes it) still show up.
     Mark articles as removed if they disappear from the feed while there are older articles still
     there? Reflect that in the UI somehow?
   * Navigation horked if you're moving between labels/feeds
