@@ -152,7 +152,18 @@ namespace pierce
 
 		private static void SetupHttpsPolicy()
 		{
-
+			var conf = Container.Resolve<PierceConfig>();
+			if (!conf.TrustAllCertificates)
+			{
+				return;
+			}
+			ServicePointManager.ServerCertificateValidationCallback = (object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors errors) => {
+				if (errors != SslPolicyErrors.None)
+				{
+					logger.InfoFormat("SSL certificate didn't validate; going ahead anyway. Problem was {0}", errors);
+				}
+				return true;
+			};
 		}
 
         protected void Application_Start()

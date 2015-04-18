@@ -145,7 +145,7 @@ view = {
                 'password': $('#password').val(),
               },
               success: function(data, statusText, xhr) {
-                ui.hideLoginWindow();
+                view.hideLoginWindow();
                 user = data;
                 ui.updateUserInfos();
                 domain.refreshFeeds();

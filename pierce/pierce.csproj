@@ -113,6 +113,7 @@
     <Compile Include="Tasks\Feeds\OrphanChunkKiller.cs" />
     <Compile Include="Tasks\Feeds\FeedChunkUpgrader.cs" />
     <Compile Include="Mongo.cs" />
+    <Compile Include="PierceConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Web.config" />

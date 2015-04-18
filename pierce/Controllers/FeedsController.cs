@@ -13,11 +13,13 @@ namespace pierce
     {
         AutodetectFeeds _detector;
         FeedMaintenance _reader;
+		PierceConfig _config;
 
-        public FeedsController(AutodetectFeeds detector, FeedMaintenance reader, Mongo db): base(db)
+        public FeedsController(AutodetectFeeds detector, FeedMaintenance reader, PierceConfig config, Mongo db): base(db)
         {
             _detector = detector;
             _reader = reader;
+			_config = config;
         }
 
         public ActionResult Add(string url, string title, string labels)
@@ -50,6 +52,15 @@ namespace pierce
                     sub.Title = title;
                 }
                 db.Users.Save(user);
+				if (f.ReadInterval < sub.CheckInterval)
+				{
+					f.ReadInterval = sub.CheckInterval;
+					var lastNextRead = DateTime.Now + f.ReadInterval;
+					if (f.NextRead < lastNextRead)
+					{
+						f.NextRead = lastNextRead;
+					}
+				}
                 f.Save(db);
                 return Json(new { FoundFeeds = true, AddedFeed = f, Subscription = sub });
             }
@@ -109,13 +120,13 @@ namespace pierce
             var checkInterval = TimeSpan.FromSeconds(checkIntervalSeconds);
             if (checkInterval > Feed.MaxUpdateInterval)
                 checkInterval = Feed.MaxUpdateInterval;
-            if (checkInterval < Feed.MinUpdateInterval)
-                checkInterval = Feed.MinUpdateInterval;
+            if (checkInterval < _config.MinUpdateInterval)
+                checkInterval = _config.MinUpdateInterval;
             var sub = user.GetSubscription(id);
             var feed = Feed.ById(id, db);
             if (feed == null)
             {
-                return Json(new { Error = "We couldn't find your feed! We tried recreating it for you, but we couldn't. Is the site working?" });
+                return Json(new { Error = "We couldn't find your feed! Is the site working?" });
             }
             if (sub == null)
             {

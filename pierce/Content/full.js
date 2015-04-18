@@ -156,6 +156,13 @@ view = {
                 user = data;
                 ui.updateUserInfos();
                 domain.refreshFeeds();
+              },
+              error: function(xhr, status, message) {
+                if (xhr.status == 404) {
+                  alert("Couldn't find a user with that username and password.");
+                } else {
+                  alert("Pierce is not available right now. Please try again in a few.");
+                }
               }
             });
           }
@@ -170,10 +177,16 @@ view = {
                 'password': $('#password').val(),
               },
               success: function(data, statusText, xhr) {
-                ui.hideLoginWindow();
+                view.hideLoginWindow();
                 user = data;
                 ui.updateUserInfos();
                 domain.refreshFeeds();
+              },
+              error: function(xhr, status, message) {
+                var obj = JSON.parse(xhr.responseText);
+                if (obj != null && obj.Error != null) {
+
+                }
               }
             });
           }
@@ -187,8 +200,12 @@ view = {
     ui.showingPopup = false;
   },
 
-  showUnknownError: function() {
+  showUnknownError: function(msg) {
     ui.showingPopup = true;
+    if (msg == null) {
+      msg = "An unknown error has occurred.";
+    }
+    $('#unknownErrorMessage').text(msg);
     $('#unknownError').dialog({
       close: function() { ui.showingPopup = false; },
       buttons: [
