@@ -74,7 +74,7 @@ namespace pierce
 			return Json(user);
 		}
 
-		public ActionResult Update(string email, string currentPassword, string newPassword)
+		public ActionResult Update(string email, string currentPassword, string newPassword, int checkInterval)
 		{
 			var user = GetUser();
 			if (user == null)
@@ -97,6 +97,7 @@ namespace pierce
 			}
 			user.Password = newPassword;
 			user.Email = email;
+			user.DefaultCheckInterval = TimeSpan.FromMinutes(checkInterval);
 			db.Users.Save(user);
 			return Json(new {});
 		}

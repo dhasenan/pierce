@@ -17,6 +17,7 @@ namespace pierce
         public string Email;
         public string PasswordHash;
         public ICollection<Subscription> Subscriptions = new HashSet<Subscription>();
+		public TimeSpan DefaultCheckInterval;
 
         public string Password { set { PasswordHash = HashedPassword(value); } }
 
@@ -30,7 +31,7 @@ namespace pierce
             var sub = Subscriptions.Where(x => x.FeedId == f.Id).FirstOrDefault();
             if (sub == null)
             {
-                sub = new Subscription { FeedUri = f.Uri, FeedId = f.Id };
+                sub = new Subscription { FeedUri = f.Uri, FeedId = f.Id, CheckInterval = DefaultCheckInterval };
                 Subscriptions.Add(sub);
             }
             return sub;

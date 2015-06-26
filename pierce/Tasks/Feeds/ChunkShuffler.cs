@@ -7,7 +7,7 @@ namespace pierce
 {
     public class ChunkShuffler : IFeedTask
     {
-        public const int MaxArticlesPerChunk = 50;
+        public const int MaxArticlesPerChunk = 100;
         private readonly Mongo _db;
         private readonly ILogger _logger;
 

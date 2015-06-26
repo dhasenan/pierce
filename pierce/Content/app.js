@@ -177,6 +177,7 @@ var domain = {
   },
 
   refreshUser: function() {
+    console.log('refreshing user data')
     $.ajax('/Users/Get', {
       dataType: 'json',
       success: function(data, statusText, xhr) {
@@ -252,8 +253,11 @@ var domain = {
     if (!ui.currentFeed && !ui.currentLabel) {
       ui.currentLabel = domain.allList;
     }
-    if (ui.currentFeed)
+    if (ui.currentFeed) {
       ui.showFeed(ui.currentFeed.Id);
+    } else if (ui.currentLabel) {
+      ui.showLabel(ui.currentLabel.Id)
+    }
     ui.updateTitle();
   },
 

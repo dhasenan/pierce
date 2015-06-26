@@ -284,6 +284,17 @@ namespace pierce
                 {
                     a.UniqueId = a.Link.ToString();
                 }
+				if (headChunk.GetArticle(a.UniqueId) != null)
+				{
+					// We assume we're getting a sequence from newest to oldest.
+					// If we encounter something we've already seen, we're done.
+					break;
+				}
+				if (headChunk.Start < a.PublishDate)
+				{
+					// Likewise, if we've seen something newer, we can skip this.
+					break;
+				}
                 headChunk.AddArticle(a);
             }
             _logger.DebugFormat("saved chunk {0}", headChunk.Id);

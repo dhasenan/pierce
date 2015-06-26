@@ -56,8 +56,9 @@ namespace pierce
         {
             try
             {
-                WebRequest wr = WebRequest.Create(uri);
+                var wr = (HttpWebRequest)WebRequest.Create(uri);
                 wr.Method = "GET";
+                wr.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
 				var response = (HttpWebResponse)wr.GetResponse();
 				_logger.InfoFormat("wget {0}: response {1} ({2})", uri, response.StatusCode, response.StatusDescription);
                 return new StreamReader(wr.GetResponse().GetResponseStream());

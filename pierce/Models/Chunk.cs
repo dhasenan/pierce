@@ -10,11 +10,11 @@ namespace pierce
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string
-            Id;
+        public string Id;
         public List<Article> Articles = new List<Article>();
         public string FeedId;
 
+		[BsonIgnore]
         public DateTime Start
         {
             get

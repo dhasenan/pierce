@@ -105,7 +105,6 @@
     <Compile Include="Tasks\Feeds\FeedMaintenance.cs" />
     <Compile Include="Tasks\Feeds\FeedParser.cs" />
     <Compile Include="Tasks\Feeds\FindIcon.cs" />
-    <Compile Include="Tasks\Feeds\GarbageCollector.cs" />
     <Compile Include="Tasks\Feeds\IFeedTask.cs" />
     <Compile Include="Tasks\Feeds\ReadFeeds.cs" />
     <Compile Include="Tasks\Feeds\ReadFeedsTask.cs" />

@@ -128,7 +128,7 @@
   <body>
     <div id='headerBar'>
       <span id='userName'>Not logged in</span>
-      <span style='float: right'><a href='#' onclick='ui.showSettingsWindow()'
+      <span style='float: right'><a href='#' onclick='view.showSettingsWindow()'
           style='color: black'>Settings</a></span>
     </div>
     <div id='mainPanel'>
@@ -243,6 +243,10 @@
           <tr>
             <td><label for='settingsEmail'>Email address:</label></td>
             <td><input type='text' id='settingsEmail' /></td>
+          </tr>
+          <tr>
+            <td><label for='settingsDefaultInterval'>Default feed update interval:</label></td>
+            <td><input type='number' id='settingsDefaultInterval' /></td>
           </tr>
           <tr>
             <td><label for='settingsCurrPassword'>Current password:</label></td>

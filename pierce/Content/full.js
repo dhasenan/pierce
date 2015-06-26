@@ -185,7 +185,7 @@ view = {
               error: function(xhr, status, message) {
                 var obj = JSON.parse(xhr.responseText);
                 if (obj != null && obj.Error != null) {
-
+                  view.showUnknownError(obj.Error);
                 }
               }
             });
@@ -196,12 +196,15 @@ view = {
   },
 
   hideLoginWindow: function() {
-    $('#loginWindow').dialog('close');
-    ui.showingPopup = false;
+    try {
+      $('#loginWindow').dialog('close');
+      ui.showingPopup = false;
+    } catch (e) {}
   },
 
   showUnknownError: function(msg) {
     ui.showingPopup = true;
+    view.showingUnknownError = true;
     if (msg == null) {
       msg = "An unknown error has occurred.";
     }
@@ -211,14 +214,17 @@ view = {
       buttons: [
         {
           text: "Okay",
-          click: function() { $('#unknownError').dialog('close'); }
+          click: function() { view.hideUnknownError(); }
         }
       ]
     });
   },
   
   hideUnknownError: function() {
-    $('#unknownError').dialog('close');
+    try {
+      $('#unknownError').dialog('close');
+      ui.showingPopup = false;
+    } catch (e) {}
   },
 
   _barrier: null
