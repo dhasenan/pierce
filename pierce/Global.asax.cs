@@ -1,4 +1,5 @@
 using System;
+using System.Web.WebPages.Scope;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -104,6 +105,12 @@ namespace pierce
         }
 
         public static WindsorContainer Container;
+        protected void Application_BeginRequest()
+        {
+            var moduleType = typeof(AspNetRequestScopeStorageProvider).Assembly.GetType("System.Web.WebPages.WebPageHttpModule");
+            var property = moduleType.GetProperty("AppStartExecuteCompleted", BindingFlags.NonPublic | BindingFlags.Static);
+            property.SetValue(null, true, null);
+        }
 
         public override void Init()
         {

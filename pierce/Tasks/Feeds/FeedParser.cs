@@ -110,7 +110,7 @@ namespace pierce
                 }
             }
         }
-        
+
         private void ElemAttrLink(XElement xelem, Action<Uri> setter)
         {
             ElemAttrLink(xelem, null, setter);
@@ -265,9 +265,11 @@ namespace pierce
             if (img != null)
             {
                 Elem(img, "title", v => feed.ImageTitle = v);
-                ElemLink(img, "url", v => {
-                    feed.LogoUri = v;
-                    feed.IconUri = v; }
+                ElemLink(img, "url", v =>
+                    {
+                        feed.LogoUri = v;
+                        feed.IconUri = v;
+                    }
                 );
                 ElemLink(img, "link", v => feed.ImageLinkTarget = v);
             }
@@ -284,17 +286,17 @@ namespace pierce
                 {
                     a.UniqueId = a.Link.ToString();
                 }
-				if (headChunk.GetArticle(a.UniqueId) != null)
-				{
-					// We assume we're getting a sequence from newest to oldest.
-					// If we encounter something we've already seen, we're done.
-					break;
-				}
-				if (headChunk.Start < a.PublishDate)
-				{
-					// Likewise, if we've seen something newer, we can skip this.
-					break;
-				}
+                if (headChunk.GetArticle(a.UniqueId) != null)
+                {
+                    // We assume we're getting a sequence from newest to oldest.
+                    // If we encounter something we've already seen, we're done.
+                    break;
+                }
+                if (headChunk.Start > a.PublishDate)
+                {
+                    // Likewise, if we've seen something newer, we can skip this.
+                    break;
+                }
                 headChunk.AddArticle(a);
             }
             _logger.DebugFormat("saved chunk {0}", headChunk.Id);
