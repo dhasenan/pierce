@@ -47,7 +47,7 @@ There are two files you might need to worry about when administering pierce.
 
 log4net.config
 --------------
-This controls the loging policy. https://logging.apache.org/log4net/release/config-examples.html
+This controls the logging policy. https://logging.apache.org/log4net/release/config-examples.html
 will show you how to modify this.  You may wish to change the log directory, filename, threshold, or
 retention, or add an SMTP appender (to get emailed about errors).
 
