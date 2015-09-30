@@ -8,7 +8,8 @@ namespace pierce
     public class GarbageCollector : IFeedTask
     {
         private readonly Mongo _db;
-        public GarbageCollector(Mongo db) { _db = db; }
+		private readonly PierceConfig _config;
+		public GarbageCollector(Mongo db, PierceConfig config) { _db = db; _config = config; }
 
         public float Priority { get { return 0; } }
 
@@ -26,6 +27,10 @@ namespace pierce
                 .Where(x => x != null)
                 .Select(x => x.CheckInterval)
                 .Min();
+			if (interval < _config.MinUpdateInterval)
+			{
+				interval = _config.MinUpdateInterval;
+			}
             feed.ReadInterval = interval;
             return true;
         }

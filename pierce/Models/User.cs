@@ -12,8 +12,7 @@ namespace pierce
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string
-            Id;
+        public string Id;
         public string Email;
         public string PasswordHash;
         public ICollection<Subscription> Subscriptions = new HashSet<Subscription>();

@@ -14,8 +14,7 @@ namespace pierce
         public List<Article> Articles = new List<Article>();
         public string FeedId;
 
-		[BsonIgnore]
-        public DateTime Start
+		public DateTime Start
         {
             get
             {

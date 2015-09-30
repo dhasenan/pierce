@@ -22,10 +22,20 @@ namespace pierce
         public void Execute()
         {
             // TODO batch these rather than reading everything
-            var list = _db.Feeds.Find(Query.LT("NextRead", DateTime.UtcNow));
-            foreach (var feed in list)
+			// TODO: this seems to be getting everything every time. Why?
+			var list = _db.Feeds.Find(Query.LT("NextRead", DateTime.UtcNow));
+			foreach (var feed in list)
             {
+				if (feed.NextRead > DateTime.UtcNow)
+				{
+					_logger.WarnFormat("got feed {0}, but it's not scheduled for update until {1}", feed, feed.NextRead);
+					continue;
+				}
+				var oldLastRead = feed.LastRead;
+				var oldNextRead = feed.NextRead;
                 ExecuteSingle(feed);
+				_logger.InfoFormat("feed was [last read: {0} next read: {1}] now is: [last read: {2} next read: {3}] (read interval {4}",
+					oldLastRead, oldNextRead, feed.LastRead, feed.NextRead, feed.ReadInterval);
             }
         }
 
@@ -48,7 +58,7 @@ namespace pierce
                 }
             }
             feed.LastRead = DateTime.UtcNow;
-            feed.NextRead = feed.LastRead + feed.ReadInterval;
+			feed.NextRead = DateTime.UtcNow + feed.ReadInterval;
             feed.Save(_db);
         }
     }

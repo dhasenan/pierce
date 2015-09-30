@@ -22,7 +22,6 @@ namespace pierce
             }
         }
 
-        
         public MongoCollection<User> Users { get { return DB.GetCollection<User>("users"); } }
         
         public MongoCollection<Feed> Feeds { get { return DB.GetCollection<Feed>("feeds"); } }

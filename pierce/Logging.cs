@@ -22,7 +22,7 @@ namespace pierce
 
         public override Logger Create(string name, LoggerLevel level)
         {
-            throw new System.NotImplementedException();
+			return Create(name);
         }
     }
 

@@ -204,7 +204,8 @@ namespace pierce
 
         private void SetupLogging()
         {
-            log4net.Config.XmlConfigurator.ConfigureAndWatch(new System.IO.FileInfo("log4net.config"));
+			var configPath = System.IO.Path.Combine(Server.MapPath("~"), "log4net.config");
+            log4net.Config.XmlConfigurator.ConfigureAndWatch(new System.IO.FileInfo(configPath));
         }
     }
 }
