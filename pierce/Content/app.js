@@ -677,17 +677,7 @@ var ui = {
 
   showArticles: function(articles) {
     $('.listRow').removeClass('selectedItem');
-    $('#articleList .content').empty();
-    // TODO this should be a template
-    $.each(articles, function(i, article) {
-      if (ui.showingUnreadOnly && article.IsRead) {
-        return;
-      }
-      var dom = ui.template('articleli', {
-        article: article,
-      });
-      $('#articleList .content').append(dom);
-    });
+    $('#articleList .content').innerHTML = ui.template('articleList', articles);
     ui.updateTitle();
   },
   

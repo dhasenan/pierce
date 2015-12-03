@@ -131,6 +131,20 @@
         <%- data.author.Name %>
       <% }%>
     </script>
+
+    <!-- variables: articles -->
+    <script id='articleList' type='text/html'>
+      <% data.articles.each(function(i, article) { %>
+      <div
+        id='<%- util.articleId(article) %>'
+        class='articleli <%- article.IsRead ? "read" : "unread" %>'
+        onclick='ui.showArticle("<%= article.Feed.Id %>", "<%= article.Id %>");'>
+        <img style='height: 16px; width: 16px;' src='<%= ui.iconUrl(article.Feed) %>' />
+        <%- ui.fmtDate(article.PublishDate) %>
+        <%- article.Title %>
+      </div>
+      <% }) %>
+    </script>
   </head>
   <body>
     <div id='headerBar'>
