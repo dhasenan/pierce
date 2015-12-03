@@ -134,7 +134,7 @@
 
     <!-- variables: articles -->
     <script id='articleList' type='text/html'>
-      <% data.articles.each(function(i, article) { %>
+      <% $.each(data.articles, function(i, article) { %>
       <div
         id='<%- util.articleId(article) %>'
         class='articleli <%- article.IsRead ? "read" : "unread" %>'
@@ -143,7 +143,7 @@
         <%- ui.fmtDate(article.PublishDate) %>
         <%- article.Title %>
       </div>
-      <% }) %>
+      <% }); %>
     </script>
   </head>
   <body>
@@ -158,7 +158,7 @@
           <div class='paneTitle'>
             <span>Articles</span>
             <span style='float: right'>
-              <a id='toggleUnread' href='#' onclick='ui.toggleUnreadOnly()'>Unread</a>
+              <a id='toggleUnread' href='#' onclick='ui.toggleUnreadOnly()'>All</a>
             </span>
           </div>
           <div class='content'>

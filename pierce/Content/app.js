@@ -510,14 +510,11 @@ var domain = {
     var curr = ui.currentLabel.Id;
     for (var i = 0; i < domain.labels.length; i++) {
       if (curr == domain.labels[i].Id) {
-        console.log('starting label ' + i);
         var k = i + offset;
         while (k >= 0 && k < domain.labels.length && !domain.labels[k].Articles) {
-          console.log('skipping label ' + k);
           k += offset;
         }
         if (k < 0 || k >= domain.labels.length) {
-          console.log('got too far; quitting');
           return;
         }
         var label = domain.labels[k];
@@ -526,13 +523,11 @@ var domain = {
           ui.toggleExpanded(label.Id);
         }
         if (moveFeed) {
-          console.log('okay, moving feed');
           domain._moveFeed(offset, true);
         }
         return;
       }
     }
-    console.log('YOLO');
   },
 
   previousArticle: function() {
@@ -583,7 +578,6 @@ var ui = {
       ui._expandedLabels.push(labelId);
       $('#labelBox_' + labelId).addClass('expanded');
       $('#labelBox_' + labelId).removeClass('collapsed');
-      console.log('expanded ' + labelId);
     }
     localStorage.expandedLabels = JSON.stringify({ labels: ui._expandedLabels });
   },
@@ -599,7 +593,6 @@ var ui = {
     }
 
     // Have to trim template text in order not to give jquery a hissy fit.
-    console.log('rendering template ' + templ.text());
     try {
       var compiled = _.template(templ.text(), {variable: 'data'});
       var raw = compiled(data);
@@ -640,7 +633,7 @@ var ui = {
     $('.feedli_' + feed.Id).replaceWith(ui.template('feedli', {feed: feed}));
   },
 
-  showingUnreadOnly: false,
+  showingUnreadOnly: true,
   currentFeed: null,
 
   showLabel: function(labelId) {
@@ -677,7 +670,8 @@ var ui = {
 
   showArticles: function(articles) {
     $('.listRow').removeClass('selectedItem');
-    $('#articleList .content').innerHTML = ui.template('articleList', articles);
+    $('#articleList .content').empty();
+    $('#articleList .content').append(ui.template('articleList', {articles: articles}));
     ui.updateTitle();
   },
   
