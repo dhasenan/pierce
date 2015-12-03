@@ -595,14 +595,21 @@ var ui = {
   template: function(name, data) {
     var templ = $('script#' + name);
     if (!templ) {
-      console.log('template ' + name + ' not found!');
       return 'TEMPLATE ' + name + ' NOT FOUND';
     }
 
     // Have to trim template text in order not to give jquery a hissy fit.
-    return _.template(templ.text(), data)
-      .replace(/^\s+/g, '')
-      .replace(/\s+$/g, '');
+    console.log('rendering template ' + templ.text());
+    try {
+      var compiled = _.template(templ.text(), {variable: 'data'});
+      var raw = compiled(data);
+      return raw
+        .replace(/^\s+/g, '')
+        .replace(/\s+$/g, '');
+    } catch (e) {
+      console.log(e);
+      throw e;
+    }
   },
 
   resizeMainPanel: function() {

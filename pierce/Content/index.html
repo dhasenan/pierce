@@ -16,8 +16,9 @@
     <script type='text/javascript' src='full.js'></script>
 
     <!-- underscore templates! -->
+    <!-- variables: labels -->
     <script id='labelListTemplate' type='text/html'>
-      <% $.each(labels, function(i, label) { 
+      <% $.each(data.labels, function(i, label) {
         var count = label.UnreadCount;
         var classes = 'labelBox';
         var labelclass = 'labelName';
@@ -46,17 +47,18 @@
       <%}); %>
     </script>
 
+    <!-- variables: feeds, labelId -->
     <script id='feedlistTemplate' type='text/html'>
-      <% $.each(feeds, function(i, feed) { %>
-        <div class='feedRow feedRow_<%= feed.Id %> lf_<%= feed.Id %><%= labelId %><%
+      <% $.each(data.feeds, function(i, feed) { %>
+        <div class='feedRow feedRow_<%= feed.Id %> lf_<%= feed.Id %><%= data.labelId %><%
           if (ui.currentLabel
-              && ui.currentLabel.Id == labelId
+              && ui.currentLabel.Id == data.labelId
               && ui.currentFeed
               && ui.currentFeed.Id == feed.Id) {
             print(' selectedItem'); 
           }
           %>'
-          onclick='ui.showFeed("<%= feed.Id %>", "<%= labelId %>")'>
+          onclick='ui.showFeed("<%= feed.Id %>", "<%= data.labelId %>")'>
           <span style='float: left; overflow: hidden; text-overflow: ellipsis; width: 90%'>
             <%= ui.template('feedli', { feed: feed }) %>
           </span>
@@ -69,59 +71,64 @@
       <% }); %>
     </script>
 
+    <!-- variables: feed -->
     <script id='feedli' type='text/html'>
-      <span class='feedli_<%- feed.Id %> feedli<%
-        var unreadc = feed.UnreadCount;
+      <span class='feedli_<%- data.feed.Id %> feedli<%
+        var unreadc = data.feed.UnreadCount;
         if (unreadc > 0) print(' unread'); %>'
         >
-        <% if (feed.IconUri) { %>
-          <img style='height: 16px; width: 16px;' src='<%- feed.IconUri %>' />
+        <% if (data.feed.IconUri) { %>
+          <img style='height: 16px; width: 16px;' src='<%- data.feed.IconUri %>' />
         <% } else { %>
           <img style='height: 16px; width: 16px;' src='/Content/no-icon.png' />
         <% } %>
-        <%-  feed.Title  %>
+        <%-  data.feed.Title  %>
         <%
           if (unreadc) print(' (' + unreadc + ')');
         %>
       </span>
     </script>
 
+    <!-- variables: feed -->
     <script id='feedmenubutton' type='text/html'>
       <span
         style='float: right; height: 1em; width: 1em'
         class='ui-icon ui-icon-triangle-e'
-        onclick='ui.showUpdateFeedWindow("<%= feed.Id %>")'
+        onclick='ui.showUpdateFeedWindow("<%= data.feed.Id %>")'
       >
       </span>
     </script>
 
+    <!-- variables: article -->
     <script id='articleli' type='text/html'>
       <div
-        id='<%- util.articleId(article) %>'
-        class='articleli <%- article.IsRead ? "read" : "unread" %>'
-        onclick='ui.showArticle("<%= article.Feed.Id %>", "<%= article.Id %>");'>
-        <img style='height: 16px; width: 16px;' src='<%= ui.iconUrl(article.Feed) %>' />
-        <%- ui.fmtDate(article.PublishDate) %>
-        <%- article.Title %>
+        id='<%- util.articleId(data.article) %>'
+        class='articleli <%- data.article.IsRead ? "read" : "unread" %>'
+        onclick='ui.showArticle("<%= data.article.Feed.Id %>", "<%= data.article.Id %>");'>
+        <img style='height: 16px; width: 16px;' src='<%= ui.iconUrl(data.article.Feed) %>' />
+        <%- ui.fmtDate(data.article.PublishDate) %>
+        <%- data.article.Title %>
       </div>
     </script>
 
+    <!-- variables: feed, article -->
     <script id='articlefull' type='text/html'>
       <div>
-        <img style='float: left' src='<%= feed.ImageUri %>' />
-        <h3><a href="<%= article.Link %>"><%- article.Title %></a> - <%- feed.Title %></h3>
-        <div><%- ui.fmtDate(article.PublishDate) %>
-          <% if (ui.authors(article)) { %> -- by <%= ui.authors(article) %><% } %></div>
+        <img style='float: left' src='<%= data.feed.ImageUri %>' />
+        <h3><a href="<%= data.article.Link %>"><%- data.article.Title %></a> - <%- data.feed.Title %></h3>
+        <div><%- ui.fmtDate(data.article.PublishDate) %>
+          <% if (ui.authors(data.article)) { %> -- by <%= ui.authors(data.article) %><% } %></div>
         <!-- as a special case, load this with html unescaped -->
-        <frame><%= article.Description || article.Summary %></frame>
+        <frame><%= data.article.Description || data.article.Summary %></frame>
       </div>
     </script>
 
+    <!-- variables: author -->
     <script id='authorLink' type='text/html'>
-      <% if (author.Link) {%>
-        <a href="<%= author.Link %>"><%- author.Name %></a>
+      <% if (data.author.Link) {%>
+        <a href="<%= data.author.Link %>"><%- data.author.Name %></a>
       <% } else { %>
-        <%- author.Name %>
+        <%- data.author.Name %>
       <% }%>
     </script>
   </head>
