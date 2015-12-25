@@ -671,7 +671,11 @@ var ui = {
   showArticles: function(articles) {
     $('.listRow').removeClass('selectedItem');
     $('#articleList .content').empty();
+    var before = new Date();
     $('#articleList .content').append(ui.template('articleList', {articles: articles}));
+    var after = new Date();
+    var duration = after.getTime() - before.getTime();
+    console.log('showed ' + articles.length + ' articles in ' + duration + 'ms');
     ui.updateTitle();
   },
   
