@@ -165,6 +165,7 @@ var domain = {
             feed.Chunks[j].Articles.push(art);
           }
         }
+        art.Display = ui.buildArticleDisplay(art);
       });
       util.sortArticles(feed.Articles);
     }
@@ -586,15 +587,22 @@ var ui = {
     view.closeFeedWindow();
   },
 
+  _templates: {},
+
   template: function(name, data) {
     var templ = $('script#' + name);
     if (!templ) {
       return 'TEMPLATE ' + name + ' NOT FOUND';
     }
 
+    var compiled = ui._templates[name];
+    if (!compiled) {
+      compiled = _.template(templ.text(), {variable: 'data'});
+      ui._templates[name] = compiled;
+    }
+
     // Have to trim template text in order not to give jquery a hissy fit.
     try {
-      var compiled = _.template(templ.text(), {variable: 'data'});
       var raw = compiled(data);
       return raw
         .replace(/^\s+/g, '')
@@ -668,11 +676,56 @@ var ui = {
     ui.selected('.lf_' + feedId + labelId);
   },
 
+  buildArticleDisplay: function(article) {
+    var div = document.createElement('div');
+    div.id = util.articleId(article);
+    if (article.IsRead) {
+      div.className = 'articleli read';
+    } else {
+      div.className = 'articleli unread';
+    }
+    div.addEventListener('click', function() {
+      ui.showArticle(article.Feed.Id, article.Id);
+    });
+    div.innerHTML =
+      '<img style="height: 16px; width: 16px;" src="' + ui.iconUrl(article.Feed) + '" />'
+        + ui.fmtDate(article.PublishDate)
+        + ' '
+        + article.Title;
+    return div;
+  },
+
   showArticles: function(articles) {
     $('.listRow').removeClass('selectedItem');
     $('#articleList .content').empty();
     var before = new Date();
-    $('#articleList .content').append(ui.template('articleList', {articles: articles}));
+    // At first we were using a template for each list item and appending them individually.
+    // That was outrageously slow. 16 seconds to display 3800 articles. Just no.
+    //
+    // When we switched to one template for the whole article list, we got down to 8 seconds. Still
+    // not good enough.
+    //
+    // We tried caching the compiled templates, which might be a good idea generally, but apparently
+    // that took so little time that normal variance between runs was larger and it was as if we
+    // hadn't done it at all. We're still caching templates.
+    //
+    // We changed to use hard-coded string manipulation and .innerHTML. Down to 5.5 seconds. Still
+    // crud. Takeaway, though: templates are a little slow. Not absurdly, just a bit.
+    //
+    // Finally we pre-computed the article lis for each article (which is a tad expensive) and then
+    // just appended them all. This got us down to ~1.3s (plus extra startup time, but since I leave
+    // it open most of the time...).
+    //
+    // Side note: we also tried adding the articles to a new div and then appending that to the
+    // list. That cost us almost a second. So don't do that.
+    var list = $('#articleList .content')[0];
+    for (var i = 0; i < articles.length; i++) {
+      // Purists might suggest we clone the DOM node before using it, but this seems not to produce
+      // problems in practice (plus it means I don't have to update read/unread status in two
+      // separate places). Main problem: this might not do the right thing if the feed gets updated
+      // and has a new icon. I think I can live with that.
+      list.appendChild(articles[i].Display);
+    }
     var after = new Date();
     var duration = after.getTime() - before.getTime();
     console.log('showed ' + articles.length + ' articles in ' + duration + 'ms');

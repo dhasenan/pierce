@@ -99,18 +99,6 @@
       </span>
     </script>
 
-    <!-- variables: article -->
-    <script id='articleli' type='text/html'>
-      <div
-        id='<%- util.articleId(data.article) %>'
-        class='articleli <%- data.article.IsRead ? "read" : "unread" %>'
-        onclick='ui.showArticle("<%= data.article.Feed.Id %>", "<%= data.article.Id %>");'>
-        <img style='height: 16px; width: 16px;' src='<%= ui.iconUrl(data.article.Feed) %>' />
-        <%- ui.fmtDate(data.article.PublishDate) %>
-        <%- data.article.Title %>
-      </div>
-    </script>
-
     <!-- variables: feed, article -->
     <script id='articlefull' type='text/html'>
       <div>
@@ -132,19 +120,6 @@
       <% }%>
     </script>
 
-    <!-- variables: articles -->
-    <script id='articleList' type='text/html'>
-      <% $.each(data.articles, function(i, article) { %>
-      <div
-        id='<%- util.articleId(article) %>'
-        class='articleli <%- article.IsRead ? "read" : "unread" %>'
-        onclick='ui.showArticle("<%= article.Feed.Id %>", "<%= article.Id %>");'>
-        <img style='height: 16px; width: 16px;' src='<%= ui.iconUrl(article.Feed) %>' />
-        <%- ui.fmtDate(article.PublishDate) %>
-        <%- article.Title %>
-      </div>
-      <% }); %>
-    </script>
   </head>
   <body>
     <div id='headerBar'>
