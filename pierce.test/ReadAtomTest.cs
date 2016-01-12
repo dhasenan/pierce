@@ -70,8 +70,8 @@ namespace pierce.test
                 "</feed>";
             var feed = new Feed();
             _target.Read(feed, XDocument.Parse(feedXml));
-            Assert.That(feed.Articles.Count, Is.EqualTo(1));
-            var art = feed.Articles.First();
+            Assert.That(feed.GetHeadChunk(null).Articles.Count, Is.EqualTo(1));
+            var art = feed.GetHeadChunk(null).Articles.First();
             Assert.That(art.Title, Is.EqualTo("Atom-Powered Robots Run Amok"));
             Assert.That(art.Link, Is.EqualTo(new Uri("http://example.org/2003/12/13/atom03")));
             Assert.That(art.PublishDate, Is.EqualTo(new DateTime(2003, 12, 13, 18, 30, 2)));
@@ -103,7 +103,7 @@ namespace pierce.test
             var feed = new Feed();
             _target.Read(feed, XDocument.Parse(feedXml));
             _target.Read(feed, XDocument.Parse(feedXml));
-            Assert.That(feed.Articles.Count, Is.EqualTo(1));
+            Assert.That(feed.GetHeadChunk(null).Articles.Count, Is.EqualTo(1));
         }
 
         [Test]
@@ -128,7 +128,7 @@ namespace pierce.test
                 "</feed>";
             var feed = new Feed();
             _target.Read(feed, XDocument.Parse(feedXml));
-            var art = feed.Articles.First();
+            var art = feed.GetHeadChunk(null).Articles.First();
             Assert.That(art.PublishDate, Is.EqualTo(new DateTime(2004, 1, 13, 18, 30, 2)));
         }
     }

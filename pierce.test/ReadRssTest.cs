@@ -65,7 +65,7 @@ namespace pierce.test
                 "</rss>";
             var feed = new Feed();
             _target.Read(feed, XDocument.Parse(feedText));
-            var article = feed.Articles.First();
+            var article = feed.GetHeadChunk(null).Articles.First();
             Assert.That(article.Title, Is.EqualTo("Incredipede"));
             Assert.That(article.Description, Is.EqualTo("This is a multiline sequence possibly containing HTML."));
             Assert.That(article.Link, Is.EqualTo(new Uri("https://dignitas.com/team/tamewymild")));

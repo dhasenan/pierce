@@ -157,6 +157,8 @@ var domain = {
       $.each(feed.Articles, function(i, art) {
         art.Feed = feed;
         art.PublishDate = util.jsDate(art.PublishDate);
+        // This is a *little* aggressive, but it should work.
+        art.Title = art.Title.replace(/<[^>]*>/g, '');
         if (sub) {
           art.IsRead = sub.ReadArticles.indexOf(art.Id) >= 0;
         }
@@ -674,6 +676,7 @@ var ui = {
     if (feed.Articles)
       ui.showArticles(feed.Articles);
     ui.selected('.lf_' + feedId + labelId);
+    ui.refreshShowingUnread();
   },
 
   buildArticleDisplay: function(article) {
@@ -792,17 +795,22 @@ var ui = {
   },
 
   toggleUnreadOnly: function() {
-    if (ui.showingUnreadOnly) {
-      ui.showingUnreadOnly = false;
-      $('#toggleUnread').text('Unread');
-      $('.read').show();
-    } else {
-      ui.showingUnreadOnly = true;
-      $('#toggleUnread').text('All');
-      $('.read:not(.selectedItem)').hide();
-    }
+    ui.showingUnreadOnly = !ui.showingUnreadOnly;
+    ui.refreshShowingUnread();
     if (ui.currentFeed) {
       ui.showFeed(ui.currentFeed.Id);
+    }
+  },
+
+  // We precompute article lis for speed.
+  // Whenever we do this, we lose whether read articles are shown or hidden.
+  // So when we finish displaying / refreshing a feed, redo show/hide stuff.
+  refreshShowingUnread: function() {
+    if (ui.showingUnreadOnly) {
+      $('.read:not(.selectedItem)').hide();
+    } else {
+      $('.read').show();
+      $('#toggleUnread').text('Unread');
     }
   },
 

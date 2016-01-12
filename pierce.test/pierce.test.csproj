@@ -37,13 +37,15 @@
     <Reference Include="Castle.Core">
       <HintPath>..\lib\castle\Castle.Core.dll</HintPath>
     </Reference>
-    <Reference Include="nunit.framework, Version=2.6.0.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
-      <Package>nunit</Package>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.3.0.1\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ReadAtomTest.cs" />
     <Compile Include="ReadRssTest.cs" />
+    <Compile Include="WgetTest.cs" />
+    <Compile Include="SomethingPositiveTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -51,5 +53,8 @@
       <Project>{776A62FE-1E49-42F4-B1D1-4AC937141CA7}</Project>
       <Name>pierce</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

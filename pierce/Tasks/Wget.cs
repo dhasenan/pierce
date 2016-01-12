@@ -5,16 +5,21 @@ using System.Net;
 using System.Xml.Linq;
 using HtmlAgilityPack;
 using Castle.Core.Logging;
+using System.Net.Cache;
 
 namespace pierce
 {
 	public class Wget
 	{
 		private readonly ILogger _logger;
+		private readonly HttpRequestCachePolicy _policy;
 
-		public Wget(ILogger _logger)
+		public Wget(ILogger logger)
 		{
-			this._logger = _logger;
+			this._logger = logger;
+			// We shouldn't normally contact the same feed twice within 30 minutes.
+			// In case we do, use cached values.
+			this._policy = new HttpRequestCachePolicy(HttpCacheAgeControl.MaxAge, TimeSpan.FromMinutes(10));
 		}
 
 		public string Text(Uri uri)
@@ -63,12 +68,16 @@ namespace pierce
 			try
 			{
 				var wr = (HttpWebRequest)WebRequest.Create(uri);
+				wr.CachePolicy = _policy;
 				wr.Method = "GET";
 				wr.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
 				using (var response = (HttpWebResponse)wr.GetResponse())
 				{
 					_logger.InfoFormat("wget {0}: response {1} ({2})", uri, response.StatusCode, response.StatusDescription);
-					return f(new StreamReader(wr.GetResponse().GetResponseStream()));
+					using (var stream = response.GetResponseStream())
+					{
+						return f(new StreamReader(stream));
+					}
 				}
 			}
 			catch (Exception ex)

@@ -181,7 +181,7 @@ namespace pierce
             ReadArticles(feed, xfeed.Elements(atom + "entry"));
         }
 
-        private Article ReadArticle(XElement xentry)
+        private Article ReadArticle(XElement xentry, DateTime now)
         {
             var article = new Article();
 
@@ -201,6 +201,13 @@ namespace pierce
             ReadAuthors(xentry, "author", article.Authors);
             ReadAuthors(xentry, "contributor", article.Authors);
             ElemAttrLink(xentry, v => article.Link = v);
+
+            if (string.IsNullOrEmpty(article.UniqueId))
+            {
+                // Hash the XML element itself to get a unique ID.
+                article.UniqueId = xentry.ToString().GetHashCode().ToString();
+            }
+
             if (article.PublishDate == DateTime.MinValue)
             {
                 // Atom uses ISO8601 rather than RFC1123. Yay!
@@ -210,7 +217,7 @@ namespace pierce
                     Elem(xentry, atom + "updated", v => article.PublishDate = DateTime.Parse(v).ToUniversalTime());
                     if (article.PublishDate == DateTime.MinValue)
                     {
-                        article.PublishDate = DateTime.UtcNow;
+                        article.PublishDate = now;
                     }
                 }
             }
@@ -278,12 +285,14 @@ namespace pierce
 
         private void ReadArticles(Feed feed, IEnumerable<XElement> elements)
         {
+            var now = DateTime.UtcNow;
             var headChunk = feed.GetHeadChunk(_db);
             var allArticles = elements
-                .Select(ReadArticle)
+                .Select(x => ReadArticle(x, now))
                 .Where(x => x != null)
                 .OrderByDescending(x => x.PublishDate)
-                .TakeWhile(x => headChunk.GetArticle(x.UniqueId) == null);
+                .TakeWhile(x => headChunk.GetArticle(x.UniqueId) == null)
+                .Reverse();
             foreach (var article in allArticles)
             {
                 headChunk.AddArticle(article);
