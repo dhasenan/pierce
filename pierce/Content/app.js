@@ -767,7 +767,8 @@ var ui = {
     // pos: position *relative to scrolled viewport*
     var pos = artDiv.position();
     var par = artDiv.parent();
-    var margin = 2;
+    // Always show an extra article above or below.
+    var margin = artDiv.height() + 2;
     if (pos.top < margin) {
       var alreadyHidden = par.scrollTop();
       // we're hiding 300px
