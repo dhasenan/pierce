@@ -205,6 +205,7 @@ namespace pierce
             if (string.IsNullOrEmpty(article.UniqueId))
             {
                 // Hash the XML element itself to get a unique ID.
+                // This will be hell on porting if that ever comes up...
                 article.UniqueId = xentry.ToString().GetHashCode().ToString();
             }
 
@@ -290,13 +291,22 @@ namespace pierce
             var allArticles = elements
                 .Select(x => ReadArticle(x, now))
                 .Where(x => x != null)
+                .ToList();
+
+            headChunk.AddAll(allArticles
+                // Articles with an explicitly set date
+                .Where(x => x.PublishDate != now)
+                // Order by the date, most recent to least recent
                 .OrderByDescending(x => x.PublishDate)
+                // Grab newest to oldest, stop if we've seen this before
                 .TakeWhile(x => headChunk.GetArticle(x.UniqueId) == null)
-                .Reverse();
-            foreach (var article in allArticles)
-            {
-                headChunk.AddArticle(article);
-            }
+                // But insert oldest to newest, because it can cause issues otherwise.
+                .Reverse());
+            headChunk.AddAll(allArticles
+                // Articles with no explicitly set date
+                .Where(x => x.PublishDate == now)
+                // Only ones that appear in the list before the last one we've seen before.
+                .TakeWhile(x => headChunk.GetArticle(x.UniqueId) == null));
         }
     }
 }

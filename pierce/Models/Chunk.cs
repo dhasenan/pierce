@@ -57,6 +57,14 @@ namespace pierce
             }
         }
 
+        public void AddAll(IEnumerable<Article> enumerable)
+        {
+            foreach (var article in enumerable)
+            {
+                AddArticle(article);
+            }
+        }
+
         public void Save(Mongo db)
         {
             bool noId = string.IsNullOrEmpty(Id);
