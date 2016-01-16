@@ -306,7 +306,10 @@ namespace pierce
                 // Articles with no explicitly set date
                 .Where(x => x.PublishDate == now)
                 // Only ones that appear in the list before the last one we've seen before.
-                .TakeWhile(x => headChunk.GetArticle(x.UniqueId) == null));
+                .TakeWhile(x => headChunk.GetArticle(x.UniqueId) == null)
+                // And reverse this likewise, because the articles are ordered ascending
+                // inside the chunks.
+                .Reverse());
         }
     }
 }

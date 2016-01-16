@@ -158,7 +158,7 @@ var domain = {
         art.Feed = feed;
         art.PublishDate = util.jsDate(art.PublishDate);
         // This is a *little* aggressive, but it should work.
-        art.Title = art.Title.replace(/<[^>]*>/g, '');
+        art.Title = (art.Title || '').replace(/<[^>]*>/g, '');
         if (sub) {
           art.IsRead = sub.ReadArticles.indexOf(art.Id) >= 0;
         }
@@ -425,7 +425,6 @@ var domain = {
       if (!f) return;
     }
     if (!f.Articles) {
-      domain._moveFeed(offset);
       return;
     }
     var articleIndex = null;
@@ -438,14 +437,12 @@ var domain = {
         }
       }
       if (articleIndex === null) {
-        // No, really, what the hell?
-        domain._moveFeed(offset);
+        // We're not showing any article in the current label / feed.
         return;
       }
       var index = articleIndex + offset;
       while (true) {
         if (index < 0 || index >= f.Articles.length) {
-          domain._moveFeed(offset);
           return;
         }
         if (!ui.isArticleVisible(f.Articles[index])) {
@@ -673,8 +670,7 @@ var ui = {
     if (!feed) return;
     ui.currentFeed = feed;
     ui.currentLabel = domain.getLabel(labelId);
-    if (feed.Articles)
-      ui.showArticles(feed.Articles);
+    ui.showArticles(feed.Articles);
     ui.selected('.lf_' + feedId + labelId);
     ui.refreshShowingUnread();
   },
@@ -701,6 +697,7 @@ var ui = {
   showArticles: function(articles) {
     $('.listRow').removeClass('selectedItem');
     $('#articleList .content').empty();
+    $('.articleCaution').hide();
     var before = new Date();
     // At first we were using a template for each list item and appending them individually.
     // That was outrageously slow. 16 seconds to display 3800 articles. Just no.
@@ -722,16 +719,25 @@ var ui = {
     // Side note: we also tried adding the articles to a new div and then appending that to the
     // list. That cost us almost a second. So don't do that.
     var list = $('#articleList .content')[0];
+    var read = 0;
     for (var i = 0; i < articles.length; i++) {
       // Purists might suggest we clone the DOM node before using it, but this seems not to produce
       // problems in practice (plus it means I don't have to update read/unread status in two
       // separate places). Main problem: this might not do the right thing if the feed gets updated
       // and has a new icon. I think I can live with that.
       list.appendChild(articles[i].Display);
+      if (articles[i].IsRead) {
+        read++;
+      }
     }
     var after = new Date();
     var duration = after.getTime() - before.getTime();
     console.log('showed ' + articles.length + ' articles in ' + duration + 'ms');
+    if (articles.length == 0) {
+      $('#noArticles').show();
+    } else if (ui.showingUnreadOnly && read == 0) {
+      $('#showingUnreadOnly').show();
+    }
     ui.updateTitle();
   },
   
@@ -775,11 +781,11 @@ var ui = {
       // relative to hidden, item is at -50
       // need to scroll to 250 hidden, and a bit further up for margin
       par.scrollTop(par.scrollTop() + pos.top - margin);
-    } else if (pos.top > par.height()) {
+    } else if (pos.top > par.height() - margin) {
       // now we want the entry as the last thing there
       // that means we hide fewer pixels -- par.height() fewer means our entry is the first thing
       // below the fold, so we raise it up by one artDiv height
-      par.scrollTop(par.scrollTop() - par.height() + pos.top - margin + artDiv.height());
+      par.scrollTop(par.scrollTop() - par.height() + pos.top + margin + artDiv.height());
     }
 
     $('#articleView .content').html(ui.template('articlefull', {
@@ -809,6 +815,7 @@ var ui = {
   refreshShowingUnread: function() {
     if (ui.showingUnreadOnly) {
       $('.read:not(.selectedItem)').hide();
+      $('#toggleUnread').text('All');
     } else {
       $('.read').show();
       $('#toggleUnread').text('Unread');

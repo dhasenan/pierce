@@ -133,9 +133,16 @@
           <div class='paneTitle'>
             <span>Articles</span>
             <span style='float: right'>
-              <a id='toggleUnread' href='#' onclick='ui.toggleUnreadOnly()'>All</a>
+              Showing: <a id='toggleUnread' href='#' onclick='ui.toggleUnreadOnly()'>All</a>
             </span>
           </div>
+					<div class='articleCaution' id='noArticles' style='display: none'>
+						There are no articles to show. Choose a feed or label, or add some feeds.
+					</div>
+					<div class='articleCaution' id='showingUnreadOnly' style='display: none'>
+						You've read everything in the current view. Choose another feed or label, or
+						<a onclick="ui.toggleUnreadOnly()">look at stuff you've already read</a>.
+					</div>
           <div class='content'>
             A list of articles, natch.
           </div>

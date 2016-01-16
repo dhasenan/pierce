@@ -24,36 +24,23 @@ namespace pierce
 
 		public string Text(Uri uri)
 		{
-			return Stream(uri, (str) =>
-				{
-					if (str == null)
-					{
-						return null;
-					}
-					return str.ReadToEnd();
-				});
+			return Stream(uri, (str) => str);
 		}
 
 		public HtmlDocument Html(Uri uri)
 		{
 			return Stream(uri, (tr) =>
 				{
-					if (tr == null)
-						return null;
-					var text = tr.ReadToEnd();
 					var doc = new HtmlDocument();
-					doc.LoadHtml(text);
+					doc.LoadHtml(tr);
 					return doc;
 				});
 		}
 
 		public XDocument Xml(Uri uri)
 		{
-			return Stream(uri, (tr) =>
+			return Stream(uri, (text) =>
 				{
-					if (tr == null)
-						return null;
-					var text = tr.ReadToEnd();
 					// I've seen people trying to put a data link escape character in their feeds. Bozhe moi!
 					if (text.Any(c => !IsXmlChar(c)))
 					{
@@ -68,6 +55,7 @@ namespace pierce
 			try
 			{
 				var wr = (HttpWebRequest)WebRequest.Create(uri);
+                wr.Timeout = 100000;
 				wr.CachePolicy = _policy;
 				wr.Method = "GET";
 				wr.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
@@ -76,7 +64,7 @@ namespace pierce
 					_logger.InfoFormat("wget {0}: response {1} ({2})", uri, response.StatusCode, response.StatusDescription);
 					using (var stream = response.GetResponseStream())
 					{
-						return f(new StreamReader(stream));
+                        return f(new StreamReader(stream).ReadToEnd());
 					}
 				}
 			}
