@@ -650,6 +650,7 @@ var ui = {
     ui.currentLabel = label;
     ui.showArticles(domain.buildCombinedArticles(label.Feeds));
     ui.selected('#labelName_' + labelId);
+    ui.refreshShowingUnread();
   },
 
   selected: function(query) {
@@ -820,6 +821,10 @@ var ui = {
       $('.read').show();
       $('#toggleUnread').text('Unread');
     }
+		if (domain.currentArticle) {
+			var artDiv = $('#' + util.articleId(article));
+			artDiv.addClass('selectedItem');
+		}
   },
 
   addFeed: function() {
