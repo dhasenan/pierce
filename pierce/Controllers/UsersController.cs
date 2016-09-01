@@ -62,7 +62,7 @@ namespace pierce
 			{
 				return Json(new { Error = "An account already exists with that email address." });
 			}
-			var user = new User { Email = email, Password = password };
+            var user = new User { Email = email, Password = password, NextMaintenance = DateTime.UtcNow };
 			var saved = db.Users.Insert(user);
 			if (!saved.Ok)
 			{

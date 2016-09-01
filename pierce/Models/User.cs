@@ -16,7 +16,16 @@ namespace pierce
         public string Email;
         public string PasswordHash;
         public ICollection<Subscription> Subscriptions = new HashSet<Subscription>();
+
+        /// <summary>
+        /// The default check interval for new feeds this user subscribes to.
+        /// </summary>
 		public TimeSpan DefaultCheckInterval;
+
+        /// <summary>
+        /// When we next must run maintenance for this user.
+        /// </summary>
+        public DateTime NextMaintenance;
 
         public string Password { set { PasswordHash = HashedPassword(value); } }
 

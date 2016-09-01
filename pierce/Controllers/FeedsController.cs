@@ -187,7 +187,7 @@ namespace pierce
 			Subscription sub = user.GetSubscription(feedId);
 			if (sub == null)
 				return Json(new { Error = "Feed not found" });
-			sub.Read(articleId);
+            sub.Read(articleId);
 			db.Users.Save(user);
 			return Json(new { Success = true, Directory = System.Environment.CurrentDirectory });
 		}

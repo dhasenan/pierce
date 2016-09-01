@@ -50,7 +50,7 @@ namespace pierce
 				});
 		}
 
-		private T Stream<T>(Uri uri, Func<TextReader, T> f)
+		private T Stream<T>(Uri uri, Func<string, T> f)
 		{
 			try
 			{
@@ -64,7 +64,10 @@ namespace pierce
 					_logger.InfoFormat("wget {0}: response {1} ({2})", uri, response.StatusCode, response.StatusDescription);
 					using (var stream = response.GetResponseStream())
 					{
-                        return f(new StreamReader(stream).ReadToEnd());
+                        using (var reader = new StreamReader(stream))
+                        {
+                            return f(reader.ReadToEnd());
+                        }
 					}
 				}
 			}

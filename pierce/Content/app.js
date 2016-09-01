@@ -180,21 +180,24 @@ var domain = {
   },
 
   refreshUser: function() {
-    console.log('refreshing user data')
+    console.log('refreshing user data');
     $.ajax('/Users/Get', {
       dataType: 'json',
       success: function(data, statusText, xhr) {
+				console.log('success refreshing user data');
         user = data;
         for (var i = 0; i < user.Subscriptions.length; i++) {
           var sub = user.Subscriptions[i];
           sub.CheckInterval = sub.CheckInterval.TotalSeconds;
         }
         ui.updateUserInfos();
+				console.log('about to refresh feeds');
         domain.refreshFeeds();
         view.hideUnknownError();
         view.hideLoginWindow();
       },
       error: function(xhr, status, err) {
+				console.log('error refreshing user data: ' + err);
         view.hideUnknownError();
         view.hideLoginWindow();
         if (xhr.status == 404) {
@@ -207,6 +210,7 @@ var domain = {
   },
 
   refreshFeeds: function() {
+    console.log('refreshing feeds');
     var updatesPending = 0;
     var feeds = [];
     $.each(user.Subscriptions, function(i, sub) {
@@ -220,19 +224,22 @@ var domain = {
           'lastRead': lastRead
         },
         success: function(data) {
+          updatesPending--;
           feeds[i] = data['Feed'];
           if (data['UpToDate']) {
             // already munged
             feeds[i] = existing;
-            return;
+          } else {
+            domain.mungeFeed(feeds[i]);
           }
-          domain.mungeFeed(feeds[i]);
-          updatesPending--;
           if (updatesPending <= 0) {
             domain.realFeeds = feeds;
             domain.reloadFeedInfo();
           }
-        }
+        },
+				error: function(xhr, status, err) {
+					console.log('error refreshing feed ' + sub.FeedId + ': ' + err);
+				}
       });
     });
   },
@@ -720,15 +727,15 @@ var ui = {
     // Side note: we also tried adding the articles to a new div and then appending that to the
     // list. That cost us almost a second. So don't do that.
     var list = $('#articleList .content')[0];
-    var read = 0;
+    var unread = 0;
     for (var i = 0; i < articles.length; i++) {
       // Purists might suggest we clone the DOM node before using it, but this seems not to produce
       // problems in practice (plus it means I don't have to update read/unread status in two
       // separate places). Main problem: this might not do the right thing if the feed gets updated
       // and has a new icon. I think I can live with that.
       list.appendChild(articles[i].Display);
-      if (articles[i].IsRead) {
-        read++;
+      if (!articles[i].IsRead) {
+        unread++;
       }
     }
     var after = new Date();
@@ -736,7 +743,7 @@ var ui = {
     console.log('showed ' + articles.length + ' articles in ' + duration + 'ms');
     if (articles.length == 0) {
       $('#noArticles').show();
-    } else if (ui.showingUnreadOnly && read == 0) {
+    } else if (ui.showingUnreadOnly && unread == 0) {
       $('#showingUnreadOnly').show();
     }
     ui.updateTitle();
@@ -1075,13 +1082,19 @@ var util = {
 
 
 
+console.log('inserting document-ready function');
 $(document).ready(function() {
+	console.log('readying UI');
   ui.initialize();
+	console.log('readying domain');
   domain.initialize();
 
+	console.log('checking cookies');
   if ($.cookie('.MONOAUTH')) {
+		console.log('have a user!');
     domain.refreshUser();
   } else {
+		console.log('no user; trying to log in');
     view.showLoginWindow();
   }
 });

@@ -4,6 +4,8 @@ using Castle.Core.Logging;
 using System.Xml.Linq;
 using System.IO;
 using System.Linq;
+using System.ServiceModel.Syndication;
+using System.Xml;
 
 namespace pierce.test
 {
@@ -73,6 +75,21 @@ namespace pierce.test
             Console.WriteLine(elem3.ToString());
             Assert.That(elem1.ToString().GetHashCode(), Is.EqualTo(elem2.ToString().GetHashCode()));
             Assert.That(elem1.ToString().GetHashCode(), Is.Not.EqualTo(elem3.ToString().GetHashCode()));
+        }
+
+        [Test]
+        public void SyndicationTest()
+        {
+            var f = SyndicationFeed.Load(XmlReader.Create(new StringReader(feed)));
+            var items = f.Items.ToList();
+            foreach (var item in items)
+            {
+                Console.WriteLine(item.Title.Text);
+                Console.WriteLine(item.PublishDate);
+            }
+        }
+        [Test]
+        public void Balh() {
         }
     }
 }

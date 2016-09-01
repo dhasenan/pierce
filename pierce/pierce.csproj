@@ -121,6 +121,8 @@
     <Compile Include="Mongo.cs" />
     <Compile Include="PierceConfig.cs" />
     <Compile Include="Tasks\Feeds\GarbageCollector.cs" />
+    <Compile Include="Tasks\Users\ScrubReadArticlesTask.cs" />
+    <Compile Include="Tasks\Users\IUserTask.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Web.config" />

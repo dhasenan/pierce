@@ -19,6 +19,7 @@ using Castle.Core;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
+using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 
 namespace pierce
 {
@@ -40,18 +41,18 @@ namespace pierce
     {
         private readonly IKernel kernel;
         private readonly ITempDataProvider dataProvider;
- 
+
         public WindsorControllerFactory(IKernel kernel)
         {
             this.kernel = kernel;
             dataProvider = new SessionlessTempDataProvider();
         }
- 
+
         public override void ReleaseController(IController controller)
         {
             kernel.ReleaseComponent(controller);
         }
- 
+
         protected override IController GetControllerInstance(RequestContext requestContext, Type controllerType)
         {
             if (controllerType == null)
@@ -61,32 +62,6 @@ namespace pierce
             var controller = (Controller)kernel.Resolve(controllerType);
             controller.TempDataProvider = dataProvider;
             return controller;
-        }
-    }
-
-    public class ArrayResolver : ISubDependencyResolver
-    {
-        private readonly IKernel kernel;
-
-        public ArrayResolver(IKernel kernel)
-        {
-            this.kernel = kernel;
-        }
-
-        public object Resolve(CreationContext context, ISubDependencyResolver parentResolver, 
-                              ComponentModel model,
-                              DependencyModel dependency)
-        {
-            return kernel.ResolveAll(dependency.TargetType.GetElementType(), null);
-        }
-
-        public bool CanResolve(CreationContext context, ISubDependencyResolver parentResolver, 
-                              ComponentModel model,
-                              DependencyModel dependency)
-        {
-            return dependency.TargetType != null && 
-                dependency.TargetType.IsArray && 
-                dependency.TargetType.GetElementType().IsInterface;
         }
     }
 
@@ -105,6 +80,7 @@ namespace pierce
         }
 
         public static WindsorContainer Container;
+
         protected void Application_BeginRequest()
         {
             var moduleType = typeof(AspNetRequestScopeStorageProvider).Assembly.GetType("System.Web.WebPages.WebPageHttpModule");
@@ -115,63 +91,99 @@ namespace pierce
         public override void Init()
         {
             base.Init();
-            this.BeginRequest += (sender, e) => {
+            this.BeginRequest += (sender, e) =>
+            {
                 Context.Response.AppendHeader("Access-Control-Allow-Headers", "Content-Type,Origin");
                 Context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
             };
-            this.Error += (sender, e) => {
+            this.Error += (sender, e) =>
+            {
                 logger.Error("Unhandled exception", Server.GetLastError());
             };
         }
 
         private static void StartPeriodicTasks()
         {
-            var thread = new Thread(() => 
-            {
-                while (true)
+            var thread = new Thread(() =>
                 {
-                    try
+                    while (true)
                     {
-                        var feedReader = Container.Resolve<FeedMaintenance>();
-                        feedReader.Execute();
+                        try
+                        {
+                            var feedReader = Container.Resolve<FeedMaintenance>();
+                            feedReader.Execute();
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Error("while updating feeds", ex);
+                        }
+                        Thread.Sleep(TimeSpan.FromSeconds(60));
                     }
-                    catch (Exception ex)
-                    {
-                        logger.Error("while updating feeds", ex);
-                    }
-                    Thread.Sleep(TimeSpan.FromSeconds(60));
                 }
-            }
-            );
+                         );
             thread.Priority = ThreadPriority.Lowest;
             thread.Start();
+
+            /*
+            var umt = new Thread(() =>
+                {
+                    while (true)
+                    {
+                        try
+                        {
+                            var userMaintenance = Container.Resolve<UserMaintenance>();
+                            userMaintenance.Execute();
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Error("while running user maintenance", ex);
+                        }
+                        Thread.Sleep(TimeSpan.FromSeconds(60));
+                    }
+                });
+            umt.Priority = ThreadPriority.Lowest;
+            umt.Start();
+            */
         }
 
-		private static void SetupWindsor()
-		{
-			Container = new WindsorContainer();
-			Container.Kernel.Resolver.AddSubResolver(new LoggerResolver(new MyLoggerFactory()));
-			Container.Kernel.Resolver.AddSubResolver(new ArrayResolver(Container.Kernel));
-			Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController))).Pick().Unless(x => typeof(IFeedTask).IsAssignableFrom(x)).WithServiceSelf().LifestyleTransient());
-			Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(ChunkShuffler))).BasedOn<IFeedTask>().WithServiceFirstInterface().LifestyleTransient());
-			ControllerBuilder.Current.SetControllerFactory(new WindsorControllerFactory(Container.Kernel));
-		}
+        private static void SetupWindsor()
+        {
+            Container = new WindsorContainer();
+            Container.Kernel.Resolver.AddSubResolver(new LoggerResolver(new MyLoggerFactory()));
+            Container.Kernel.Resolver.AddSubResolver(new ArrayResolver(Container.Kernel));
+            Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(HomeController)))
+                .Pick()
+                .Unless(x => typeof(IFeedTask).IsAssignableFrom(x))
+                .Unless(x => typeof(IUserTask).IsAssignableFrom(x))
+                .WithServiceSelf()
+                .LifestyleTransient());
+            Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(ChunkShuffler)))
+                .BasedOn<IFeedTask>()
+                .WithServiceFirstInterface()
+                .LifestyleTransient());
+            Container.Register(Classes.FromAssembly(Assembly.GetAssembly(typeof(ChunkShuffler)))
+                .BasedOn<IUserTask>()
+                .WithServiceFirstInterface()
+                .LifestyleTransient());
+            ControllerBuilder.Current.SetControllerFactory(new WindsorControllerFactory(Container.Kernel));
+        }
 
-		private static void SetupHttpsPolicy()
-		{
-			var conf = Container.Resolve<PierceConfig>();
-			if (!conf.TrustAllCertificates)
-			{
-				return;
-			}
-			ServicePointManager.ServerCertificateValidationCallback = (object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors errors) => {
-				if (errors != SslPolicyErrors.None)
-				{
-					logger.InfoFormat("SSL certificate didn't validate; going ahead anyway. Problem was {0}", errors);
-				}
-				return true;
-			};
-		}
+        private static void SetupHttpsPolicy()
+        {
+            var conf = Container.Resolve<PierceConfig>();
+            if (!conf.TrustAllCertificates)
+            {
+                return;
+            }
+            ServicePointManager.ServerCertificateValidationCallback = (object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors errors) =>
+            {
+                if (errors != SslPolicyErrors.None)
+                {
+                    logger.InfoFormat("SSL certificate didn't validate; going ahead anyway. Problem was {0}", errors);
+                }
+                return true;
+            };
+        }
 
         protected void Application_Start()
         {
@@ -183,8 +195,8 @@ namespace pierce
                 logger.Info("registering areas and routes");
                 AreaRegistration.RegisterAllAreas();
                 RegisterRoutes(RouteTable.Routes);
-				logger.Info("setting up HTTPS policy");
-				SetupHttpsPolicy();
+                logger.Info("setting up HTTPS policy");
+                SetupHttpsPolicy();
                 logger.Info("starting periodic tasks");
                 StartPeriodicTasks();
                 logger.Info("initialization complete!");
@@ -204,7 +216,7 @@ namespace pierce
 
         private void SetupLogging()
         {
-			var configPath = System.IO.Path.Combine(Server.MapPath("~"), "log4net.config");
+            var configPath = System.IO.Path.Combine(Server.MapPath("~"), "log4net.config");
             log4net.Config.XmlConfigurator.ConfigureAndWatch(new System.IO.FileInfo(configPath));
         }
     }
