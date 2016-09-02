@@ -124,7 +124,6 @@ namespace pierce
             thread.Priority = ThreadPriority.Lowest;
             thread.Start();
 
-            /*
             var umt = new Thread(() =>
                 {
                     while (true)
@@ -143,7 +142,6 @@ namespace pierce
                 });
             umt.Priority = ThreadPriority.Lowest;
             umt.Start();
-            */
         }
 
         private static void SetupWindsor()

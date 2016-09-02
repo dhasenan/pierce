@@ -322,10 +322,28 @@ var domain = {
 
     domain.updateDisplayForArticle(article);
   },
-  
+
+  markOlderRead: function(article) {
+    if (article == null) {
+      article = domain.currentArticle;
+    }
+    if (article == null) {
+      return;
+    }
+    $.ajax('/Feeds/MarkOlderRead', {
+      dataType: 'json',
+      data: {
+        feedId: article.Feed.Id,
+        articleId: article.Id
+      }
+    });
+
+    alert('Refresh to see updated view.');
+  },
+
   updateDisplayForArticle: function(article) {
     ui.displayArticleStatus(article);
-    
+
     // Update the real, direct feed that contains this article.
     ui.updateFeedDisplay(article.Feed);
 
@@ -953,6 +971,7 @@ var ui = {
       'A': view.showAddFeedWindow,
       'u': domain.markUnread,
       'r': domain.markRead,
+      'M': domain.markOlderRead
     };
 
     $(document).keypress(function(evt) {

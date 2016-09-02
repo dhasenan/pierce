@@ -17,8 +17,7 @@ namespace pierce
             foreach (var sub in user.Subscriptions)
             {
                 var feed = Feed.ById(sub.FeedId, _db);
-                var head = feed.GetHeadChunk(_db);
-                var deadReads = sub.ReadArticles.Where(x => !head.Articles.Any(y => y.Id.ToString() == x)).ToList();
+                var deadReads = sub.ReadArticles.Where(x => !feed.Articles.Any(y => y.Id.ToString() == x)).ToList();
                 foreach (var dead in deadReads)
                 {
                     sub.ReadArticles.Remove(dead);

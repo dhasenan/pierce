@@ -190,7 +190,28 @@ namespace pierce
             sub.Read(articleId);
 			db.Users.Save(user);
 			return Json(new { Success = true, Directory = System.Environment.CurrentDirectory });
-		}
+        }
+
+        public ActionResult MarkOlderRead(string feedId, string articleId)
+        {
+            var user = GetUser();
+            Subscription sub = user.GetSubscription(feedId);
+            if (sub == null)
+                return Json(new { Error = "Feed not found" });
+            var feed = Feed.ById(feedId, db);
+            var guid = Guid.Parse(articleId);
+            var art = feed.Articles.First(x => x.Id == guid);
+            foreach (var article in feed.Articles)
+            {
+                if (article.PublishDate < art.PublishDate)
+                {
+                    sub.Read(article.Id.ToString());
+                }
+            }
+            sub.Read(articleId);
+            db.Users.Save(user);
+            return Json(new { Success = true, Directory = System.Environment.CurrentDirectory });
+        }
 
 		public ActionResult MarkUnread(string feedId, string articleId)
 		{
