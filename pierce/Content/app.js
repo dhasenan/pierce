@@ -181,6 +181,7 @@ var domain = {
 
   refreshUser: function() {
     console.log('refreshing user data');
+		ui.showAlert('Refreshing subscriptions');
     $.ajax('/Users/Get', {
       dataType: 'json',
       success: function(data, statusText, xhr) {
@@ -864,6 +865,7 @@ var ui = {
   toggleUnreadOnly: function() {
     ui.showingUnreadOnly = !ui.showingUnreadOnly;
 		ui.showArticles(ui.articles);
+		ui.refreshShowingUnread();
   },
 
   // We precompute article lis for speed.
@@ -872,15 +874,11 @@ var ui = {
   refreshShowingUnread: function() {
     if (ui.showingUnreadOnly) {
       $('.read:not(.selectedItem)').hide();
-      $('#toggleUnread').text('All');
+      $('#toggleUnread').text('Unread');
     } else {
       $('.read').show();
-      $('#toggleUnread').text('Unread');
+      $('#toggleUnread').text('All');
     }
-		if (domain.currentArticle) {
-			var artDiv = $('#' + util.articleId(article));
-			artDiv.addClass('selectedItem');
-		}
   },
 
   addFeed: function() {
