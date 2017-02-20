@@ -212,7 +212,9 @@ var domain = {
   refreshFeeds: function() {
     console.log('refreshing feeds');
     var updatesPending = 0;
+		var updatesFinished = 0;
     var feeds = [];
+		ui.showAlert('Refreshing ' + user.Subscriptions.length + 'feeds');
     $.each(user.Subscriptions, function(i, sub) {
       feeds.push(null);
       var existing = domain.getFeed(sub.FeedId);
@@ -225,6 +227,7 @@ var domain = {
         },
         success: function(data) {
           updatesPending--;
+          updatesFinished++
           feeds[i] = data['Feed'];
           if (data['UpToDate']) {
             // already munged
@@ -232,12 +235,16 @@ var domain = {
           } else {
             domain.mungeFeed(feeds[i]);
           }
+					ui.showAlert('Refreshing feed ' + updatesFinished + '; ' + updatesPending + ' remaining.');
           if (updatesPending <= 0) {
+						ui.hideAlert();
             domain.realFeeds = feeds;
             domain.reloadFeedInfo();
           }
         },
 				error: function(xhr, status, err) {
+					updatesPending--;
+					updatesFinished++
 					console.log('error refreshing feed ' + sub.FeedId + ': ' + err);
 				}
       });
@@ -338,7 +345,7 @@ var domain = {
       }
     });
 
-    alert('Refresh to see updated view.');
+    ui.showAlert('Refresh to see updated view.');
   },
 
   updateDisplayForArticle: function(article) {
@@ -416,7 +423,7 @@ var domain = {
     $.ajax('/Feeds/Unsubscribe', {
       data: { id: feedId },
     success: function() {
-      alert('Successfully unsubscribed.');
+      ui.showAlert('Successfully unsubscribed.');
       view.closeModifyFeedWindow();
       domain.removeFeed(feedId);
       ui.displayFeeds();
@@ -433,7 +440,7 @@ var domain = {
       },
       success: function(data) {
         if (data['Error']) {
-          alert(data['Error']);
+          ui.showAlert(data['Error']);
         } else {
           view.closeSettingsWindow();
         }
@@ -775,6 +782,19 @@ var ui = {
     }
     ui.updateTitle();
   },
+
+	showAlert: function(content) {
+		if (ui.butterTimeout) {
+			window.clearTimeout(ui.butterTimeout);
+		}
+		ui.butterTimeout = window.setTimeout(ui.hideAlert, 5000);
+		document.getElementById('buttercontent').innerText = content;
+		document.getElementById("butterbar").style.display = 'block';
+	},
+
+	hideAlert: function() {
+		document.getElementById("butterbar").style.display = 'none';
+	},
   
   displayArticleStatus: function(article) {
     var artDiv = $('#' + util.articleId(article));
@@ -877,7 +897,7 @@ var ui = {
       success: function(data, statusText, xhr) {
         if (!data['FoundFeeds']) {
           // leave window open for corrections
-          alert('I didn\'t find any feeds :(');
+          ui.showAlert('I didn\'t find any feeds :(');
         } else if (data['AddedFeed']) {
           // mungeFeed requires an existing subscription. Deal with it first.
           var sub = data['Subscription'];

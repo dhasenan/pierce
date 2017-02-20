@@ -1,4 +1,5 @@
 
+
 body {
   background-color: #fafaff;
   font-family: 'Open Sans', sans-serif;
@@ -170,4 +171,24 @@ a {
 
 .labelContent {
   clear: both;
+}
+
+#butterbar {
+	position: absolute;
+	z-index: 100;
+	top: 4em;
+	left: 0px;
+	display: none;
+	width: 100%;
+	box-pack: center;
+	box-align: center;
+	text-align: center;
+}
+
+#buttercontent {
+	background-color: #ddd;
+	border: 2px solid black;
+	padding: 5px;
+	font-size: 12pt;
+	margin: auto;
 }
