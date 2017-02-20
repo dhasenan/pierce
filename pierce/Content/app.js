@@ -474,7 +474,7 @@ var domain = {
           index += offset;
           continue;
         }
-        ui.showArticle(f, f.Articles[index].Id);
+        ui.showArticle(f, f.Articles[index]);
         return;
       }
     }
@@ -520,7 +520,7 @@ var domain = {
       }
       var art = f.Articles[ai];
       if (art) {
-        ui.showArticle(f, f.Articles[ai].Id);
+        ui.showArticle(f, f.Articles[ai]);
       }
       return;
     }
@@ -710,7 +710,7 @@ var ui = {
       div.className = 'articleli unread';
     }
     div.addEventListener('click', function() {
-      ui.showArticle(article.Feed.Id, article.Id);
+      ui.showArticle(article.Feed.Id, article);
     });
     div.innerHTML =
       '<img style="height: 16px; width: 16px;" src="' + ui.iconUrl(article.Feed) + '" />'
@@ -721,7 +721,7 @@ var ui = {
   },
 
   showArticles: function(articles) {
-    $('.listRow').removeClass('selectedItem');
+		ui.articles = articles;
     $('#articleList .content').empty();
     $('.articleCaution').hide();
     var before = new Date();
@@ -751,8 +751,17 @@ var ui = {
       // problems in practice (plus it means I don't have to update read/unread status in two
       // separate places). Main problem: this might not do the right thing if the feed gets updated
       // and has a new icon. I think I can live with that.
-      list.appendChild(articles[i].Display);
-      if (!articles[i].IsRead) {
+      let art = articles[i];
+			if (ui.showingUnreadOnly && art.IsRead) {
+				// By defaulting to unread only and not building / adding things that aren't being
+				// displayed, we cut render time from 8.6s to 0.028s.
+				continue;
+			}
+      if (!art.Display) {
+        art.Display = ui.buildArticleDisplay(art);
+      }
+      list.appendChild(art.Display);
+      if (!art.IsRead) {
         unread++;
       }
     }
@@ -778,20 +787,25 @@ var ui = {
     }
   },
 
-  showArticle: function(o, artId) {
+  showArticle: function(o, article) {
     var feed = null;
     if (o.Articles) {
       feed = o;
     } else {
       feed = domain.getFeed(o) || domain.getLabel(o);
     }
-    var article = domain.getArticle(feed, artId);
+		if (!article.Id) {
+			article = domain.getArticle(feed, article);
+		}
     if (!article) {
       console.log('feed ' + feedId + ' has no article ' + artId);
       return;
     }
-    $('.articleli').removeClass('selectedItem');
-    var artDiv = $('#' + util.articleId(article));
+		if (ui.currentArticle) {
+			$(ui.currentArticle).removeClass('selectedItem');
+		}
+		ui.currentArticle = article.Display;
+    var artDiv = $(article.Display);
     artDiv.addClass('selectedItem');
     artDiv.removeClass('unread');
     artDiv.addClass('read');
@@ -829,10 +843,7 @@ var ui = {
 
   toggleUnreadOnly: function() {
     ui.showingUnreadOnly = !ui.showingUnreadOnly;
-    ui.refreshShowingUnread();
-    if (ui.currentFeed) {
-      ui.showFeed(ui.currentFeed.Id);
-    }
+		ui.showArticles(ui.articles);
   },
 
   // We precompute article lis for speed.
