@@ -590,7 +590,7 @@ var domain = {
   },
 
   initialize: function() {
-    window.setInterval(domain.refreshUser, 5 * 60 * 1000);
+    window.setInterval(domain.refreshUser, 15 * 60 * 1000);
   }
 };
 
