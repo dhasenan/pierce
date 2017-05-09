@@ -1,8 +1,12 @@
 module pierce.db;
 
 import vibe.db.postgresql;
+import std.conv;
+import std.string;
+import std.traits;
+import std.datetime;
 
-T parse(T)(Row row)
+T parse(T)(immutable Row row)
 {
     import std.traits;
     import std.datetime;
@@ -14,13 +18,21 @@ T parse(T)(Row row)
         val = new T();
     }
 
-    foreach (m; __traits(derivedMembers, T))
+    foreach (mm; __traits(derivedMembers, T))
     {
-        if (m !in row)
+        const m = mm;
+        bool found = false;
+        for (int i = 0; i < row.length; i++)
         {
-            continue;
+            if (row.columnName(i) == m)
+            {
+                found = true;
+                break;
+            }
         }
-        auto val = row[m].as!string;
+        if (!found) continue;
+
+        auto v = row[m].as!string;
 
         alias FT = typeof(__traits(getMember, T, m));
         static if (isFunction!FT)
@@ -29,29 +41,30 @@ T parse(T)(Row row)
         }
         else static if (is(FT == UUID))
         {
-            __traits(getMember, T, m) = val.parseUUID;
+            __traits(getMember, val, m) = v.parseUUID;
         }
         else static if (is(FT == SysTime))
         {
-            __traits(getMember, T, m) = SysTime.fromSimpleString(val);
+            __traits(getMember, val, m) = SysTime.fromSimpleString(v);
         }
         else static if (is(FT == string))
         {
-            __traits(getMember, T, m) = val;
+            __traits(getMember, val, m) = v;
         }
         else static if (is(FT == Duration))
         {
-            __traits(getMember, T, m) = dur!"seconds"(val.to!int);
+            __traits(getMember, val, m) = dur!"seconds"(std.conv.to!int(v));
         }
         else static if (is(FT == int))
         {
-            __traits(getMember, T, m) = val.to!int;
+            __traits(getMember, val, m) = std.conv.to!int(v);
         }
         else
         {
             static assert(false, "can't deserialize " ~ FT.stringof ~ " from DB");
         }
     }
+    return val;
 }
 
 QueryParams toParams(T)(T val, bool trailingId)
@@ -62,28 +75,31 @@ QueryParams toParams(T)(T val, bool trailingId)
     {
         alias FT = typeof(__traits(getMember, T, m));
         string str;
-        static if (isFunction!FT)
+        static if (!isFunction!FT)
         {
-            continue;
+            static if (is(FT == SysTime))
+            {
+                str = __traits(getMember, val, m).toISOString(val);
+            }
+            else static if (is(FT == Duration))
+            {
+                str = __traits(getMember, val, m).total!("seconds").to!string;
+            }
+            else static if (is(FT == string))
+            {
+                str = __traits(getMember, val, m);
+            }
+            else
+            {
+                str = std.conv.to!string(__traits(getMember, val, m));
+            }
+            v[i] = toValue(str, ValueFormat.TEXT);
+            i++;
         }
-        else static if (is(FT == SysTime))
-        {
-            str = __traits(getMember, T, m).toISOString(val);
-        }
-        else static if (is(FT == Duration))
-        {
-            str = __traits(getMember, T, m).total!("seconds").to!string;
-        }
-        else
-        {
-            str = __traits(getMember, T, m).to!string;
-        }
-        v[i] = toValue(str, ValueFormat.TEXT);
-        i++;
     }
     if (trailingId)
     {
-        v[i] = toValue(T.id.to!string, ValueFormat.TEXT);
+        v[i] = toValue(val.id.to!string, ValueFormat.TEXT);
         i++;
     }
     QueryParams p;
@@ -93,25 +109,23 @@ QueryParams toParams(T)(T val, bool trailingId)
 
 string updateText(T)()
 {
-    string cmd = `UPDATE "` ~ T.stringof ~ `" SET `;
+    string cmd = `UPDATE "` ~ T.stringof.toLower ~ `" SET `;
     int i = 0;
     foreach (m; __traits(derivedMembers, T))
     {
         alias FT = typeof(__traits(getMember, T, m));
-        static if (isFunction!FT)
+        static if (!isFunction!FT)
         {
-            continue;
+            i++;
+            if (i > 1)
+            {
+                cmd ~= `, `;
+            }
+            cmd ~= m;
+            cmd ~= ` = $`;
+            cmd ~= i.to!string;
         }
-        i++;
-        if (i > 1)
-        {
-            cmd ~= `, `;
-        }
-        cmd ~= m;
-        cmd ~= ` = $`;
-        cmd ~= i.to!string;
     }
-    v[i] = toValue(T.id.to!string, ValueFormat.TEXT);
     i++;
     cmd ~= ` WHERE id = $`;
     cmd ~= i.to!string;
@@ -120,21 +134,20 @@ string updateText(T)()
 
 string insertText(T)()
 {
-    string cmd = `INSERT INTO "` ~ T.stringof ~ ` (`;
+    string cmd = `INSERT INTO "` ~ T.stringof.toLower ~ `" (`;
     int i = 0;
     foreach (m; __traits(derivedMembers, T))
     {
         alias FT = typeof(__traits(getMember, T, m));
-        static if (isFunction!FT)
+        if (!isFunction!FT)
         {
-            continue;
+            i++;
+            if (i > 1)
+            {
+                cmd ~= `, `;
+            }
+            cmd ~= m;
         }
-        i++;
-        if (i > 1)
-        {
-            cmd ~= `, `;
-        }
-        cmd ~= m;
     }
     cmd ~= `) VALUES (`;
     for (int x = 1; x <= i; x++)
@@ -183,7 +196,7 @@ Nullable!T fetch(T)(UUID id)
 T[] query(T)(string cmd, string[] args)
 {
     QueryParams params;
-    params.argsFromArray = params;
+    params.argsFromArray = args;
     params.sqlCommand = cmd;
     auto result = inConnection!(conn => conn.execParams(params));
     auto vals = new T[result.length];

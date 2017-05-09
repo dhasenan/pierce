@@ -1,11 +1,17 @@
 module pierce.app;
 
 import vibe.d;
+import vibe.db.postgresql;
+import core.time;
+import std.uuid;
 
 import pierce.domain;
+import pierce.db;
 
 shared static this()
 {
+    logInfo(updateText!User);
+    logInfo(insertText!User);
     auto settings = new HTTPServerSettings;
     settings.port = 8080;
     auto router = new URLRouter;
@@ -168,12 +174,13 @@ class LoginController
     // Do you a login for great good!
     Json login(HTTPServerResponse response, string email, string password)
     {
+        auto js = Json.emptyObject;
         string[1] args;
         args[0] = email;
-        auto matches = db.query!User(`SELECT * FROM "user" WHERE email = $1`, args);
+        auto matches = query!User(`SELECT * FROM "user" WHERE email = $1`, args);
         if (matches.length > 1)
         {
-            log.errorf("multiple users match email %s", email);
+            logError("multiple users match email %s", email);
         }
         foreach (match; matches)
         {
@@ -181,15 +188,21 @@ class LoginController
             {
                 auto sessionTag = randomUUID.toString;
                 sessions[sessionTag] = match.id.toString;
-                Cookie cookie;
-                cookie.name = COOKIE_NAME;
+                Cookie cookie = new Cookie;
                 cookie.value = sessionTag;
                 auto expDate = Clock.currTime + LOGIN_DURATION;
                 cookie.expires = expDate.toRFC822DateTimeString;
                 cookie.path = "/";
-                response.setCookie(cookie);
+                response.cookies[COOKIE_NAME] = cookie;
+                js["success"] = true;
+                js["id"] = match.id.toString;
+                js["email"] = match.email;
+                js["checkIntervalSeconds"] = match.checkInterval.total!"seconds";
+                return js;
             }
         }
+        js["success"] = false;
+        return js;
     }
 
     Json register(HTTPServerResponse response, string email, string password)
@@ -205,8 +218,8 @@ class LoginController
         catch (Dpq2Exception e)
         {
             // TODO detect exact exception for conflict
-            log.errorf("failed to save user: %s", e);
-            responses.statusCode = 409;
+            logError("failed to save user: %s", e);
+            response.statusCode = 409;
             js["success"] = false;
             js["error"] = "Another person registered with that email address already.";
             return js;
@@ -219,14 +232,13 @@ class LoginController
     void logout(HTTPServerRequest req, HTTPServerResponse response)
     {
         // Clear the cookie: set its value to something invalid, set it to expire
-        Cookie cookie;
-        cookie.name = COOKIE_NAME;
+        Cookie cookie = new Cookie;
         cookie.value = "invalid";
         // Date doesn't matter if it's in the past.
         cookie.expires = "Wed, 21 Oct 2015 07:28:00 GMT";
         cookie.path = "/";
         cookie.maxAge = 1;
-        response.setCookie(cookie);
+        response.cookies[COOKIE_NAME] = cookie;
         response.writeVoidBody();
     }
 }
@@ -271,16 +283,16 @@ class UsersController
             js["setPassword"] = true;
         }
         user.email = email;
-        user.checkIntervalSeconds = checkIntervalSeconds;
+        user.checkInterval = dur!"seconds"(checkIntervalSeconds);
         try
         {
-            update(user);
+            .update(user);
         }
         catch (Dpq2Exception e)
         {
             // TODO detect exact exception for conflict
-            log.errorf("failed to save user: %s", e);
-            responses.statusCode = 409;
+            logError("failed to save user: %s", e);
+            res.statusCode = 409;
             js["success"] = false;
             js["setPassword"] = false;
             js["error"] = "Another person registered with that email address already.";

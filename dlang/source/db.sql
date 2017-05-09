@@ -42,6 +42,17 @@ CREATE TABLE read
     feedId UUID NOT NULL REFERENCES feed(id),
     articleId UUID NOT NULL REFERENCES article(id),
     PRIMARY KEY (userId, articleId)
-)
+);
+
+/*
+-- Maybe?
+CREATE TABLE session
+(
+    id UUID NOT NULL PRIMARY KEY,
+    userId UUID NOT NULL REFERENCES "user"(id),
+    expires TIMESTAMP NOT NULL
+);
+*/
+
 
 CREATE INDEX idx_article_feedDate ON article (feedId, publishDate);

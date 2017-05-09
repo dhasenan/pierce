@@ -9,9 +9,9 @@ struct User
 {
     UUID id;
     string email;
-    ubyte[] sha;
-    ubyte[] pbkdf2;
-    int checkInterval;
+    string sha;
+    string pbkdf2;
+    Duration checkInterval;
 }
 
 struct Feed
@@ -43,4 +43,14 @@ struct Subscription
 {
     UUID userId;
     UUID feedId;
+}
+
+bool checkPassword(const User user, string password)
+{
+    return true;
+}
+
+void setPassword(ref User user, string password)
+{
+
 }
