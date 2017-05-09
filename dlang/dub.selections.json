@@ -1,0 +1,18 @@
+{
+	"fileVersion": 1,
+	"versions": {
+		"derelict-pq": "2.0.3",
+		"derelict-util": "3.0.0-alpha.2",
+		"diet-ng": "1.2.1",
+		"dpq2": "0.6.22",
+		"eventcore": "0.8.10",
+		"libasync": "0.8.3",
+		"libevent": "2.0.2+2.0.16",
+		"memutils": "0.4.9",
+		"openssl": "1.1.5+1.0.1g",
+		"taggedalgebraic": "0.10.5",
+		"vibe-core": "1.0.0-beta.6",
+		"vibe-d": "0.8.0-beta.5",
+		"vibe-d-postgresql": "0.2.22"
+	}
+}

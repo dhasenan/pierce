@@ -1,0 +1,15 @@
+{
+	"name": "pierce",
+	"authors": [
+		"dhasenan"
+	],
+	"dependencies": {
+		"vibe-d": "~>0.7.31",
+		"vibe-d-postgresql": "~>0.22.2",
+		"derelict-pq": "2.0.3"
+	},
+	"description": "RSS reader",
+	"copyright": "Copyright © 2017, dhasenan",
+	"license": "Ms-PL",
+	"versions": ["VibeDefaultMain"]
+}
