@@ -80,6 +80,7 @@
     <Reference Include="System.Web.WebPages">
       <HintPath>..\..\..\..\..\usr\lib\mono\4.5\System.Web.WebPages.dll</HintPath>
     </Reference>
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Content\" />

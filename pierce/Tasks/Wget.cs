@@ -6,6 +6,7 @@ using System.Xml.Linq;
 using HtmlAgilityPack;
 using Castle.Core.Logging;
 using System.Net.Cache;
+using System.Net.Http;
 
 namespace pierce
 {
@@ -13,6 +14,8 @@ namespace pierce
 	{
 		private readonly ILogger _logger;
 		private readonly HttpRequestCachePolicy _policy;
+		private HttpClient _http;
+		private DateTime _lastRefreshed;
 
 		public Wget(ILogger logger)
 		{
@@ -20,6 +23,8 @@ namespace pierce
 			// We shouldn't normally contact the same feed twice within 30 minutes.
 			// In case we do, use cached values.
 			this._policy = new HttpRequestCachePolicy(HttpCacheAgeControl.MaxAge, TimeSpan.FromMinutes(10));
+			_http = new HttpClient();
+			_lastRefreshed = DateTime.UtcNow;
 		}
 
 		public string Text(Uri uri)
@@ -52,30 +57,18 @@ namespace pierce
 
 		private T Stream<T>(Uri uri, Func<string, T> f)
 		{
-			try
+			if (_lastRefreshed < DateTime.UtcNow - TimeSpan.FromMinutes(10))
 			{
-				var wr = (HttpWebRequest)WebRequest.Create(uri);
-                wr.Timeout = 100000;
-				wr.CachePolicy = _policy;
-				wr.Method = "GET";
-				wr.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
-				using (var response = (HttpWebResponse)wr.GetResponse())
-				{
-					_logger.InfoFormat("wget {0}: response {1} ({2})", uri, response.StatusCode, response.StatusDescription);
-					using (var stream = response.GetResponseStream())
-					{
-                        using (var reader = new StreamReader(stream))
-                        {
-                            return f(reader.ReadToEnd());
-                        }
-					}
-				}
+				_http = new HttpClient();
+				_lastRefreshed = DateTime.UtcNow;
 			}
-			catch (Exception ex)
+			var task = _http.GetStringAsync(uri);
+			task.Wait();
+			if (task.IsFaulted)
 			{
-				_logger.InfoFormat(ex, "failed to get response from URL {0}", uri);
-				return default(T);
+				_logger.InfoFormat(task.Exception, "failed to get response from URL {0}");
 			}
+			return f(task.Result);
 		}
 
 		private bool IsXmlChar(char c)
