@@ -1,6 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
+		"datetimeformat": "0.1.0",
 		"derelict-pq": "2.0.3",
 		"derelict-util": "3.0.0-alpha.2",
 		"diet-ng": "1.2.1",

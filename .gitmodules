@@ -1,0 +1,3 @@
+[submodule "dlang/psql"]
+	path = dlang/psql
+	url = https://github.com/denizzzka/vibe.d.db.postgresql.git

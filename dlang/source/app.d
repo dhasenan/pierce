@@ -16,6 +16,8 @@ shared static this()
     settings.port = 8080;
     auto router = new URLRouter;
     router.registerWebInterface(new Authed!(FeedsControllerImpl, "feeds"));
+    router.registerWebInterface(new Authed!(UsersControllerImpl, "users"));
+    router.registerWebInterface(new LoginController);
     listenHTTP(settings, router);
 }
 
@@ -111,6 +113,7 @@ class FeedsControllerImpl
 {
     Json postAdd(User user, string url, string title, string labels)
     {
+        auto existing = query!Feed("select * from feeds where url = $1");
         return Json.init;
     }
 
@@ -155,11 +158,6 @@ class FeedsControllerImpl
         return Json.init;
     }
 
-    Json getChunk(User user, string feedId, string chunkId)
-    {
-        return Json.init;
-    }
-
     Json getAll(User user)
     {
         return Json.init;
@@ -167,6 +165,7 @@ class FeedsControllerImpl
 }
 
 // This would better be named "not-logged-in controller"
+@path("login")
 class LoginController
 {
     enum LOGIN_DURATION = dur!"days"(14);
@@ -177,7 +176,7 @@ class LoginController
         auto js = Json.emptyObject;
         string[1] args;
         args[0] = email;
-        auto matches = query!User(`SELECT * FROM "user" WHERE email = $1`, args);
+        auto matches = query!User(`SELECT * FROM users WHERE email = $1`, args);
         if (matches.length > 1)
         {
             logError("multiple users match email %s", email);
@@ -243,7 +242,7 @@ class LoginController
     }
 }
 
-class UsersController
+class UsersControllerImpl
 {
     User get(User user)
     {

@@ -109,7 +109,7 @@ QueryParams toParams(T)(T val, bool trailingId)
 
 string updateText(T)()
 {
-    string cmd = `UPDATE "` ~ T.stringof.toLower ~ `" SET `;
+    string cmd = `UPDATE ` ~ T.stringof.toLower ~ `s SET `;
     int i = 0;
     foreach (m; __traits(derivedMembers, T))
     {
@@ -134,7 +134,7 @@ string updateText(T)()
 
 string insertText(T)()
 {
-    string cmd = `INSERT INTO "` ~ T.stringof.toLower ~ `" (`;
+    string cmd = `INSERT INTO ` ~ T.stringof.toLower ~ `s (`;
     int i = 0;
     foreach (m; __traits(derivedMembers, T))
     {
@@ -181,7 +181,7 @@ void insert(T)(T val)
 
 Nullable!T fetch(T)(UUID id)
 {
-    enum cmd = `SELECT * FROM "` ~ T.stringof.toLower ~ `" WHERE id = $1`;
+    enum cmd = `SELECT * FROM ` ~ T.stringof.toLower ~ `s WHERE id = $1`;
     QueryParams params;
     params.argsFromArray = [id.toString];
     params.sqlCommand = cmd;
@@ -228,4 +228,16 @@ shared static this()
        WHERE subscription.userId = $1;
    SELECT * FROM article WHERE feedId = $1 ORDER BY publishDate DESC LIMIT 100;
    SELECT * FROM read WHERE feedId = $1 AND userId = $2 ORDER BY publishDate DESC LIMIT 100;
+   */
+
+/*
+   Find all unread articles for a user:
+    SELECT articles.* FROM articles
+        INNER JOIN subscriptions ON subscriptions.feedId = articles.feedId
+        WHERE subscriptions.userId = :userId AND NOT EXISTS (
+            SELECT * FROM read WHERE userId = :userId AND articleId = :articles.id
+        )
+
+   That's...not *awesome*, but not the end of the world, and it's probably better than what I
+   currently do.
    */

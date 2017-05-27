@@ -1,4 +1,4 @@
-CREATE TABLE "user"
+CREATE TABLE users
 (
     id UUID NOT NULL PRIMARY KEY,
     email VARCHAR(128) NOT NULL UNIQUE,
@@ -7,7 +7,7 @@ CREATE TABLE "user"
     checkInterval INT NULL
 );
 
-CREATE TABLE feed
+CREATE TABLE feeds
 (
     id UUID NOT NULL PRIMARY KEY,
     url VARCHAR(256),
@@ -19,17 +19,19 @@ CREATE TABLE feed
     errors INT NOT NULL DEFAULT 0
 );
 
-CREATE TABLE article
+CREATE TABLE articles
 (
     id UUID NOT NULL PRIMARY KEY,
     feedId INT NOT NULL REFERENCES feed(id),
     url VARCHAR(256) NOT NULL,
     title VARCHAR(256),
     description TEXT,
+    author VARCHAR(256),
+    internalId VARCHAR(256),
     publishDate TIMESTAMP NOT NULL
 );
 
-CREATE TABLE subscription
+CREATE TABLE subscriptions
 (
     userId UUID NOT NULL REFERENCES "user"(id),
     feedId UUID NOT NULL REFERENCES feed(id),

@@ -25,7 +25,6 @@ struct Feed
     SysTime nextRead;
     SysTime lastRead;
     int errors;
-
 }
 
 struct Article
@@ -35,6 +34,8 @@ struct Article
     string url;
     string title;
     string description;
+    string author;
+    string internalId;
     SysTime publishDate;
 }
 

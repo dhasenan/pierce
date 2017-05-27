@@ -4,9 +4,10 @@
 		"dhasenan"
 	],
 	"dependencies": {
-		"vibe-d": "~>0.7.31",
-		"vibe-d-postgresql": "~>0.22.2",
-		"derelict-pq": "2.0.3"
+		  "vibe-d": "~>0.7.31"
+		, "vibe-d-postgresql": {"path": "psql"}
+		, "derelict-pq": "2.0.3"
+		, "datetimeformat": "~>0.1.0"
 	},
 	"description": "RSS reader",
 	"copyright": "Copyright © 2017, dhasenan",
