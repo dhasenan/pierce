@@ -1,18 +1,19 @@
+DROP TABLE users, feeds, articles, subscriptions, read;
 CREATE TABLE users
 (
-    id UUID NOT NULL PRIMARY KEY,
-    email VARCHAR(128) NOT NULL UNIQUE,
-    sha BYTEA(140),
-    pbkdf2 BYTEA(256),
+    id CHAR(36) NOT NULL PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    sha TEXT,
+    pbkdf2 TEXT,
     checkInterval INT NULL
 );
 
 CREATE TABLE feeds
 (
-    id UUID NOT NULL PRIMARY KEY,
-    url VARCHAR(256),
-    title VARCHAR(256),
-    iconURL VARCHAR(256),
+    id CHAR(36) NOT NULL PRIMARY KEY,
+    url TEXT,
+    title TEXT,
+    iconURL TEXT,
     checkInterval INT,
     nextRead TIMESTAMP NOT NULL,
     lastRead TIMESTAMP NOT NULL DEFAULT '1970-01-01',
@@ -21,28 +22,28 @@ CREATE TABLE feeds
 
 CREATE TABLE articles
 (
-    id UUID NOT NULL PRIMARY KEY,
-    feedId INT NOT NULL REFERENCES feed(id),
-    url VARCHAR(256) NOT NULL,
-    title VARCHAR(256),
+    id CHAR(36) NOT NULL PRIMARY KEY,
+    feedId CHAR(36) NOT NULL REFERENCES feeds(id),
+    url TEXT NOT NULL,
+    title TEXT,
     description TEXT,
-    author VARCHAR(256),
-    internalId VARCHAR(256),
+    author TEXT,
+    internalId TEXT,
     publishDate TIMESTAMP NOT NULL
 );
 
 CREATE TABLE subscriptions
 (
-    userId UUID NOT NULL REFERENCES "user"(id),
-    feedId UUID NOT NULL REFERENCES feed(id),
+    userId CHAR(36) NOT NULL REFERENCES users(id),
+    feedId CHAR(36) NOT NULL REFERENCES feeds(id),
     PRIMARY KEY (userId, feedId)
 );
 
 CREATE TABLE read
 (
-    userId UUID NOT NULL REFERENCES "user"(id),
-    feedId UUID NOT NULL REFERENCES feed(id),
-    articleId UUID NOT NULL REFERENCES article(id),
+    userId CHAR(36) NOT NULL REFERENCES users(id),
+    feedId CHAR(36) NOT NULL REFERENCES feeds(id),
+    articleId CHAR(36) NOT NULL REFERENCES articles(id),
     PRIMARY KEY (userId, articleId)
 );
 
@@ -50,11 +51,11 @@ CREATE TABLE read
 -- Maybe?
 CREATE TABLE session
 (
-    id UUID NOT NULL PRIMARY KEY,
-    userId UUID NOT NULL REFERENCES "user"(id),
+    id CHAR(36) NOT NULL PRIMARY KEY,
+    userId CHAR(36) NOT NULL REFERENCES "user"(id),
     expires TIMESTAMP NOT NULL
 );
 */
 
 
-CREATE INDEX idx_article_feedDate ON article (feedId, publishDate);
+CREATE INDEX idx_article_feedDate ON articles (feedId, publishDate);

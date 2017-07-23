@@ -1,7 +1,8 @@
 module pierce.db;
 
 import vibe.core.log;
-import vibe.db.postgresql;
+//import vibe.db.postgresql;
+import dpq2;
 
 import std.conv;
 import std.datetime;
@@ -76,7 +77,7 @@ T parse(T)(immutable Row row)
 QueryParams toParams(T)(T val, bool trailingId)
 {
     Value[__traits(derivedMembers, T).length + 1] v;
-    int i = 1;
+    int i = 0;
     foreach (m; __traits(derivedMembers, T))
     {
         alias FT = typeof(__traits(getMember, T, m));
@@ -85,23 +86,20 @@ QueryParams toParams(T)(T val, bool trailingId)
         {
             static if (is(FT == SysTime))
             {
-                str = __traits(getMember, val, m).toISOString(val);
+                v[i] = toValue(__traits(getMember, val, m).toISOString(val));
             }
             else static if (is(FT == Duration))
             {
-                str = __traits(getMember, val, m).total!("seconds").to!string;
+                v[i] = toValue(cast(int)__traits(getMember, val, m).total!("seconds"));
             }
             else static if (is(FT == string))
             {
-                str = __traits(getMember, val, m);
+                v[i] = toValue(__traits(getMember, val, m));
             }
             else
             {
-                str = std.conv.to!string(__traits(getMember, val, m));
+                v[i] = toValue(std.conv.to!string(__traits(getMember, val, m)));
             }
-            if (str is null) str = "\0";
-            logInfo("setting value %s to %s", i, str);
-            v[i] = toValue(str, ValueFormat.TEXT);
             i++;
         }
     }
@@ -130,8 +128,16 @@ string updateText(T)()
                 cmd ~= `, `;
             }
             cmd ~= m;
-            cmd ~= ` = $`;
-            cmd ~= i.to!string;
+            cmd ~= ` = `;
+            static if (is(FT == UUID))
+            {
+                cmd ~= `uuid($` ~ i.to!string ~ `)`;
+            }
+            else
+            {
+                cmd ~= '$';
+                cmd ~= i.to!string;
+            }
         }
     }
     i++;
@@ -144,6 +150,7 @@ string insertText(T)()
 {
     string cmd = `INSERT INTO ` ~ T.stringof.toLower ~ `s (`;
     int i = 0;
+    string values = ``;
     foreach (m; __traits(derivedMembers, T))
     {
         alias FT = typeof(__traits(getMember, T, m));
@@ -153,22 +160,22 @@ string insertText(T)()
             if (i > 1)
             {
                 cmd ~= `, `;
+                values ~= `, `;
             }
             cmd ~= m;
+            static if (is(FT == UUID))
+            {
+                values ~= `uuid($` ~ i.to!string ~ `)`;
+            }
+            else
+            {
+                values ~= `$`;
+                values ~= i.to!string;
+            }
         }
     }
     cmd ~= `) VALUES (`;
-    for (int x = 1; x <= i; x++)
-    {
-        if (x > 1)
-        {
-            cmd ~= `, `;
-        }
-        cmd ~= `$`;
-        cmd ~= x.to!string;
-    }
-    cmd ~= `)`;
-    return cmd;
+    return cmd ~ values ~ `)`;
 }
 
 void update(T)(T val)
@@ -181,13 +188,14 @@ void update(T)(T val)
 
 void insert(T)(T val)
 {
-    enum cmd = insertText!T();
+    auto cmd = insertText!T();
     logInfo("built command text: %s", cmd);
     auto params = val.toParams(false);
-    logInfo("have params");
+    import std.algorithm : joiner, map;
+    logInfo("have params: %s", params.args.map!(x => x.toString()).joiner(", "));
     params.sqlCommand = cmd;
-    logInfo("have sql cmd");
-    inConnection!(delegate void(scope __Conn conn)
+    logInfo("have sql cmd: %s", cmd);
+    inConnection!(delegate void(Connection conn)
     {
         logInfo("have connection, executing");
         try
@@ -232,23 +240,46 @@ T[] query(T)(string cmd, string[] args...)
     return vals;
 }
 
+struct Result
+{
+    Throwable e;
+    immutable(Answer) answer;
+}
 auto inConnection(alias fn)()
 {
-    auto conn = pg.lockConnection;
-    logInfo("created connection");
-    scope(exit)
+    import vibe.core.concurrency : async;
+
+    Throwable err = null;
+    void* delegate () @trusted dg = () @trusted {
+        logInfo("creatin connection");
+        auto conn = new Connection("dbname=pierce user=dhasenan");
+        logInfo("created connection");
+        try
+        {
+            return cast(void*)fn(conn);
+        }
+        catch (Throwable e)
+        {
+            err = e;
+            return null;
+        }
+    };
+    auto v = async(dg);
+    auto res = v.getResult;
+    if (res is null && err !is null)
     {
-        logInfo("deleting connection");
-        //conn.dropConnection;
+        throw err;
     }
-    return fn(conn);
+    return cast(immutable(Answer))res;
 }
 
+/*
 shared PostgresClient pg;
 shared static this()
 {
     pg = new shared PostgresClient("dbname=pierce user=dhasenan", 4);
 }
+*/
 
 
 /*

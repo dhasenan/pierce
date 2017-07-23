@@ -4,7 +4,6 @@ import core.time;
 import std.datetime;
 import std.uuid;
 
-// TODO structs vs classes?
 struct User
 {
     UUID id;
@@ -39,7 +38,6 @@ struct Article
     SysTime publishDate;
 }
 
-// TODO do we even need this?
 struct Subscription
 {
     UUID userId;

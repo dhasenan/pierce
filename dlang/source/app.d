@@ -1,7 +1,8 @@
 module pierce.app;
 
 import vibe.d;
-import vibe.db.postgresql;
+import dpq2;
+import dpq2.exception;
 import core.time;
 import std.traits;
 import std.typecons;
@@ -86,6 +87,11 @@ class FeedsControllerImpl
     }
 }
 
+struct Test
+{
+    UUID id;
+}
+
 // This would better be named "not-logged-in controller"
 @path("login")
 class LoginController
@@ -147,7 +153,18 @@ class LoginController
         logInfo("set password");
         try
         {
-            insert(user);
+            inConnection!(delegate immutable(Answer) (scope Connection conn) {
+                QueryParams p;
+                p.args = [
+                    toValue(user.id.toString()),
+                    toValue(user.email),
+                    toValue(user.sha),
+                    toValue(user.pbkdf2),
+                    toValue(cast(int)user.checkInterval.total!"seconds"),
+                ];
+                p.sqlCommand = `INSERT INTO users (id, email, sha, pbkdf2, checkInterval) VALUES (uuid($1), $2, $3, $4, $5)`;
+                return conn.execParams(p);
+            })();
             logInfo("inserted");
         }
         catch (Dpq2Exception e)
