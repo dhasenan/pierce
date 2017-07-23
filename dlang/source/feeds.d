@@ -1,13 +1,25 @@
 module pierce.feeds;
 
-import std.typecons : Nullable;
-import std.xml;
+import std.stdio;
 
-import datefmt;
-import vibe.d;
+import std.algorithm;
+import std.array : Appender;
+import std.datetime;
+import std.range : isInputRange;
+import std.typecons : Nullable;
+import std.uuid;
+static import std.xml;
+
+import arsd.dom;
+import vibe.core.log;
+
+import pierce.datetimeformat;
+import pierce.domain;
+import pierce.opt;
 
 alias XDoc = std.xml.Document;
-alias XElem = std.xml.XElement;
+alias XElem = std.xml.Element;
+alias XMLException = std.xml.XMLException;
 
 /**
   * Find the feeds available at the given URL.
@@ -46,21 +58,19 @@ Article[] parseArticles(Feed feed, Page page)
         return feed.parseArticles(
             dom.first("rss").first("channel")
                 .elements
-                .filter!(x => x.tag == "item"));
+                .filter!(x => x.tag.name == "item"));
     }
     else if (page.isAtom)
     {
         feedContainer = dom.first("feed");
         return feed.parseArticles(
-            dom.first("").first("channel")
-                .elements
-                .filter!(x => x.tag == "item"));
+                feedContainer.elements.filter!(x => x.tag.name == "entry"));
 
     }
     return parseArticles(
             feed,
             feedContainer.elements
-                .filter!(x => x.tag == "item" || x.tag == "entry"));
+                .filter!(x => x.tag.name == "item" || x.tag.name == "entry"));
 }
 
 /**
@@ -77,7 +87,8 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
         art.internalId = elem.first("guid").txt
             .or(elem.first("id").txt);
         art.title = elem.first("title").txt;
-        art.url = elem.first("link").txt;
+        art.url = elem.first("link").txt
+            .or(elem.first("link").attr("href"));
         art.description = elem.first("description").txt
             .or(elem.first("summary").txt);
 
@@ -104,11 +115,11 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
         SysTime st;
         if (datestr != "")
         {
-            if (tryParse(datestr, RFC1123FORMAT, out st))
+            if (tryParse(datestr, RFC1123FORMAT, st, UTC()))
             {
                 art.publishDate = st;
             }
-            else if (tryParse(datestr, ISO8601FORMAT, out st))
+            else if (tryParse(datestr, ISO8601FORMAT, st, UTC()))
             {
                 art.publishDate = st;
             }
@@ -123,10 +134,13 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
   */
 Page wget(string url)
 {
+    import vibe.http.client;
+    import vibe.core.stream : InputStream;
     auto limit = Clock.currTime - dur!"minutes"(15);
     foreach (k, v; downloadCache)
     {
-        if (v.downloaded < limit)
+        auto f = cast(immutable)v.downloaded;
+        if (f < limit)
         {
             downloadCache.remove(k);
         }
@@ -137,7 +151,7 @@ Page wget(string url)
     }
     auto resp = requestHTTP(url);
     Appender!(ubyte[]) a;
-    resp.readRawBody((stream) {
+    resp.readRawBody(delegate void (scope InputStream stream) scope {
         while (!stream.empty)
         {
             auto buf = new ubyte[stream.leastSize];
@@ -152,7 +166,7 @@ Page wget(string url)
 
 shared Page[string] downloadCache;
 
-Maybe!Feed findFeed(Page w)
+Maybe!Feed findFeed(Page page)
 {
     Maybe!Feed m;
     XDoc doc;
@@ -166,16 +180,16 @@ Maybe!Feed findFeed(Page w)
         return nothing!Feed;
     }
 
-    if (w.isAtom)
+    if (page.isAtom)
     {
-        return parseAtomHeader(doc, w.url);
+        return parseAtomHeader(doc, page.url);
     }
-    else if (w.isRSS)
+    else if (page.isRSS)
     {
-        return parseRSSHeader(doc, w.url);
+        return parseRSSHeader(doc, page.url);
     }
 
-    logInfo("page at %s has unrecognized content type %s", url, w.contentType);
+    logInfo("page at %s has unrecognized content type %s", page.url, page.contentType);
     return nothing!Feed;
 }
 
@@ -189,10 +203,6 @@ string[] findReferencedFeedsInHTML(Page p)
     {
         if (link.getAttribute("type").canFind(RSS_CONTENT_TYPE) ||
             link.getAttribute("type").canFind(ATOM_CONTENT_TYPE))
-        {
-            found ~= link.getAttribute("href");
-        }
-        else if ()
         {
             found ~= link.getAttribute("href");
         }
@@ -234,6 +244,7 @@ XElem first(XElem parent, string tag)
     // TODO check Atom namespace too
     // (Dunno how std.xml works, doesn't seem to have xmlns thing explicitly)
     if (parent is null) return null;
+    if (parent.tag.name == tag) return parent;
     foreach (e; parent.elements)
     {
         if (e.tag.name == tag)
@@ -273,6 +284,20 @@ Maybe!Feed parseRSSHeader(XDoc doc, string url)
     return just(feed);
 }
 
+string txt(XElem elem)
+{
+    if (elem is null) return null;
+    return elem.text;
+}
+
+string attr(XElem elem, string name)
+{
+    if (elem is null) return null;
+    auto p = name in elem.tag.attr;
+    if (p) return *p;
+    return null;
+}
+
 T or(T)(T a, T b)
 {
     if (!a) return b;
@@ -281,5 +306,83 @@ T or(T)(T a, T b)
 
 unittest
 {
-    
+    enum atom = `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title>Example Feed</title>
+  <link href="http://example.org/"/>
+  <updated>2003-12-13T18:30:02Z</updated>
+  <author>
+    <name>John Doe</name>
+  </author>
+  <id>urn:uuid:60a76c80-d399-11d9-b93C-0003939e0af6</id>
+
+  <entry>
+    <title>Atom-Powered Robots Run Amok</title>
+    <link href="http://example.org/2003/12/13/atom03"/>
+    <id>urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a</id>
+    <updated>2003-12-13T18:30:02Z</updated>
+    <summary>Some text.</summary>
+  </entry>
+
+</feed>`;
+    auto doc = new XDoc(atom);
+    auto maybeFeed = parseAtomHeader(doc, "localhost/atom");
+    assert(maybeFeed.present);
+    auto feed = maybeFeed.value;
+    assert(feed.title == "Example Feed");
+    auto id = randomUUID();
+    feed.id = id;
+
+    auto arts = parseArticles(feed, Page(atom, ATOM_CONTENT_TYPE, "localhost/atom"));
+    assert(arts.length == 1);
+    auto art = arts[0];
+    assert(art.internalId == "urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a");
+    assert(art.feedId == id);
+    assert(art.title == "Atom-Powered Robots Run Amok");
+    assert(art.description == "Some text.");
+    assert(art.publishDate == SysTime(DateTime(2003, 12, 13, 18, 30, 2), UTC()),
+            art.publishDate.toISOString());
+    assert(art.url == "http://example.org/2003/12/13/atom03", art.url);
+}
+
+
+unittest
+{
+    auto rss = `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+ <title>RSS Title</title>
+ <description>This is an example of an RSS feed</description>
+ <link>http://www.example.com/main.html</link>
+ <lastBuildDate>Mon, 06 Sep 2010 00:01:00 +0000 </lastBuildDate>
+ <pubDate>Sun, 06 Sep 2009 16:20:00 +0000</pubDate>
+ <ttl>1800</ttl>
+
+ <item>
+  <title>Example entry</title>
+  <description>Here is some text containing an interesting description.</description>
+  <link>http://www.example.com/blog/post/1</link>
+  <guid isPermaLink="true">7bd204c6-1655-4c27-aeee-53f933c5395f</guid>
+  <pubDate>Sun, 06 Sep 2009 16:20:00 +0000</pubDate>
+ </item>
+
+</channel>
+</rss>`;
+    auto maybeFeed = parseRSSHeader(new XDoc(rss), "localhost/rss");
+    auto feed = maybeFeed.value;
+    assert(feed.title == "RSS Title");
+    auto id = randomUUID();
+    feed.id = id;
+
+    auto arts = parseArticles(feed, Page(rss, RSS_CONTENT_TYPE, "localhost/rss"));
+    assert(arts.length == 1);
+    auto art = arts[0];
+    assert(art.internalId == "7bd204c6-1655-4c27-aeee-53f933c5395f");
+    assert(art.feedId == id);
+    assert(art.title == "Example entry");
+    assert(art.description == "Here is some text containing an interesting description.");
+    assert(art.publishDate == SysTime(DateTime(2009, 9, 6, 16, 20, 0), UTC()),
+            art.publishDate.toISOString());
+    assert(art.url == "http://www.example.com/blog/post/1", art.url);
 }

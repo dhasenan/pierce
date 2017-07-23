@@ -1,10 +1,14 @@
 module pierce.db;
 
+import vibe.core.log;
 import vibe.db.postgresql;
+
 import std.conv;
+import std.datetime;
 import std.string;
 import std.traits;
-import std.datetime;
+import std.typecons;
+import std.uuid;
 
 T parse(T)(immutable Row row)
 {
@@ -32,7 +36,9 @@ T parse(T)(immutable Row row)
         }
         if (!found) continue;
 
-        auto v = row[m].as!string;
+        auto cell = row[m];
+        if (cell.isNull) continue;
+        auto v = cell.as!string;
 
         alias FT = typeof(__traits(getMember, T, m));
         static if (isFunction!FT)
@@ -70,7 +76,7 @@ T parse(T)(immutable Row row)
 QueryParams toParams(T)(T val, bool trailingId)
 {
     Value[__traits(derivedMembers, T).length + 1] v;
-    int i = 0;
+    int i = 1;
     foreach (m; __traits(derivedMembers, T))
     {
         alias FT = typeof(__traits(getMember, T, m));
@@ -93,6 +99,8 @@ QueryParams toParams(T)(T val, bool trailingId)
             {
                 str = std.conv.to!string(__traits(getMember, val, m));
             }
+            if (str is null) str = "\0";
+            logInfo("setting value %s to %s", i, str);
             v[i] = toValue(str, ValueFormat.TEXT);
             i++;
         }
@@ -174,9 +182,26 @@ void update(T)(T val)
 void insert(T)(T val)
 {
     enum cmd = insertText!T();
+    logInfo("built command text: %s", cmd);
     auto params = val.toParams(false);
+    logInfo("have params");
     params.sqlCommand = cmd;
-    inConnection!(conn => conn.execParams(params));
+    logInfo("have sql cmd");
+    inConnection!(delegate void(scope __Conn conn)
+    {
+        logInfo("have connection, executing");
+        try
+        {
+            conn.execParams(params);
+        }
+        catch (Throwable e)
+        {
+            logError("failed to execute: %s", e);
+            throw e;
+        }
+        logInfo("done executing");
+    });
+    logInfo("done insert");
 }
 
 Nullable!T fetch(T)(UUID id)
@@ -188,12 +213,12 @@ Nullable!T fetch(T)(UUID id)
     auto result = inConnection!(conn => conn.execParams(params));
     if (result.length > 0)
     {
-        return parse!T(result[0]);
+        return Nullable!T(parse!T(result[0]));
     }
     return Nullable!T.init;
 }
 
-T[] query(T)(string cmd, string[] args)
+T[] query(T)(string cmd, string[] args...)
 {
     QueryParams params;
     params.argsFromArray = args;
@@ -210,14 +235,19 @@ T[] query(T)(string cmd, string[] args)
 auto inConnection(alias fn)()
 {
     auto conn = pg.lockConnection;
-    scope(exit) delete conn;
+    logInfo("created connection");
+    scope(exit)
+    {
+        logInfo("deleting connection");
+        //conn.dropConnection;
+    }
     return fn(conn);
 }
 
 shared PostgresClient pg;
 shared static this()
 {
-    pg = new shared PostgresClient("dbname=pierce user=pierce", 4);
+    pg = new shared PostgresClient("dbname=pierce user=dhasenan", 4);
 }
 
 

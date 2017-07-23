@@ -3,10 +3,13 @@ module pierce.app;
 import vibe.d;
 import vibe.db.postgresql;
 import core.time;
+import std.traits;
+import std.typecons;
 import std.uuid;
 
 import pierce.domain;
 import pierce.db;
+import pierce.vibeutil;
 
 shared static this()
 {
@@ -15,6 +18,8 @@ shared static this()
     auto settings = new HTTPServerSettings;
     settings.port = 8080;
     auto router = new URLRouter;
+    router.get("static/*", serveStaticFiles("static/"));
+    router.get("/", serveStaticFile("static/index.html"));
     router.registerWebInterface(new Authed!(FeedsControllerImpl, "feeds"));
     router.registerWebInterface(new Authed!(UsersControllerImpl, "users"));
     router.registerWebInterface(new LoginController);
@@ -26,94 +31,11 @@ void handleRequest(HTTPServerRequest req, HTTPServerResponse res)
     res.bodyWriter.write("nope");
 }
 
-class AuthedBase
-{
-    import std.typecons : Nullable;
-    protected Nullable!User checkAuth(HTTPServerRequest req, HTTPServerResponse resp)
-    {
-        return Nullable!User.init;
-    }
-}
-
-template Authed(TController, string path)
-{
-    import std.traits;
-
-    class Authed : AuthedBase
-    {
-        TController _parent;
-        mixin(authedForwardClass!TController);
-    }
-}
-
-string authedForwardClass(TController)()
-{
-    auto s = ``;
-    foreach (name; __traits(derivedMembers, TController))
-    {
-        foreach (method; __traits(getOverloads, TController, name))
-        {
-            auto k = authedForwardMethod!(name, method);
-            s ~= k;
-        }
-    }
-    return s;
-}
-
-import std.traits;
-string authedForwardMethod(string fnName, alias method)()
-{
-    auto s = ReturnType!(method).stringof
-        ~ ` `
-        ~ fnName
-        ~ `(HTTPServerRequest reqForAuth, HTTPServerResponse respForAuth`;
-    foreach (i, p; Parameters!method)
-    {
-        if (!is(p == User))
-        {
-            auto istr = i.to!string;
-            s ~= `, `;
-            s ~= p.stringof;
-            s ~= ` arg`;
-            s ~= istr;
-        }
-    }
-    s ~= `)
-    {
-        auto user = checkAuth(reqForAuth, respForAuth);
-        if (user.isNull) return Json.init;
-        return _parent.`;
-
-    s ~= fnName;
-    s ~= `(`;
-    foreach (i, p; Parameters!method)
-    {
-        if (i > 0)
-        {
-            s ~= `, `;
-        }
-        if (is(p : User))
-        {
-            s ~= `user`;
-        }
-        else
-        {
-            s ~= `arg`;
-            s ~= i.to!string;
-        }
-    }
-    s ~= `);
-    }
-
-    `;
-    return s;
-}
-
 class FeedsControllerImpl
 {
     Json postAdd(User user, string url, string title, string labels)
     {
-        auto existing = query!Feed("select * from feeds where url = $1");
+        auto existing = query!Feed("select * from feeds where url = $1", url);
         return Json.init;
     }
 
@@ -174,63 +96,87 @@ class LoginController
     Json login(HTTPServerResponse response, string email, string password)
     {
         auto js = Json.emptyObject;
-        string[1] args;
-        args[0] = email;
-        auto matches = query!User(`SELECT * FROM users WHERE email = $1`, args);
-        if (matches.length > 1)
+        try
         {
-            logError("multiple users match email %s", email);
-        }
-        foreach (match; matches)
-        {
-            if (match.checkPassword(password))
+            string[1] args;
+            args[0] = email;
+            auto matches = query!User(`SELECT * FROM users WHERE email = $1`, args);
+            if (matches.length > 1)
             {
-                auto sessionTag = randomUUID.toString;
-                sessions[sessionTag] = match.id.toString;
-                Cookie cookie = new Cookie;
-                cookie.value = sessionTag;
-                auto expDate = Clock.currTime + LOGIN_DURATION;
-                cookie.expires = expDate.toRFC822DateTimeString;
-                cookie.path = "/";
-                response.cookies[COOKIE_NAME] = cookie;
-                js["success"] = true;
-                js["id"] = match.id.toString;
-                js["email"] = match.email;
-                js["checkIntervalSeconds"] = match.checkInterval.total!"seconds";
-                return js;
+                logError("multiple users match email %s", email);
             }
+            foreach (match; matches)
+            {
+                if (match.checkPassword(password))
+                {
+                    auto sessionTag = randomUUID.toString;
+                    sessions[sessionTag] = match.id.toString;
+                    Cookie cookie = new Cookie;
+                    cookie.value = sessionTag;
+                    auto expDate = Clock.currTime + LOGIN_DURATION;
+                    cookie.expires = expDate.toRFC822DateTimeString;
+                    cookie.path = "/";
+                    response.cookies[COOKIE_NAME] = cookie;
+                    js["success"] = true;
+                    js["id"] = match.id.toString;
+                    js["email"] = match.email;
+                    js["checkIntervalSeconds"] = match.checkInterval.total!"seconds";
+                    return js;
+                }
+            }
+            js["success"] = false;
+            return js;
         }
-        js["success"] = false;
-        return js;
+        catch (Throwable e)
+        {
+            logError("couldn't log user %s in: %s", email, e);
+            response.statusCode = 500;
+            js["success"] = false;
+            js["error"] = e.toString();
+            return js;
+        }
     }
 
     Json register(HTTPServerResponse response, string email, string password)
     {
+        logInfo("registering %s / %s", email, password);
         User user;
+        user.id = randomUUID;
         user.email = email;
         user.setPassword(password);
-        auto js = Json.emptyObject;
+        logInfo("set password");
         try
         {
             insert(user);
+            logInfo("inserted");
         }
         catch (Dpq2Exception e)
         {
             // TODO detect exact exception for conflict
             logError("failed to save user: %s", e);
             response.statusCode = 409;
+            auto js = Json.emptyObject;
             js["success"] = false;
             js["error"] = "Another person registered with that email address already.";
             return js;
         }
-        js["success"] = true;
-        js["id"] = user.id.toString;
-        return js;
+        catch (Throwable e)
+        {
+            logError("failed to save user: %s", e);
+            response.statusCode = 500;
+            auto js = Json.emptyObject;
+            js["success"] = false;
+            js["error"] = e.toString;
+            return js;
+        }
+        return login(response, email, password);
     }
 
     void logout(HTTPServerRequest req, HTTPServerResponse response)
     {
         // Clear the cookie: set its value to something invalid, set it to expire
+        auto sessionTag = req.cookies[COOKIE_NAME];
+        sessions.remove(sessionTag);
         Cookie cookie = new Cookie;
         cookie.value = "invalid";
         // Date doesn't matter if it's in the past.
@@ -244,12 +190,21 @@ class LoginController
 
 class UsersControllerImpl
 {
-    User get(User user)
+    Json getSelf(User user)
+    {
+        // The task of figuring out who you are is already handled.
+        // We don't want to show everyone your password hash.
+        user.sha = null;
+        user.pbkdf2 = null;
+        return Json.init;
+    }
+
+    Json postDelete(User user)
     {
         // We don't want to show everyone your password hash.
         user.sha = null;
         user.pbkdf2 = null;
-        return user;
+        return Json.init;
     }
 
     Json update(
@@ -301,9 +256,3 @@ class UsersControllerImpl
         return js;
     }
 }
-
-enum COOKIE_NAME = "sessionToken";
-
-// TODO: expire people at the right times
-// TODO: consider putting sessions in the database
-shared string[string] sessions;

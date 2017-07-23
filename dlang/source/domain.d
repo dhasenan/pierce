@@ -53,5 +53,6 @@ bool checkPassword(const User user, string password)
 
 void setPassword(ref User user, string password)
 {
-
+    user.sha = "sha";
+    user.pbkdf2 = "test";
 }
