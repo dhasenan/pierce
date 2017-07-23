@@ -11,6 +11,8 @@ import std.traits;
 import std.typecons;
 import std.uuid;
 
+import pierce.domain;
+
 T parse(T)(immutable Row row)
 {
     import std.traits;
@@ -84,22 +86,25 @@ QueryParams toParams(T)(T val, bool trailingId)
         string str;
         static if (!isFunction!FT)
         {
+            auto fieldVal = __traits(getMember, val, m);
             static if (is(FT == SysTime))
             {
-                v[i] = toValue(__traits(getMember, val, m).toISOString(val));
+                v[i] = toValue(fieldVal.toISOString(fieldVal));
             }
             else static if (is(FT == Duration))
             {
-                v[i] = toValue(cast(int)__traits(getMember, val, m).total!("seconds"));
+                auto secs =  fieldVal.total!("seconds");
+                v[i] = toValue(cast(int)secs);
             }
             else static if (is(FT == string))
             {
-                v[i] = toValue(__traits(getMember, val, m));
+                v[i] = toValue(fieldVal);
             }
             else
             {
-                v[i] = toValue(std.conv.to!string(__traits(getMember, val, m)));
+                v[i] = toValue(std.conv.to!string(fieldVal));
             }
+            logInfo("arg %s is %s", i + 1, v[i]);
             i++;
         }
     }
@@ -178,6 +183,22 @@ string insertText(T)()
     return cmd ~ values ~ `)`;
 }
 
+void saveUser(User user)
+{
+    inConnection!(delegate immutable(Answer) (scope Connection conn) {
+        QueryParams p;
+        p.args = [
+            toValue(user.id.toString()),
+            toValue(user.email),
+            toValue(user.sha),
+            toValue(user.pbkdf2),
+            toValue(cast(int)user.checkInterval.total!"seconds"),
+        ];
+        p.sqlCommand = `INSERT INTO users (id, email, sha, pbkdf2, checkInterval) VALUES (uuid($1), $2, $3, $4, $5)`;
+        return conn.execParams(p);
+    })();
+}
+
 void update(T)(T val)
 {
     enum cmd = updateText!T();
@@ -188,28 +209,11 @@ void update(T)(T val)
 
 void insert(T)(T val)
 {
-    auto cmd = insertText!T();
-    logInfo("built command text: %s", cmd);
+    enum cmd = insertText!T();
     auto params = val.toParams(false);
     import std.algorithm : joiner, map;
-    logInfo("have params: %s", params.args.map!(x => x.toString()).joiner(", "));
     params.sqlCommand = cmd;
-    logInfo("have sql cmd: %s", cmd);
-    inConnection!(delegate void(Connection conn)
-    {
-        logInfo("have connection, executing");
-        try
-        {
-            conn.execParams(params);
-        }
-        catch (Throwable e)
-        {
-            logError("failed to execute: %s", e);
-            throw e;
-        }
-        logInfo("done executing");
-    });
-    logInfo("done insert");
+    inConnection!(conn => conn.execParams(params));
 }
 
 Nullable!T fetch(T)(UUID id)
@@ -251,9 +255,7 @@ auto inConnection(alias fn)()
 
     Throwable err = null;
     void* delegate () @trusted dg = () @trusted {
-        logInfo("creatin connection");
         auto conn = new Connection("dbname=pierce user=dhasenan");
-        logInfo("created connection");
         try
         {
             return cast(void*)fn(conn);

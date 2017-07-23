@@ -34,7 +34,7 @@ template Authed(TController, string myPath)
     @path(myPath)
     class Authed : AuthedBase
     {
-        TController _parent;
+        TController _parent = new TController;
         mixin(authedForwardClass!TController);
     }
 }
@@ -76,7 +76,11 @@ string authedForwardMethod(string fnName, alias method)()
         try
         {
             auto user = checkAuth(reqForAuth, respForAuth);
-            if (user.isNull) return typeof(return).init;
+            if (user.isNull)
+            {
+                respForAuth.statusCode = 401;
+                return typeof(return).init;
+            }
             return _parent.`;
 
     s ~= fnName;

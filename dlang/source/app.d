@@ -14,8 +14,6 @@ import pierce.vibeutil;
 
 shared static this()
 {
-    logInfo(updateText!User);
-    logInfo(insertText!User);
     auto settings = new HTTPServerSettings;
     settings.port = 8080;
     auto router = new URLRouter;
@@ -115,7 +113,8 @@ class LoginController
             {
                 if (match.checkPassword(password))
                 {
-                    auto sessionTag = randomUUID.toString;
+                    //auto sessionTag = randomUUID.toString;
+                    auto sessionTag = "1";
                     sessions[sessionTag] = match.id.toString;
                     Cookie cookie = new Cookie;
                     cookie.value = sessionTag;
@@ -145,44 +144,31 @@ class LoginController
 
     Json register(HTTPServerResponse response, string email, string password)
     {
-        logInfo("registering %s / %s", email, password);
         User user;
         user.id = randomUUID;
         user.email = email;
         user.setPassword(password);
-        logInfo("set password");
         try
         {
-            inConnection!(delegate immutable(Answer) (scope Connection conn) {
-                QueryParams p;
-                p.args = [
-                    toValue(user.id.toString()),
-                    toValue(user.email),
-                    toValue(user.sha),
-                    toValue(user.pbkdf2),
-                    toValue(cast(int)user.checkInterval.total!"seconds"),
-                ];
-                p.sqlCommand = `INSERT INTO users (id, email, sha, pbkdf2, checkInterval) VALUES (uuid($1), $2, $3, $4, $5)`;
-                return conn.execParams(p);
-            })();
-            logInfo("inserted");
-        }
-        catch (Dpq2Exception e)
-        {
-            // TODO detect exact exception for conflict
-            logError("failed to save user: %s", e);
-            response.statusCode = 409;
-            auto js = Json.emptyObject;
-            js["success"] = false;
-            js["error"] = "Another person registered with that email address already.";
-            return js;
+            saveUser(user);
+            logInfo("registered %s", email);
         }
         catch (Throwable e)
         {
-            logError("failed to save user: %s", e);
-            response.statusCode = 500;
             auto js = Json.emptyObject;
             js["success"] = false;
+            if (auto p = cast(Dpq2Exception)e)
+            {
+                if (p.msg.canFind("duplicate key"))
+                {
+                    logInfo("duplicate user %s", user.email);
+                    response.statusCode = 409;
+                    js["error"] = "Another person registered with that email address already.";
+                    return js;
+                }
+            }
+            logError("failed to save user %s: %s", user.email, e);
+            response.statusCode = 500;
             js["error"] = e.toString;
             return js;
         }
@@ -209,11 +195,11 @@ class UsersControllerImpl
 {
     Json getSelf(User user)
     {
-        // The task of figuring out who you are is already handled.
-        // We don't want to show everyone your password hash.
-        user.sha = null;
-        user.pbkdf2 = null;
-        return Json.init;
+        Json js = Json.emptyObject;
+        js["id"] = user.id.toString;
+        js["email"] = user.email;
+        js["checkIntervalSeconds"] = cast(int) user.checkInterval.total!"seconds";
+        return js;
     }
 
     Json postDelete(User user)
