@@ -17,7 +17,9 @@ shared static this()
     auto settings = new HTTPServerSettings;
     settings.port = 8080;
     auto router = new URLRouter;
-    router.get("static/*", serveStaticFiles("static/"));
+    auto fsettings = new HTTPFileServerSettings;
+    fsettings.serverPathPrefix = "/static";
+    router.get("/static/*", serveStaticFiles("static/", fsettings));
     router.get("/", serveStaticFile("static/index.html"));
     router.registerWebInterface(new Authed!(FeedsControllerImpl, "feeds"));
     router.registerWebInterface(new Authed!(UsersControllerImpl, "users"));
@@ -113,20 +115,7 @@ class LoginController
             {
                 if (match.checkPassword(password))
                 {
-                    //auto sessionTag = randomUUID.toString;
-                    auto sessionTag = "1";
-                    sessions[sessionTag] = match.id.toString;
-                    Cookie cookie = new Cookie;
-                    cookie.value = sessionTag;
-                    auto expDate = Clock.currTime + LOGIN_DURATION;
-                    cookie.expires = expDate.toRFC822DateTimeString;
-                    cookie.path = "/";
-                    response.cookies[COOKIE_NAME] = cookie;
-                    js["success"] = true;
-                    js["id"] = match.id.toString;
-                    js["email"] = match.email;
-                    js["checkIntervalSeconds"] = match.checkInterval.total!"seconds";
-                    return js;
+                    return reallyLogin(response, match, password);
                 }
             }
             js["success"] = false;
@@ -140,6 +129,36 @@ class LoginController
             js["error"] = e.toString();
             return js;
         }
+    }
+
+    private Json reallyLogin(HTTPServerResponse response, User match, string password)
+    {
+        if (match.sha !is null)
+        {
+            // Old imported account. Fix!
+            match.setPassword(password);
+            update(match);
+        }
+
+        // Build a session
+        auto sessionTag = randomUUID.toString;
+        sessions[sessionTag] = match.id.toString;
+
+        // Set session cookie
+        Cookie cookie = new Cookie;
+        cookie.value = sessionTag;
+        auto expDate = Clock.currTime + LOGIN_DURATION;
+        cookie.expires = expDate.toRFC822DateTimeString;
+        cookie.path = "/";
+        response.cookies[COOKIE_NAME] = cookie;
+
+        // Make a response
+        auto js = Json.emptyObject;
+        js["success"] = true;
+        js["id"] = match.id.toString;
+        js["email"] = match.email;
+        js["checkIntervalSeconds"] = match.checkInterval.total!"seconds";
+        return js;
     }
 
     Json register(HTTPServerResponse response, string email, string password)
@@ -159,6 +178,7 @@ class LoginController
             js["success"] = false;
             if (auto p = cast(Dpq2Exception)e)
             {
+                import std.algorithm.searching : canFind;
                 if (p.msg.canFind("duplicate key"))
                 {
                     logInfo("duplicate user %s", user.email);
@@ -172,7 +192,7 @@ class LoginController
             js["error"] = e.toString;
             return js;
         }
-        return login(response, email, password);
+        return reallyLogin(response, user, password);
     }
 
     void logout(HTTPServerRequest req, HTTPServerResponse response)
@@ -204,10 +224,8 @@ class UsersControllerImpl
 
     Json postDelete(User user)
     {
-        // We don't want to show everyone your password hash.
-        user.sha = null;
-        user.pbkdf2 = null;
-        return Json.init;
+        Json js = Json.emptyObject;
+        return js;
     }
 
     Json update(
@@ -232,12 +250,12 @@ class UsersControllerImpl
         // TODO min password length?
         if (newPassword.length)
         {
-            js["setPassword"] = false;
+            js["setPassword"] = true;
             user.setPassword(newPassword);
         }
         else
         {
-            js["setPassword"] = true;
+            js["setPassword"] = false;
         }
         user.email = email;
         user.checkInterval = dur!"seconds"(checkIntervalSeconds);

@@ -4,11 +4,12 @@
 		"dhasenan"
 	],
 	"dependencies": {
-		  "vibe-d": "~>0.8.0-beta.4"
-		, "vibe-d-postgresql": "~>0.2.22"
+		  "vibe-d": "0.8.0-beta.4"
+		, "vibe-d-postgresql": "0.2.22"
 		, "derelict-pq": {"path": "DerelictPQ"}
 		, "datefmt": "~master"
 		, "arsd-official:dom": "1.2.1"
+		, "pbkdf2": "0.1.2"
 	},
 	"dflags-dmd": ["-g"],
 	"description": "RSS reader",
