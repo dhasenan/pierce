@@ -89,7 +89,7 @@ QueryParams toParams(T)(T val, bool trailingId)
             auto fieldVal = __traits(getMember, val, m);
             static if (is(FT == SysTime))
             {
-                v[i] = toValue(fieldVal.toISOString(fieldVal));
+                v[i] = toValue(fieldVal.toISOString());
             }
             else static if (is(FT == Duration))
             {
@@ -110,8 +110,15 @@ QueryParams toParams(T)(T val, bool trailingId)
     }
     if (trailingId)
     {
-        v[i] = toValue(val.id.to!string, ValueFormat.TEXT);
-        i++;
+        static if (is (typeof(val.id)))
+        {
+            v[i] = toValue(val.id.to!string, ValueFormat.TEXT);
+            i++;
+        }
+        else
+        {
+            throw new Exception("asked for trailing id for type " ~ T.stringof ~ "with no trailing id");
+        }
     }
     QueryParams p;
     p.args = v[0..i];
@@ -214,6 +221,19 @@ void insert(T)(T val)
     import std.algorithm : joiner, map;
     params.sqlCommand = cmd;
     inConnection!(conn => conn.execParams(params));
+}
+
+void saveOrUpdate(T)(ref T val)
+{
+    if (val.id == UUID.init)
+    {
+        val.id = randomUUID;
+        insert(val);
+    }
+    else
+    {
+        update(val);
+    }
 }
 
 Nullable!T fetch(T)(UUID id)

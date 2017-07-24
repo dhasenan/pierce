@@ -46,8 +46,11 @@ string authedForwardClass(TController)()
     {
         foreach (method; __traits(getOverloads, TController, name))
         {
-            auto k = authedForwardMethod!(name, method);
-            s ~= k;
+            if (__traits(getProtection, method) == "public")
+            {
+                auto k = authedForwardMethod!(name, method);
+                s ~= k;
+            }
         }
     }
     return s;

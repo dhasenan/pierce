@@ -44,6 +44,13 @@ struct Subscription
 {
     UUID userId;
     UUID feedId;
+    string title;
+    string labels;
+}
+
+Json toJson(T)(T value)
+{
+    return Json.emptyObject;
 }
 
 bool checkPassword(const User user, string password)

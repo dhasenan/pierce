@@ -10,6 +10,7 @@ import std.uuid;
 
 import pierce.domain;
 import pierce.db;
+import pierce.feeds;
 import pierce.vibeutil;
 
 shared static this()
@@ -36,54 +37,216 @@ class FeedsControllerImpl
 {
     Json postAdd(User user, string url, string title, string labels)
     {
+        auto js = Json.emptyObject;
+        // Let's have a little optimism here.
+        js["success"] = true;
+
+        // Subscription, just in case we manage to insert it.
+        Subscription sub;
+        sub.userId = user.id;
+        sub.title = title;
+        sub.labels = labels;
+
+        auto feeds = findFeedForURL(url);
+        if (feeds.length == 0)
+        {
+            js["success"] = false;
+            js["error"] = "No feeds found on this URL";
+            return js;
+        }
+
+        if (feeds.length > 0)
+        {
+            auto arr = new Json[feeds.length];
+            foreach (i, feed; feeds)
+            {
+                auto jsfeed = Json.emptyObject;
+                jsfeed["title"] = feed.title;
+                jsfeed["url"] = feed.url;
+                arr[i] = jsfeed;
+            }
+            js["feeds"] = arr;
+            return js;
+        }
+
+        if (feeds.length == 1)
+        {
+            saveOrUpdate(feeds[0]);
+            auto id = feeds[0].id;
+            sub.feedId = id;
+            try
+            {
+                insert(sub);
+                js["success"] = true;
+                js["feed_id"] = id.toString;
+            }
+            catch (Dpq2Exception e)
+            {
+                js["success"] = false;
+                // Is it a conflict?
+                import std.algorithm.searching : canFind;
+                if (e.msg.canFind("duplicate key"))
+                {
+                    js["already_subscribed"] = true;
+                }
+                else
+                {
+                    logError("while trying to grab feed from %s for user %s", url, user.id);
+                    js["error"] = e.toString;
+                }
+            }
+        }
+
+        return js;
+    }
+
+    // We need to label this package so that getOverloads can look at it and determinet that it's
+    // not public. __traits(getOverloads) sucks.
+    package Feed[] findFeedForURL(string url)
+    {
         auto existing = query!Feed("select * from feeds where url = $1", url);
-        return Json.init;
+        Feed feedToAdd;
+        if (existing.length)
+        {
+            return existing;
+        }
+        else
+        {
+            auto feeds = findFeeds(url);
+            if (feeds.length == 0)
+            {
+                return null;
+            }
+            if (feeds.length == 1)
+            {
+                // If I add questionablecontent.net and you add questionablecontent.net, then the
+                // second one doesn't match anything, since the feed is for
+                // http://www.questionablecontent.net/QCRSS.xml. So we search again.
+                if (feeds[0].url != url)
+                {
+                    existing = query!Feed("select * from feeds where url = $1", feeds[0].url);
+                    if (existing.length)
+                    {
+                        return existing;
+                    }
+                }
+                return feeds;
+            }
+            return feeds;
+        }
     }
 
     Json postUnsubscribe(User user, string id)
     {
-        return Json.init;
-
-    }
-
-    Json postRead(User user, string id)
-    {
-
-        return Json.init;
+        QueryParams p;
+        p.sqlCommand = "DELETE FROM subscriptions WHERE userId = $1 AND feedId = $2";
+        p.args = [
+            toValue(user.id.toString()),
+            toValue(id)
+        ];
+        inConnection(conn => conn.execParams(p));
+        return Json.emptyObject;
     }
 
     Json postUpdate(User user, string id, string title, int checkIntervalSeconds, string labels)
     {
-
         return Json.init;
     }
 
     Json postMarkUnread(User user, string feedId, string articleId)
     {
-
-        return Json.init;
+        QueryParams p;
+        p.sqlCommand = "DELETE FROM read WHERE userId = $1 AND feedId = $2 AND articleId = $3";
+        p.args = [
+            toValue(user.id.toString()),
+            toValue(feedId),
+            toValue(articleId),
+        ];
+        inConnection(conn => conn.execParams(p));
+        return Json.emptyObject;
     }
 
     Json postMarkRead(User user, string feedId, string articleId)
     {
-
-        return Json.init;
+        QueryParams p;
+        p.sqlCommand = "INSERT INTO read (userId, feedId, articleId) VALUES ($1, $2, $3)";
+        p.args = [toValue(user.id.toString), toValue(feedId), toValue(articleId)];
+        inConnection!(conn => conn.execParams(p));
+        return Json.emptyObject;
     }
 
     Json postMarkOlderRead(User user, string feedId, string articleId)
     {
-
-        return Json.init;
+        QueryParams p;
+        p.sqlCommand = `
+            INSERT INTO read (userId, feedId, articleId)
+            SELECT $1, $2, id
+            FROM articles
+            WHERE feedId = $2 AND publishDate <
+                (SELECT publishDate FROM articles WHERE articleId = $3)`;
+        p.args = [toValue(user.id.toString), toValue(feedId), toValue(articleId)];
+        inConnection!(conn => conn.execParams(p));
+        return Json.emptyObject;
     }
 
     Json getNewer(User user, string id, string lastRead)
     {
-        return Json.init;
+        auto js = json.emptyObject;
+        js["articles"] = query!Article(`
+                SELECT * FROM articles
+                WHERE feedId = $1
+                AND publishDate >
+                    (SELECT publishDate FROM articles WHERE articleId = $2)
+                ORDER BY publishDate ASCENDING
+                LIMIT 500`,
+                id, lastRead)
+            .map!(x => toJson(x))
+            .array;
+        return js;
     }
 
-    Json getAll(User user)
+    Json getAllUnread(User user, string newerThan)
     {
-        return Json.init;
+        if (!newerThan)
+        {
+            newerThan = "1970-01-01T00:00:00Z";
+        }
+        auto js = json.emptyObject;
+        js["articles"] = query!Article(`
+                SELECT articles.* FROM articles
+                INNER JOIN subscriptions ON subscriptions.feedId = articles.feedId
+                WHERE subscriptions.userId = $1
+                AND articles.publishDate > $2
+                AND NOT EXISTS
+                    (SELECT * FROM read
+                        WHERE readarticleId = articles.id
+                        AND read.userId = $1)
+                ORDER BY publishDate ASCENDING
+                LIMIT 500`,
+                id, newerThan)
+            .map!(x => toJson(x))
+            .array;
+        return js;
+    }
+
+    Json getAll(User user, string newerThan)
+    {
+        if (!newerThan)
+        {
+            newerThan = "1970-01-01T00:00:00Z";
+        }
+        auto js = json.emptyObject;
+        js["articles"] = query!Article(`
+                SELECT articles.* FROM articles
+                INNER JOIN subscriptions ON subscriptions.feedId = articles.feedId
+                WHERE subscriptions.userId = $1
+                AND articles.publishDate > $2
+                ORDER BY publishDate ASCENDING
+                LIMIT 500`,
+                id, newerThan)
+            .map!(x => toJson(x))
+            .array;
+        return js;
     }
 }
 
