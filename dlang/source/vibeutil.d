@@ -15,14 +15,17 @@ class AuthedBase
         auto s = req.cookies[COOKIE_NAME];
         if (!s)
         {
+            logInfo("missing cookie %s", COOKIE_NAME);
             return Nullable!User.init;
         }
         auto p = s in sessions;
         if (!p)
         {
+            logInfo("missing session with ID %s (%s total sessions)", s, sessions.length);
             return Nullable!User.init;
         }
         auto id = parseUUID(*p);
+        logInfo("found user ID: %s", id);
         return fetch!User(id);
     }
 }
@@ -63,6 +66,8 @@ string authedForwardMethod(string fnName, alias method)()
         ~ ` `
         ~ fnName
         ~ `(HTTPServerRequest reqForAuth, HTTPServerResponse respForAuth`;
+
+    auto params = [ParameterIdentifierTuple!method];
     foreach (i, p; Parameters!method)
     {
         if (!is(p == User))
@@ -70,8 +75,8 @@ string authedForwardMethod(string fnName, alias method)()
             auto istr = i.to!string;
             s ~= `, `;
             s ~= p.stringof;
-            s ~= ` arg`;
-            s ~= istr;
+            s ~= ` `;
+            s ~= params[i];
         }
     }
     s ~= `)
@@ -81,6 +86,7 @@ string authedForwardMethod(string fnName, alias method)()
             auto user = checkAuth(reqForAuth, respForAuth);
             if (user.isNull)
             {
+                logInfo("not logged in person!!1");
                 respForAuth.statusCode = 401;
                 return typeof(return).init;
             }
@@ -100,8 +106,7 @@ string authedForwardMethod(string fnName, alias method)()
         }
         else
         {
-            s ~= `arg`;
-            s ~= i.to!string;
+            s ~= params[i];
         }
     }
     s ~= `);
@@ -137,4 +142,4 @@ enum COOKIE_NAME = "sessionToken";
 
 // TODO: expire people at the right times
 // TODO: consider putting sessions in the database
-shared string[string] sessions;
+__gshared string[string] sessions;

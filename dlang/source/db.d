@@ -13,7 +13,7 @@ import std.uuid;
 
 import pierce.domain;
 
-T parse(T)(immutable Row row)
+T parse(T)(immutable Row row) if (is(T == class) || is(T == struct))
 {
     import std.traits;
     import std.datetime;
@@ -76,6 +76,11 @@ T parse(T)(immutable Row row)
     return val;
 }
 
+T parse(T)(immutable Row row) if (!is(T == class) && !is(T == struct))
+{
+    return to!T(row[0].as!string);
+}
+
 QueryParams toParams(T)(T val, bool trailingId)
 {
     Value[__traits(derivedMembers, T).length + 1] v;
@@ -117,7 +122,9 @@ QueryParams toParams(T)(T val, bool trailingId)
         }
         else
         {
-            throw new Exception("asked for trailing id for type " ~ T.stringof ~ "with no trailing id");
+            throw new Exception(
+                    "asked for trailing id for type " ~
+                    T.stringof ~ "with no trailing id");
         }
     }
     QueryParams p;
@@ -201,7 +208,9 @@ void saveUser(User user)
             toValue(user.pbkdf2),
             toValue(cast(int)user.checkInterval.total!"seconds"),
         ];
-        p.sqlCommand = `INSERT INTO users (id, email, sha, pbkdf2, checkInterval) VALUES (uuid($1), $2, $3, $4, $5)`;
+        p.sqlCommand = `
+            INSERT INTO users (id, email, sha, pbkdf2, checkInterval)
+            VALUES (uuid($1), $2, $3, $4, $5)`;
         return conn.execParams(p);
     })();
 }
@@ -275,7 +284,7 @@ auto inConnection(alias fn)()
 
     Throwable err = null;
     void* delegate () @trusted dg = () @trusted {
-        auto conn = new Connection("dbname=pierce user=dhasenan");
+        scope conn = new Connection("dbname=pierce user=dhasenan");
         try
         {
             return cast(void*)fn(conn);
@@ -294,15 +303,6 @@ auto inConnection(alias fn)()
     }
     return cast(immutable(Answer))res;
 }
-
-/*
-shared PostgresClient pg;
-shared static this()
-{
-    pg = new shared PostgresClient("dbname=pierce user=dhasenan", 4);
-}
-*/
-
 
 /*
    So, a normal query will look like:

@@ -48,6 +48,16 @@ Feed[] findFeeds(string url)
     return null;
 }
 
+Article[] fetchArticles(Feed feed)
+{
+    import std.algorithm.sorting : sort;
+
+    auto w = wget(feed.url);
+    auto articles = parseArticles(feed, w);
+    articles.sort!((x, y) => x.publishDate > y.publishDate);
+    return articles;
+}
+
 Article[] parseArticles(Feed feed, Page page)
 {
     auto dom = new XDoc(page.text);

@@ -1,7 +1,8 @@
 module pierce.domain;
 
-import vibe.core.log;
 import core.time;
+import vibe.core.log;
+import vibe.data.json;
 import std.datetime;
 import std.random;
 import std.uuid;
@@ -38,6 +39,14 @@ struct Article
     string author;
     string internalId;
     SysTime publishDate;
+
+    bool isProbablySameAs(Article other)
+    {
+        if (url != other.url) return false;
+        if (title != other.title) return false;
+        if (description != other.description) return false;
+        return true;
+    }
 }
 
 struct Subscription
@@ -73,6 +82,7 @@ bool checkPassword(const User user, string password)
         a.popFront;
         ubyte[] hash = a.front.fromHexString;
         ubyte[] expected = pbkdf2(password.representation, salt, rounds);
+        logInfo("expected: %s bytes; hash: %s bytes", expected.length, hash.length);
         bool eq = true;
         foreach (i, h; hash)
         {
