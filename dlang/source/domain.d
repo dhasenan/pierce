@@ -3,6 +3,7 @@ module pierce.domain;
 import core.time;
 import vibe.core.log;
 import vibe.data.json;
+import std.base64;
 import std.datetime;
 import std.random;
 import std.uuid;
@@ -78,11 +79,13 @@ bool checkPassword(const User user, string password)
         auto a = splitter(user.pbkdf2, ":");
         auto rounds = a.front.to!uint;
         a.popFront;
-        ubyte[] salt = a.front.fromHexString;
+        ubyte[] salt = Base64.decode(a.front);
         a.popFront;
-        ubyte[] hash = a.front.fromHexString;
+        ubyte[] hash = Base64.decode(a.front);
         ubyte[] expected = pbkdf2(password.representation, salt, rounds);
-        logInfo("expected: %s bytes; hash: %s bytes", expected.length, hash.length);
+        if (expected.length != hash.length) {
+            return false;
+        }
         bool eq = true;
         foreach (i, h; hash)
         {
@@ -103,18 +106,6 @@ bool checkPassword(const User user, string password)
     }
 }
 
-ubyte[] fromHexString(const char[] c)
-{
-    ubyte[] b = new ubyte[c.length / 2];
-    for (uint i = 0; i < b.length; i++)
-    {
-        import std.conv : to;
-        auto j = i * 2;
-        b[i] = to!ubyte(c[j .. j+1], 16);
-    }
-    return b;
-}
-
 void setPassword(ref User user, string password)
 {
     import kdf.pbkdf2;
@@ -131,6 +122,13 @@ void setPassword(ref User user, string password)
     user.pbkdf2 = format(
             "%s:%s:%s",
             rounds,
-            salt.toHexString,
-            hash.toHexString);
+            Base64.encode(salt),
+            Base64.encode(hash));
+}
+
+unittest
+{
+    User user;
+    user.setPassword("hallelujah");
+    assert(user.checkPassword("hallelujah"));
 }

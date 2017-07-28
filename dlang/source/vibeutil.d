@@ -12,16 +12,16 @@ class AuthedBase
     import std.typecons : Nullable;
     protected Nullable!User checkAuth(HTTPServerRequest req, HTTPServerResponse resp)
     {
-        auto s = req.cookies[COOKIE_NAME];
-        if (!s)
+        auto sp = COOKIE_NAME in req.cookies;
+        if (!sp)
         {
             logInfo("missing cookie %s", COOKIE_NAME);
             return Nullable!User.init;
         }
-        auto p = s in sessions;
+        auto p = *sp in sessions;
         if (!p)
         {
-            logInfo("missing session with ID %s (%s total sessions)", s, sessions.length);
+            logInfo("missing session with ID %s (%s total sessions)", *sp, sessions.length);
             return Nullable!User.init;
         }
         auto id = parseUUID(*p);

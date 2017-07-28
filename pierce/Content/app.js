@@ -849,10 +849,14 @@ var ui = {
       par.scrollTop(par.scrollTop() - par.height() + pos.top + margin + artDiv.height());
     }
 
-    $('#articleView .content').html(ui.template('articlefull', {
-      feed: article.Feed,
-      article: article
-    }));
+		try {
+			$('#articleView .content').html(ui.template('articlefull', {
+				feed: article.Feed,
+				article: article
+			}));
+		} catch (e) {
+			console.log("error while displaying article: " + e);
+		}
 
     $('#articleView a').attr('target', '_blank');
 
