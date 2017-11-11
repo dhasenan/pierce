@@ -10,10 +10,14 @@ import std.typecons;
 import std.uuid;
 import vibe.d;
 
-import pierce.domain;
 import pierce.db;
+import pierce.domain;
 import pierce.feeds;
 import pierce.vibeutil;
+
+alias Session = pierce.domain.Session;
+
+immutable SESSION_DURATION = 14.days;
 
 class FeedsControllerImpl
 {
@@ -319,13 +323,18 @@ class LoginController
         }
 
         // Build a session
-        auto sessionTag = randomUUID.toString;
-        sessions[sessionTag] = match.id.toString;
-        logInfo("set session %s => user %s", sessionTag, match.id);
+        Session session =
+        {
+            id: randomUUID(),
+            userId: match.id,
+            expires: Clock.currTime(UTC()) + SESSION_DURATION,
+        };
+        insert(session);
+        logInfo("set session %s => user %s", session.id, match.id);
 
         // Set session cookie
         Cookie cookie = new Cookie;
-        cookie.value = sessionTag;
+        cookie.value = session.id.to!string;
         auto expDate = Clock.currTime + LOGIN_DURATION;
         cookie.expires = expDate.toRFC822DateTimeString;
         cookie.path = "/";
@@ -377,8 +386,23 @@ class LoginController
     void logout(HTTPServerRequest req, HTTPServerResponse response)
     {
         // Clear the cookie: set its value to something invalid, set it to expire
-        auto sessionTag = req.cookies[COOKIE_NAME];
-        sessions.remove(sessionTag);
+        auto sessionTag = req.cookies.get(COOKIE_NAME, "");
+        if (sessionTag != "")
+        {
+            try
+            {
+                dbdelete!Session(parseUUID(sessionTag));
+            }
+            catch (Exception e)
+            {
+                // This is either the database not finding it,
+                // an invalid session already,
+                // or something strange.
+                // I'm not entirely sure how to disambiguate, but it's not a problem.
+                // Probably.
+                logInfo("unexpected error logging you out from %s: %s", sessionTag, e);
+            }
+        }
         Cookie cookie = new Cookie;
         cookie.value = "invalid";
         // Date doesn't matter if it's in the past.

@@ -13,7 +13,7 @@ shared static this()
 
     // Set up http server.
     auto settings = new HTTPServerSettings;
-    settings.port = 8080;
+    settings.port = 9881;
     auto router = new URLRouter;
     auto fsettings = new HTTPFileServerSettings;
     fsettings.serverPathPrefix = "/static";

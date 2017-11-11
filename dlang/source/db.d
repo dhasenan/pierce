@@ -11,6 +11,7 @@ import std.traits;
 import std.typecons;
 import std.uuid;
 
+import pierce.datetimeformat;
 import pierce.domain;
 
 /**
@@ -52,7 +53,8 @@ void update(T)(T val)
   */
 void insert(T)(T val)
 {
-    enum cmd = insertText!T();
+    static immutable string cmd = insertText!T();
+    logInfo("insert text is " ~ cmd);
     auto params = val.toParams(false);
     import std.algorithm : joiner, map;
     params.sqlCommand = cmd;
@@ -81,9 +83,17 @@ void saveOrUpdate(T)(ref T val)
 /**
   * Delete something from the database.
   */
-void dbdelete(T)(ref T val)
+void dbdelete(T)(T val)
 {
-    query!void("DELETE FROM " ~ T.stringof ~ "s WHERE id = ?", val.id.to!string);
+    dbdelete!T(val.id);
+}
+
+/**
+  * Delete something from the database.
+  */
+void dbdelete(T)(UUID id)
+{
+    query!void("DELETE FROM " ~ T.stringof ~ "s WHERE id = ?", id.to!string);
 }
 
 Nullable!T fetch(T)(UUID id)
@@ -205,7 +215,7 @@ QueryParams toParams(T)(T val, bool trailingId)
             auto fieldVal = __traits(getMember, val, m);
             static if (is(FT == SysTime))
             {
-                v[i] = toValue(fieldVal.toISOString());
+                v[i] = toValue(fieldVal.format(ISO8601FORMAT));
             }
             else static if (is(FT == Duration))
             {
@@ -221,6 +231,7 @@ QueryParams toParams(T)(T val, bool trailingId)
                 v[i] = toValue(std.conv.to!string(fieldVal));
             }
             logInfo("arg %s is %s", i + 1, v[i]);
+            v[i].data();
             i++;
         }
     }
@@ -239,7 +250,8 @@ QueryParams toParams(T)(T val, bool trailingId)
         }
     }
     QueryParams p;
-    p.args = v[0..i];
+    p.args = v[0..i].dup;
+    logInfo("submitting %s args", i);
     return p;
 }
 
@@ -262,6 +274,12 @@ string updateText(T)()
             static if (is(FT == UUID))
             {
                 cmd ~= `uuid($` ~ i.to!string ~ `)`;
+            }
+            else static if (is(FT == SysTime))
+            {
+                cmd ~= '$';
+                cmd ~= i.to!string;
+                cmd ~= `::timestamp without time zone`;
             }
             else
             {
@@ -296,6 +314,12 @@ string insertText(T)()
             static if (is(FT == UUID))
             {
                 values ~= `uuid($` ~ i.to!string ~ `)`;
+            }
+            else static if (is(FT == SysTime))
+            {
+                values ~= `$`;
+                values ~= i.to!string;
+                values ~= `::timestamp without time zone`;
             }
             else
             {

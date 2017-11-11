@@ -152,7 +152,3 @@ string authedForwardMethod(string fnName, alias method)()
 
 
 enum COOKIE_NAME = "sessionToken";
-
-// TODO: expire people at the right times
-// TODO: consider putting sessions in the database
-__gshared string[string] sessions;

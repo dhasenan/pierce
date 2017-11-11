@@ -50,7 +50,7 @@ CREATE TABLE read
 CREATE TABLE sessions
 (
     id CHAR(36) NOT NULL PRIMARY KEY,
-    userId CHAR(36) NOT NULL REFERENCES "user"(id),
+    userId CHAR(36) NOT NULL REFERENCES "users"(id),
     expires TIMESTAMP NOT NULL
 );
 
