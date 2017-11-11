@@ -1,14 +1,15 @@
+/** Because std.typecons.Nullable has a cruddy interface. */
 module pierce.opt;
 
 import std.traits : ReturnType;
+public import std.typecons : Nullable, nullable;
 
-struct Maybe(T)
+bool present(T)(Nullable!T n)
 {
-    T value;
-    bool present;
+    return !n.isNull;
 }
 
-auto ifPreset(alias v, T)(Maybe!T maybe)
+auto ifPreset(alias v, T)(Nullable!T maybe)
 {
     if (maybe.present)
     {
@@ -17,12 +18,12 @@ auto ifPreset(alias v, T)(Maybe!T maybe)
     return ReturnType!(v).init;
 }
 
-Maybe!T just(T)(T value)
+Nullable!T just(T)(T value)
 {
-    return Maybe!T(value, true);
+    return nullable(value);
 }
 
-Maybe!T nothing(T)()
+Nullable!T nothing(T)()
 {
-    return Maybe!T(T.init, false);
+    return Nullable!T.init;
 }

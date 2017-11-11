@@ -42,11 +42,11 @@ Feed[] findFeeds(URL url)
             .map!wget
             .map!findFeed
             .filter!(x => x.present)
-            .map!(x => x.value)
+            .map!(x => x.get)
             .array;
     }
     auto f = findFeed(w);
-    if (f.present) return [f.value];
+    if (f.present) return [f.get];
     return null;
 }
 
@@ -190,9 +190,9 @@ Page wget(URL url)
 
 shared Page[string] downloadCache;
 
-Maybe!Feed findFeed(Page page)
+Nullable!Feed findFeed(Page page)
 {
-    Maybe!Feed m;
+    Nullable!Feed m;
     XDoc doc;
     try
     {
@@ -210,6 +210,13 @@ Maybe!Feed findFeed(Page page)
     }
     else if (page.isRSS)
     {
+        return parseRSSHeader(doc, page.url);
+    }
+    else if (page.isXML)
+    {
+        // Some stuff says it's text/xml. Like xkcd. Which is pretty annoying.
+        auto f = parseAtomHeader(doc, page.url);
+        if (f.present) return f;
         return parseRSSHeader(doc, page.url);
     }
 
@@ -236,6 +243,7 @@ URL[] findReferencedFeedsInHTML(Page p)
 
 enum ATOM_CONTENT_TYPE = "application/atom+xml";
 enum RSS_CONTENT_TYPE = "application/rss+xml";
+enum XML_CONTENT_TYPE = "text/xml";
 enum HTML_CONTENT_TYPE = "text/html";
 enum XHTML_CONTENT_TYPE = "application/xhtml+xml";
 
@@ -261,6 +269,11 @@ struct Page
     {
         return contentType.startsWith(RSS_CONTENT_TYPE);
     }
+
+    bool isXML() @property
+    {
+        return contentType.startsWith(XML_CONTENT_TYPE);
+    }
 }
 
 XElem first(XElem parent, string tag)
@@ -285,7 +298,7 @@ string text(XElem elem)
     return elem.text();
 }
 
-Maybe!Feed parseAtomHeader(XDoc doc, string url)
+Nullable!Feed parseAtomHeader(XDoc doc, string url)
 {
     auto d = doc.first("feed");
     if (d is null) return nothing!Feed;
@@ -297,7 +310,7 @@ Maybe!Feed parseAtomHeader(XDoc doc, string url)
     return just(f);
 }
 
-Maybe!Feed parseRSSHeader(XDoc doc, string url)
+Nullable!Feed parseRSSHeader(XDoc doc, string url)
 {
     auto channel = doc.first("rss").first("channel");
     if (channel is null) nothing!Feed;
