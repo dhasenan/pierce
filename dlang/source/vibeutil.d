@@ -7,26 +7,39 @@ import std.uuid;
 import pierce.db;
 import pierce.domain;
 
+alias Sess = pierce.domain.Session;
+
 class AuthedBase
 {
     import std.typecons : Nullable;
     protected Nullable!User checkAuth(HTTPServerRequest req, HTTPServerResponse resp)
     {
-        auto sp = COOKIE_NAME in req.cookies;
-        if (!sp)
+        foreach (key, value; req.headers.byKeyValue)
+        {
+            logInfo("got header %s -> %s", key, value);
+        }
+        auto sp = req.cookies.get(COOKIE_NAME, "");
+        if (sp == "")
         {
             logInfo("missing cookie %s", COOKIE_NAME);
             return Nullable!User.init;
         }
-        auto p = *sp in sessions;
-        if (!p)
+        auto sessionId = parseUUID(sp);
+        auto maybeSession = fetch!Sess(sessionId);
+        if (maybeSession.isNull)
         {
-            logInfo("missing session with ID %s (%s total sessions)", *sp, sessions.length);
+            logInfo("failed to find session %s", sessionId);
             return Nullable!User.init;
         }
-        auto id = parseUUID(*p);
-        logInfo("found user ID: %s", id);
-        return fetch!User(id);
+        auto session = maybeSession.get;
+        if (session.expires < Clock.currTime(UTC()))
+        {
+            logInfo("session %s is already expired", sessionId);
+            // clean it up I guess?
+            dbdelete(session);
+            return Nullable!User.init;
+        }
+        return fetch!User(session.userId);
     }
 }
 

@@ -47,15 +47,12 @@ CREATE TABLE read
     PRIMARY KEY (userId, articleId)
 );
 
-/*
--- Maybe?
-CREATE TABLE session
+CREATE TABLE sessions
 (
     id CHAR(36) NOT NULL PRIMARY KEY,
     userId CHAR(36) NOT NULL REFERENCES "user"(id),
     expires TIMESTAMP NOT NULL
 );
-*/
 
 
 CREATE INDEX idx_article_feedDate ON articles (feedId, publishDate);

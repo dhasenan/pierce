@@ -13,6 +13,114 @@ import std.uuid;
 
 import pierce.domain;
 
+/**
+  * Save a new user.
+  *
+  * Should probably just use insert(user).
+  */
+void saveUser(User user)
+{
+    inConnection!(delegate immutable(Answer) (scope Connection conn) {
+        QueryParams p;
+        p.args = [
+            toValue(user.id.toString()),
+            toValue(user.email),
+            toValue(user.sha),
+            toValue(user.pbkdf2),
+            toValue(cast(int)user.checkInterval.total!"seconds"),
+        ];
+        p.sqlCommand = `
+            INSERT INTO users (id, email, sha, pbkdf2, checkInterval)
+            VALUES (uuid($1), $2, $3, $4, $5)`;
+        return conn.execParams(p);
+    })();
+}
+
+/**
+  * Update a DB row.
+  */
+void update(T)(T val)
+{
+    enum cmd = updateText!T();
+    auto params = val.toParams(true);
+    params.sqlCommand = cmd;
+    inConnection!(conn => conn.execParams(params));
+}
+
+/**
+  * Insert a new DB row.
+  */
+void insert(T)(T val)
+{
+    enum cmd = insertText!T();
+    auto params = val.toParams(false);
+    import std.algorithm : joiner, map;
+    params.sqlCommand = cmd;
+    inConnection!(conn => conn.execParams(params));
+}
+
+/**
+  * Update the value if it's already in the database, otherwise insert it.
+  *
+  * This relies on newly created items not having IDs. This might not work well for stuff that's got
+  * complex creation steps; in that case, you need to manually call insert.
+  */
+void saveOrUpdate(T)(ref T val)
+{
+    if (val.id == UUID.init)
+    {
+        val.id = randomUUID;
+        insert(val);
+    }
+    else
+    {
+        update(val);
+    }
+}
+
+/**
+  * Delete something from the database.
+  */
+void dbdelete(T)(ref T val)
+{
+    query!void("DELETE FROM " ~ T.stringof ~ "s WHERE id = ?", val.id.to!string);
+}
+
+Nullable!T fetch(T)(UUID id)
+{
+    enum cmd = `SELECT * FROM ` ~ T.stringof.toLower ~ `s WHERE id = $1`;
+    QueryParams params;
+    params.argsFromArray = [id.toString];
+    params.sqlCommand = cmd;
+    auto result = inConnection!(conn => conn.execParams(params));
+    if (result.length > 0)
+    {
+        return Nullable!T(parse!T(result[0]));
+    }
+    return Nullable!T.init;
+}
+
+/**
+  * Execute a query, parsing the results automatically.
+  */
+auto query(T = void)(string cmd, string[] args...)
+{
+    QueryParams params;
+    params.argsFromArray = args;
+    params.sqlCommand = cmd;
+    auto result = inConnection!(conn => conn.execParams(params));
+    static if (!is(T == void))
+    {
+        auto vals = new T[result.length];
+        foreach (i, ref v; vals)
+        {
+            v = parse!T(result[i]);
+        }
+        return vals;
+    }
+}
+
+// Parse a DB row out into a class or struct instance.
 T parse(T)(immutable Row row) if (is(T == class) || is(T == struct))
 {
     import std.traits;
@@ -76,13 +184,16 @@ T parse(T)(immutable Row row) if (is(T == class) || is(T == struct))
     return val;
 }
 
+// Parse a DB row out into a struct.
 T parse(T)(immutable Row row) if (!is(T == class) && !is(T == struct))
 {
     return to!T(row[0].as!string);
 }
 
+// Convert a thingy into a query parameter set.
 QueryParams toParams(T)(T val, bool trailingId)
 {
+    // I suspect I have too much space here.
     Value[__traits(derivedMembers, T).length + 1] v;
     int i = 0;
     foreach (m; __traits(derivedMembers, T))
@@ -195,82 +306,6 @@ string insertText(T)()
     }
     cmd ~= `) VALUES (`;
     return cmd ~ values ~ `)`;
-}
-
-void saveUser(User user)
-{
-    inConnection!(delegate immutable(Answer) (scope Connection conn) {
-        QueryParams p;
-        p.args = [
-            toValue(user.id.toString()),
-            toValue(user.email),
-            toValue(user.sha),
-            toValue(user.pbkdf2),
-            toValue(cast(int)user.checkInterval.total!"seconds"),
-        ];
-        p.sqlCommand = `
-            INSERT INTO users (id, email, sha, pbkdf2, checkInterval)
-            VALUES (uuid($1), $2, $3, $4, $5)`;
-        return conn.execParams(p);
-    })();
-}
-
-void update(T)(T val)
-{
-    enum cmd = updateText!T();
-    auto params = val.toParams(true);
-    params.sqlCommand = cmd;
-    inConnection!(conn => conn.execParams(params));
-}
-
-void insert(T)(T val)
-{
-    enum cmd = insertText!T();
-    auto params = val.toParams(false);
-    import std.algorithm : joiner, map;
-    params.sqlCommand = cmd;
-    inConnection!(conn => conn.execParams(params));
-}
-
-void saveOrUpdate(T)(ref T val)
-{
-    if (val.id == UUID.init)
-    {
-        val.id = randomUUID;
-        insert(val);
-    }
-    else
-    {
-        update(val);
-    }
-}
-
-Nullable!T fetch(T)(UUID id)
-{
-    enum cmd = `SELECT * FROM ` ~ T.stringof.toLower ~ `s WHERE id = $1`;
-    QueryParams params;
-    params.argsFromArray = [id.toString];
-    params.sqlCommand = cmd;
-    auto result = inConnection!(conn => conn.execParams(params));
-    if (result.length > 0)
-    {
-        return Nullable!T(parse!T(result[0]));
-    }
-    return Nullable!T.init;
-}
-
-T[] query(T)(string cmd, string[] args...)
-{
-    QueryParams params;
-    params.argsFromArray = args;
-    params.sqlCommand = cmd;
-    auto result = inConnection!(conn => conn.execParams(params));
-    auto vals = new T[result.length];
-    foreach (i, ref v; vals)
-    {
-        v = parse!T(result[i]);
-    }
-    return vals;
 }
 
 struct Result

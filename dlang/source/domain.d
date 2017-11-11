@@ -58,9 +58,38 @@ struct Subscription
     string labels;
 }
 
+private void addField(T, size_t i, string[] names)(T value, Json js)
+{
+    static if (i < names.length)
+    {
+        mixin(`auto fv = value.` ~ names[i] ~ `;`);
+        auto name = names[i];
+        static if (is(typeof(fv) == UUID))
+        {
+            js[name] = fv.toString;
+        }
+        else static if (is(typeof(fv) == SysTime))
+        {
+            js[name] = fv.toISOString;
+        }
+        else static if (is(typeof(fv) == Duration))
+        {
+            js[name] = fv.total!"seconds";
+        }
+        else
+        {
+            js[name] = fv;
+        }
+        addField!(T, i+1, names)(value, js);
+    }
+}
+
 Json toJson(T)(T value)
 {
-    return Json.emptyObject;
+    import std.traits : FieldNameTuple;
+    Json js = Json.emptyObject;
+    addField!(T, 0, [FieldNameTuple!T])(value, js);
+    return js;
 }
 
 bool checkPassword(const User user, string password)
@@ -131,4 +160,11 @@ unittest
     User user;
     user.setPassword("hallelujah");
     assert(user.checkPassword("hallelujah"));
+}
+
+struct Session
+{
+    UUID id;
+    UUID userId;
+    SysTime expires;
 }

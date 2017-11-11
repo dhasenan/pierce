@@ -3,6 +3,8 @@ module pierce.controllers;
 import core.time;
 import dpq2.exception;
 import dpq2;
+import std.array : array;
+import std.algorithm.iteration : map;
 import std.traits;
 import std.typecons;
 import std.uuid;
@@ -451,6 +453,16 @@ class UsersControllerImpl
             return js;
         }
 
+        return js;
+    }
+
+    Json getSubscriptions(User user)
+    {
+        auto js = Json.emptyObject;
+        js["subscriptions"] =
+            query!Subscription(`SELECT * FROM subscriptions WHERE userId = $1`, user.id.toString)
+            .map!(x => x.toJson)
+            .array;
         return js;
     }
 }
