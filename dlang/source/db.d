@@ -37,6 +37,52 @@ void saveUser(User user)
     })();
 }
 
+void deleteSub(User user, string id)
+{
+    QueryParams p;
+    p.sqlCommand = "DELETE FROM subscriptions WHERE userId = $1 AND feedId = $2";
+    p.args = [
+        toValue(user.id.toString()),
+        toValue(id)
+    ];
+    inConnection!((conn) => conn.execParams(p));
+}
+
+void markUnread(User user, string feedId, string articleId)
+{
+    QueryParams p;
+    p.sqlCommand = "DELETE FROM read WHERE userId = $1 AND feedId = $2 AND articleId = $3";
+    p.args = [
+        toValue(user.id.toString()),
+        toValue(feedId),
+        toValue(articleId),
+    ];
+    inConnection!(conn => conn.execParams(p));
+}
+
+void markRead(User user, string feedId, string articleId)
+{
+    QueryParams p;
+    p.sqlCommand = "INSERT INTO read (userId, feedId, articleId) VALUES ($1, $2, $3)";
+    p.args = [toValue(user.id.toString), toValue(feedId), toValue(articleId)];
+    inConnection!(conn => conn.execParams(p));
+}
+
+void markOlderRead(User user, string feedId, string articleId)
+{
+    QueryParams p;
+    p.sqlCommand = `
+        INSERT INTO read (userId, feedId, articleId)
+        SELECT $1, $2, id
+        FROM articles
+        WHERE feedId = $2 AND publishDate <
+        (SELECT publishDate FROM articles WHERE articleId = $3)`;
+    p.args = [toValue(user.id.toString), toValue(feedId), toValue(articleId)];
+    inConnection!(conn => conn.execParams(p));
+    
+}
+
+
 /**
   * Update a DB row.
   */

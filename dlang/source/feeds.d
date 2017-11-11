@@ -16,6 +16,7 @@ import vibe.core.log;
 import pierce.datetimeformat;
 import pierce.domain;
 import pierce.opt;
+import url;
 
 alias XDoc = std.xml.Document;
 alias XElem = std.xml.Element;
@@ -29,9 +30,10 @@ alias XMLException = std.xml.XMLException;
   *
   * This doesn't read the referenced articles.
   */
-Feed[] findFeeds(string url)
+Feed[] findFeeds(URL url)
 {
     auto w = wget(url);
+    logInfo("have page for %s", url);
     if (w.isHTML)
     {
         import std.algorithm;
@@ -52,7 +54,7 @@ Article[] fetchArticles(Feed feed)
 {
     import std.algorithm.sorting : sort;
 
-    auto w = wget(feed.url);
+    auto w = wget(feed.url.parseURL);
     auto articles = parseArticles(feed, w);
     articles.sort!((x, y) => x.publishDate > y.publishDate);
     return articles;
@@ -142,10 +144,11 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
 /**
   * Download the page at the given URL.
   */
-Page wget(string url)
+Page wget(URL url)
 {
     import vibe.http.client;
     import vibe.core.stream : InputStream;
+    /*
     auto limit = Clock.currTime - dur!"minutes"(15);
     foreach (k, v; downloadCache)
     {
@@ -159,19 +162,30 @@ Page wget(string url)
     {
         return *existing;
     }
-    auto resp = requestHTTP(url);
-    Appender!(ubyte[]) a;
-    resp.readRawBody(delegate void (scope InputStream stream) scope {
-        while (!stream.empty)
+    */
+    logInfo("making request for URL %s", url);
+    Page page;
+    requestHTTP(url,
+    (scope HTTPClientRequest req)
+    {
+        req.method = HTTPMethod.GET;
+    },
+    (scope HTTPClientResponse resp)
+    {
+        logInfo("connected to remote host!");
+        foreach (k, v; resp.headers)
         {
-            auto buf = new ubyte[stream.leastSize];
-            stream.read(buf);
-            a ~= buf;
+            logInfo("header %s => %s", k, v);
         }
+        import vibe.stream.operations : readAllUTF8;
+        auto data = resp.bodyReader.readAllUTF8();
+        page = Page(data, resp.contentType, url, Clock.currTime);
+
     });
+    logInfo("finished making request for URL %s", url);
 
     // TODO encodings
-    return Page(cast(string)a.data, resp.contentType, url, Clock.currTime);
+    return page;
 }
 
 shared Page[string] downloadCache;
@@ -203,9 +217,9 @@ Maybe!Feed findFeed(Page page)
     return nothing!Feed;
 }
 
-string[] findReferencedFeedsInHTML(Page p)
+URL[] findReferencedFeedsInHTML(Page p)
 {
-    string[] found;
+    URL[] found;
     // TODO encodings
     auto doc = new Document(p.text);
     auto links = doc.querySelectorAll("link");
@@ -214,7 +228,7 @@ string[] findReferencedFeedsInHTML(Page p)
         if (link.getAttribute("type").canFind(RSS_CONTENT_TYPE) ||
             link.getAttribute("type").canFind(ATOM_CONTENT_TYPE))
         {
-            found ~= link.getAttribute("href");
+            found ~= p.url.resolve(link.getAttribute("href"));
         }
     }
     return found;
@@ -229,7 +243,7 @@ struct Page
 {
     string text;
     string contentType;
-    string url;
+    URL url;
     SysTime downloaded;
 
     bool isHTML() @property

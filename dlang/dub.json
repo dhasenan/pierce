@@ -5,6 +5,7 @@
 	],
 	"dependencies": {
 		  "vibe-d": "~>0.8.0"
+    , "urld": "~>2.1.0"
 		, "vibe-d-postgresql": "0.2.22"
 		, "derelict-pq": {"path": "DerelictPQ"}
 		, "datefmt": "~master"

@@ -1,5 +1,7 @@
 module pierce.app;
 
+import etc.linux.memoryerror;
+
 import vibe.d;
 
 import pierce.controllers;
@@ -8,6 +10,7 @@ import pierce.vibeutil;
 
 shared static this()
 {
+    registerMemoryErrorHandler();
     // Set up background processes.
     runTask(() => pierce.tasks.runTasks());
 

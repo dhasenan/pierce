@@ -8,6 +8,7 @@ import std.algorithm.iteration : map;
 import std.traits;
 import std.typecons;
 import std.uuid;
+import url;
 import vibe.d;
 
 import pierce.db;
@@ -35,7 +36,19 @@ class FeedsControllerImpl
         sub.labels = labels;
 
         logInfo("checking URL for feeds");
-        auto feeds = findFeedForURL(url);
+        Feed[] feeds;
+        try
+        {
+            feeds = findFeedForURL(url);
+        }
+        catch (Exception e)
+        {
+            logError("while trying to find feeds at %s: %s", url, e);
+            js["success"] = false;
+            js["error"] = e.toString;
+            return js;
+        }
+        logInfo("found %s feeds", feeds.length);
         if (feeds.length == 0)
         {
             js["success"] = false;
@@ -99,36 +112,37 @@ class FeedsControllerImpl
     // not public. __traits(getOverloads) sucks.
     package Feed[] findFeedForURL(string url)
     {
+        logInfo("querying for existing feed");
         auto existing = query!Feed("select * from feeds where url = $1", url);
         Feed feedToAdd;
         if (existing.length)
         {
+            logInfo("found %s existing feeds", existing.length);
             return existing;
         }
-        else
+        logInfo("looking for feeds at %s", url);
+        auto feeds = findFeeds(url.parseURL);
+        logInfo("found %s feeds", feeds.length);
+        if (feeds.length == 0)
         {
-            auto feeds = findFeeds(url);
-            if (feeds.length == 0)
+            return null;
+        }
+        if (feeds.length == 1)
+        {
+            // If I add questionablecontent.net and you add questionablecontent.net, then the
+            // second one doesn't match anything, since the feed is for
+            // http://www.questionablecontent.net/QCRSS.xml. So we search again.
+            if (feeds[0].url != url)
             {
-                return null;
-            }
-            if (feeds.length == 1)
-            {
-                // If I add questionablecontent.net and you add questionablecontent.net, then the
-                // second one doesn't match anything, since the feed is for
-                // http://www.questionablecontent.net/QCRSS.xml. So we search again.
-                if (feeds[0].url != url)
+                existing = query!Feed("select * from feeds where url = $1", feeds[0].url);
+                if (existing.length)
                 {
-                    existing = query!Feed("select * from feeds where url = $1", feeds[0].url);
-                    if (existing.length)
-                    {
-                        return existing;
-                    }
+                    return existing;
                 }
-                return feeds;
             }
             return feeds;
         }
+        return feeds;
     }
 
     Json getMine(User user)
@@ -146,13 +160,7 @@ class FeedsControllerImpl
 
     Json postUnsubscribe(User user, string id)
     {
-        QueryParams p;
-        p.sqlCommand = "DELETE FROM subscriptions WHERE userId = $1 AND feedId = $2";
-        p.args = [
-            toValue(user.id.toString()),
-            toValue(id)
-        ];
-        inConnection!((conn) => conn.execParams(p));
+        deleteSub(user, id);
         return Json.emptyObject;
     }
 
@@ -163,37 +171,19 @@ class FeedsControllerImpl
 
     Json postMarkUnread(User user, string feedId, string articleId)
     {
-        QueryParams p;
-        p.sqlCommand = "DELETE FROM read WHERE userId = $1 AND feedId = $2 AND articleId = $3";
-        p.args = [
-            toValue(user.id.toString()),
-            toValue(feedId),
-            toValue(articleId),
-        ];
-        inConnection!(conn => conn.execParams(p));
+        markUnread(user, feedId, articleId);
         return Json.emptyObject;
     }
 
     Json postMarkRead(User user, string feedId, string articleId)
     {
-        QueryParams p;
-        p.sqlCommand = "INSERT INTO read (userId, feedId, articleId) VALUES ($1, $2, $3)";
-        p.args = [toValue(user.id.toString), toValue(feedId), toValue(articleId)];
-        inConnection!(conn => conn.execParams(p));
+        markRead(user, feedId, articleId);
         return Json.emptyObject;
     }
 
     Json postMarkOlderRead(User user, string feedId, string articleId)
     {
-        QueryParams p;
-        p.sqlCommand = `
-            INSERT INTO read (userId, feedId, articleId)
-            SELECT $1, $2, id
-            FROM articles
-            WHERE feedId = $2 AND publishDate <
-                (SELECT publishDate FROM articles WHERE articleId = $3)`;
-        p.args = [toValue(user.id.toString), toValue(feedId), toValue(articleId)];
-        inConnection!(conn => conn.execParams(p));
+        markOlderRead(user, feedId, articleId);
         return Json.emptyObject;
     }
 
