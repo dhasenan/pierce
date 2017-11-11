@@ -99,6 +99,7 @@ void dbdelete(T)(UUID id)
 Nullable!T fetch(T)(UUID id)
 {
     enum cmd = `SELECT * FROM ` ~ T.stringof.toLower ~ `s WHERE id = $1`;
+    logInfo("SQL: {%s} id: %s", cmd, id);
     QueryParams params;
     params.argsFromArray = [id.toString];
     params.sqlCommand = cmd;
@@ -143,48 +144,67 @@ T parse(T)(immutable Row row) if (is(T == class) || is(T == struct))
         val = new T();
     }
 
-    foreach (mm; __traits(derivedMembers, T))
+    foreach (mm; FieldNameTuple!T)
     {
         const m = mm;
+        alias FT = typeof(__traits(getMember, T, m));
+
         bool found = false;
+        string normalName = m;
         for (int i = 0; i < row.length; i++)
         {
-            if (row.columnName(i) == m)
+            import std.uni : sicmp;
+
+            auto name = row.columnName(i);
+            if (sicmp(name, m) == 0)
             {
+                normalName = name;
                 found = true;
                 break;
             }
         }
-        if (!found) continue;
+        if (!found)
+        {
+            logInfo("no cell found for field %s", m);
+            continue;
+        }
 
-        auto cell = row[m];
-        if (cell.isNull) continue;
-        auto v = cell.as!string;
+        auto cell = row[normalName];
+        if (cell.isNull)
+        {
+            logInfo("cell %s is null -- is this bad?", m);
+        }
 
-        alias FT = typeof(__traits(getMember, T, m));
         static if (isFunction!FT)
         {
             continue;
         }
         else static if (is(FT == UUID))
         {
-            __traits(getMember, val, m) = v.parseUUID;
+            auto s = cell.as!string;
+            logInfo("cell %s is uuid %s", m, s);
+            __traits(getMember, val, m) = s.parseUUID;
         }
         else static if (is(FT == SysTime))
         {
-            __traits(getMember, val, m) = SysTime.fromSimpleString(v);
+            import std.bitmanip : bigEndianToNative;
+            ubyte[8] data;
+            data[] = cell.data[0..8];
+            auto off = data.bigEndianToNative!ulong;
+            SysTime PSQL_EPOCH = SysTime(Date(2000, 1, 1), UTC());
+            __traits(getMember, val, m) = PSQL_EPOCH + off.usecs;
         }
         else static if (is(FT == string))
         {
-            __traits(getMember, val, m) = v;
+            __traits(getMember, val, m) = cell.as!string;
         }
         else static if (is(FT == Duration))
         {
-            __traits(getMember, val, m) = dur!"seconds"(std.conv.to!int(v));
+            __traits(getMember, val, m) = dur!"seconds"(cell.as!int);
         }
         else static if (is(FT == int))
         {
-            __traits(getMember, val, m) = std.conv.to!int(v);
+            __traits(getMember, val, m) = cell.as!int;
         }
         else
         {

@@ -32,6 +32,7 @@ class AuthedBase
             return Nullable!User.init;
         }
         auto session = maybeSession.get;
+        logInfo("session will expire %s", session.expires);
         if (session.expires < Clock.currTime(UTC()))
         {
             logInfo("session %s is already expired", sessionId);
@@ -39,7 +40,13 @@ class AuthedBase
             dbdelete(session);
             return Nullable!User.init;
         }
-        return fetch!User(session.userId);
+        logInfo("session is good! sessionId: %s userid: %s", session.id, session.userId);
+        auto user = fetch!User(session.userId);
+        if (user.isNull)
+        {
+            logInfo("user is null despite having a valid session");
+        }
+        return user;
     }
 }
 

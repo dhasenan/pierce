@@ -11,7 +11,6 @@
 		, "arsd-official:dom": "1.2.1"
 		, "pbkdf2": "0.1.2"
 	},
-	"dflags-dmd": ["-g"],
 	"description": "RSS reader",
 	"copyright": "Copyright © 2017, dhasenan",
 	"license": "Ms-PL",
