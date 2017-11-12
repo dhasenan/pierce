@@ -1,0 +1,194 @@
+
+
+body {
+  background-color: #fafaff;
+  font-family: sans-serif;
+  font-size: 10pt;
+  font-weight: normal;
+  line-height: 1.2em;
+  margin: 0px;
+  overflow: hidden;
+  position:fixed;
+}
+
+.paneTitle {
+  width: 100%;
+  background-color: #444;
+  color: #fee;
+  padding: 0.2em;
+  padding-left: 0.3em;
+}
+
+.paneTitle a {
+  color: #f0e0e0;
+  padding-right: 0.5em;
+}
+
+.content {
+  background-color: #fafafa;
+}
+
+.ui-layout-resizer-west {
+  width: 4px !important;
+}
+
+.ui-layout-resizer-south {
+  height: 4px !important;
+}
+
+.ui-layout-pane {
+  background-color: #fdfdff !important;
+}
+
+.ui-layout-resizer {
+  background-color: #e95 !important;
+}
+
+.login {
+  background-color: #8af;
+}
+
+#headerBar {
+  background-color: #e95; 
+}
+
+.selectedItem .labelName {
+  background-color: #ddd;
+}
+
+.selectedItem .feedli {
+  background-color: #ddd;
+}
+
+.selectedItem .feedli {
+  background-color: #ddd;
+}
+
+.selectedItem.articleli {
+  background-color: #ddd;
+}
+
+.unread {
+  font-weight: bold;
+}
+
+.listRow {
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 0.2em;
+  padding-right: 0.4em;
+  font-size: 9pt;
+  text-overflow: ellipsis;
+}
+
+.feedli {
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 0.2em;
+  margin-left: 2em;
+  font-size: 9pt;
+  text-overflow: ellipsis;
+  height: 16px;
+  line-height: 16px;
+}
+
+.feedli img {
+  position: relative;
+  top: 4px;
+}
+
+.feedName {
+  line-height: 1em;
+  height: 1em;
+}
+
+.articleli {
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0.2em;
+  font-size: 9pt;
+  text-overflow: ellipsis;
+  border-bottom: 1px dotted #aaa;
+}
+
+.collapsed .labelContent {
+  display: none;
+}
+
+.expanded .labelContent {
+  display: block;
+}
+
+a {
+  color: #39e;
+  text-decoration: none;
+}
+
+#articleContent a {
+  target-name: "new";
+  target-new: "tab";
+}
+
+/* I don't rightly understand why the nested ones aren't acting like
+ * the non-nested one, but this seems to make everything happy.
+ */
+.content {
+  overflow: auto;
+  padding: 0.4em;
+  position: absolute;
+  top: 1.6em;
+  left: 0;
+  bottom: 0px;
+  right: 0;
+}
+
+#feedList .content {
+  top: 0px;
+}
+
+.pane {
+  overflow: hidden;
+  border: 1px solid gray;
+}
+
+.ajaxLoader {
+  height: 100%;
+  float: left;
+}
+
+.ajaxLoader img {
+  vertical-align: middle;
+}
+
+.expander {
+  float: left;
+  clear: both;
+}
+
+.label {
+  clear: both;
+}
+
+.labelContent {
+  clear: both;
+}
+
+#butterbar {
+  position: absolute;
+  z-index: 100;
+  top: 4em;
+  left: 0px;
+  display: none;
+  width: 100%;
+  box-pack: center;
+  box-align: center;
+  text-align: center;
+}
+
+#buttercontent {
+  background-color: #ddd;
+  border: 2px solid black;
+  padding: 5px;
+  font-size: 12pt;
+  margin: auto;
+}
