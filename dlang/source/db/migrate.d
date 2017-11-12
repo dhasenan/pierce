@@ -31,6 +31,8 @@ void dbMigrate()
     sort(finishedMigrations);
     // Might want to check if we're applying out of order...
     auto toApply = setDifference(migrations, finishedMigrations).array;
+    // Just in case.
+    sort(toApply);
 
     logInfo("%s migrations already run, %s defined, %s remaining",
             finishedMigrations.length,

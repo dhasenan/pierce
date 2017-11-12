@@ -1,6 +1,8 @@
 module pierce.db.core;
 
+import core.time;
 import dpq2;
+import dpq2.conv.time;
 
 import pierce.datetimeformat;
 import pierce.domain;
@@ -165,12 +167,9 @@ T parse(T)(immutable Row row) if (is(T == class) || is(T == struct))
         }
         else static if (is(FT == SysTime))
         {
-            import std.bitmanip : bigEndianToNative;
-            ubyte[8] data;
-            data[] = cell.data[0..8];
-            auto off = data.bigEndianToNative!ulong;
-            SysTime PSQL_EPOCH = SysTime(Date(2000, 1, 1), UTC());
-            __traits(getMember, val, m) = PSQL_EPOCH + off.usecs;
+            auto sansTZ = cell.as!TimeStampWithoutTZ;
+            auto st = SysTime(sansTZ.dateTime, sansTZ.fracSec.hnsecs.hnsecs, UTC());
+            __traits(getMember, val, m) = st;
         }
         else static if (is(FT == string))
         {
@@ -195,7 +194,7 @@ T parse(T)(immutable Row row) if (is(T == class) || is(T == struct))
 // Parse a DB row out into a struct.
 T parse(T)(immutable Row row) if (!is(T == class) && !is(T == struct))
 {
-    return to!T(row[0].as!string);
+    return row[0].as!T;
 }
 
 // Convert a thingy into a query parameter set.
