@@ -1,16 +1,27 @@
 module pierce.app;
 
 import etc.linux.memoryerror;
-
+import std.experimental.logger;
+import std.stdio;
 import vibe.d;
 
-import pierce.controllers;
+import pierce.controllers.feeds;
+import pierce.controllers.login;
+import pierce.controllers.users;
+import pierce.db.migrate;
+import pierce.log;
 import pierce.tasks;
 import pierce.vibeutil;
 
 shared static this()
 {
     registerMemoryErrorHandler();
+    auto log = new MultiLogger;
+    log.insertLogger("console", new std.experimental.logger.FileLogger(stderr));
+    log.insertLogger("file", new VibeRollingFileLogger("pierce-%y-%m-%d.%n.log", std.experimental.logger.LogLevel.all));
+    sharedLog = log;
+
+    dbMigrate();
     // Set up background processes.
     runTask(() => pierce.tasks.runTasks());
 

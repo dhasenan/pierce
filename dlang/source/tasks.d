@@ -10,6 +10,74 @@ import pierce.feeds;
 
 enum MAX_SAVED_ARTICLES = 1000;
 
+__gshared TaskRunner tasks;
+shared static this()
+{
+    tasks = new TaskRunner;
+}
+
+class TaskRunner
+{
+    Task[] tasks;
+    FeedTask[] feedTasks;
+
+    this()
+    {
+        tasks = buildTasks();
+        feedTasks = buildFeedTasks();
+    }
+
+    void runStandardTasks()
+    {
+        logInfo("running periodic tasks");
+        foreach (task; tasks)
+        {
+            try
+            {
+                logInfo("running task %s", task);
+                task.run();
+            }
+            catch (Throwable t)
+            {
+                logError("in task %s: %s", task, t);
+            }
+        }
+    }
+
+    void runFeedTasks()
+    {
+        auto feeds = query!Feed(`
+            SELECT * FROM feeds
+            WHERE nextRead IS NULL OR nextRead < now()
+            ORDER BY lastRead
+            LIMIT 100`);
+        logInfo("scanning %s feeds", feeds.length);
+        foreach (feed; feeds)
+        {
+            runTasksOnFeed(feed);
+        }
+    }
+
+    void runTasksOnFeed(Feed feed)
+    {
+        foreach (feedTask; feedTasks)
+        {
+            try
+            {
+                logInfo("running task %s", feedTask);
+                feedTask.run(feed);
+            }
+            catch (Throwable t)
+            {
+                logError("in feed task %s: %s", feedTask, t);
+            }
+
+        }
+        feed.nextRead = Clock.currTime() + feed.checkInterval;
+        update(feed);
+    }
+}
+
 void runTasks()
 {
     vibe.core.core.yield();
@@ -90,14 +158,12 @@ class ScrubFeeds : Task
     void run()
     {
         QueryParams p;
-        // We only delete stuff that's been read at least once to reduce data races.
-        // Here, we could delete a feed with a subscriber, but it would have to be a feed that Alice
-        // unsubscribed from and Bob is in the middle of subscribing to.
-        // In the more common case that Alice subscribes to a unique feed, we'll skip over it
-        // because it hasn't yet been read.
+        // This has a race condition where everyone unsubs from feed S, someone starts subscribing,
+        // then this runs. dpq2 doesn't seem to support transactions...
         p.sqlCommand = `
             DELETE FROM feeds
             WHERE lastRead IS NOT NULL
+            AND created < now() - '30 minutes'::interval
             AND NOT EXISTS (
                 SELECT * FROM subscriptions
                 WHERE subscriptions.feedId = feeds.id)

@@ -1,8 +1,9 @@
-module pierce.db;
+module pierce.db.core;
 
-import vibe.core.log;
-//import vibe.db.postgresql;
 import dpq2;
+
+import pierce.datetimeformat;
+import pierce.domain;
 
 import std.conv;
 import std.datetime;
@@ -11,77 +12,7 @@ import std.traits;
 import std.typecons;
 import std.uuid;
 
-import pierce.datetimeformat;
-import pierce.domain;
-
-/**
-  * Save a new user.
-  *
-  * Should probably just use insert(user).
-  */
-void saveUser(User user)
-{
-    inConnection!(delegate immutable(Answer) (scope Connection conn) {
-        QueryParams p;
-        p.args = [
-            toValue(user.id.toString()),
-            toValue(user.email),
-            toValue(user.sha),
-            toValue(user.pbkdf2),
-            toValue(cast(int)user.checkInterval.total!"seconds"),
-        ];
-        p.sqlCommand = `
-            INSERT INTO users (id, email, sha, pbkdf2, checkInterval)
-            VALUES (uuid($1), $2, $3, $4, $5)`;
-        return conn.execParams(p);
-    })();
-}
-
-void deleteSub(User user, string id)
-{
-    QueryParams p;
-    p.sqlCommand = "DELETE FROM subscriptions WHERE userId = $1 AND feedId = $2";
-    p.args = [
-        toValue(user.id.toString()),
-        toValue(id)
-    ];
-    inConnection!((conn) => conn.execParams(p));
-}
-
-void markUnread(User user, string feedId, string articleId)
-{
-    QueryParams p;
-    p.sqlCommand = "DELETE FROM read WHERE userId = $1 AND feedId = $2 AND articleId = $3";
-    p.args = [
-        toValue(user.id.toString()),
-        toValue(feedId),
-        toValue(articleId),
-    ];
-    inConnection!(conn => conn.execParams(p));
-}
-
-void markRead(User user, string feedId, string articleId)
-{
-    QueryParams p;
-    p.sqlCommand = "INSERT INTO read (userId, feedId, articleId) VALUES ($1, $2, $3)";
-    p.args = [toValue(user.id.toString), toValue(feedId), toValue(articleId)];
-    inConnection!(conn => conn.execParams(p));
-}
-
-void markOlderRead(User user, string feedId, string articleId)
-{
-    QueryParams p;
-    p.sqlCommand = `
-        INSERT INTO read (userId, feedId, articleId)
-        SELECT $1, $2, id
-        FROM articles
-        WHERE feedId = $2 AND publishDate <
-        (SELECT publishDate FROM articles WHERE articleId = $3)`;
-    p.args = [toValue(user.id.toString), toValue(feedId), toValue(articleId)];
-    inConnection!(conn => conn.execParams(p));
-    
-}
-
+import vibe.core.log;
 
 /**
   * Update a DB row.
@@ -100,7 +31,6 @@ void update(T)(T val)
 void insert(T)(T val)
 {
     static immutable string cmd = insertText!T();
-    logInfo("insert text is " ~ cmd);
     auto params = val.toParams(false);
     import std.algorithm : joiner, map;
     params.sqlCommand = cmd;
@@ -145,7 +75,6 @@ void dbdelete(T)(UUID id)
 Nullable!T fetch(T)(UUID id)
 {
     enum cmd = `SELECT * FROM ` ~ T.stringof.toLower ~ `s WHERE id = $1`;
-    logInfo("SQL: {%s} id: %s", cmd, id);
     QueryParams params;
     params.argsFromArray = [id.toString];
     params.sqlCommand = cmd;
@@ -211,14 +140,14 @@ T parse(T)(immutable Row row) if (is(T == class) || is(T == struct))
         }
         if (!found)
         {
-            logInfo("no cell found for field %s", m);
             continue;
         }
 
         auto cell = row[normalName];
         if (cell.isNull)
         {
-            logInfo("cell %s is null -- is this bad?", m);
+            // should have default value here
+            continue;
         }
 
         static if (isFunction!FT)
@@ -228,7 +157,6 @@ T parse(T)(immutable Row row) if (is(T == class) || is(T == struct))
         else static if (is(FT == UUID))
         {
             auto s = cell.as!string;
-            logInfo("cell %s is uuid %s", m, s);
             __traits(getMember, val, m) = s.parseUUID;
         }
         else static if (is(FT == SysTime))
@@ -296,7 +224,6 @@ QueryParams toParams(T)(T val, bool trailingId)
             {
                 v[i] = toValue(std.conv.to!string(fieldVal));
             }
-            logInfo("arg %s is %s", i + 1, v[i]);
             v[i].data();
             i++;
         }
@@ -317,7 +244,6 @@ QueryParams toParams(T)(T val, bool trailingId)
     }
     QueryParams p;
     p.args = v[0..i].dup;
-    logInfo("submitting %s args", i);
     return p;
 }
 
@@ -449,3 +375,4 @@ auto inConnection(alias fn)()
    That's...not *awesome*, but not the end of the world, and it's probably better than what I
    currently do.
    */
+

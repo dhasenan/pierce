@@ -1,4 +1,4 @@
-module pierce.controllers;
+module pierce.controllers.feeds;
 
 import core.time;
 import dpq2.exception;
@@ -16,10 +16,6 @@ import pierce.domain;
 import pierce.feeds;
 import pierce.vibeutil;
 
-alias Session = pierce.domain.Session;
-
-immutable SESSION_DURATION = 14.days;
-
 class FeedsControllerImpl
 {
     Json postAdd(User user, string url, string title, string labels)
@@ -29,14 +25,13 @@ class FeedsControllerImpl
         // Let's have a little optimism here.
         js["success"] = true;
 
-        // Subscription, just in case we manage to insert it.
-        Subscription sub;
-        sub.userId = user.id;
-        sub.title = title;
-        sub.labels = labels;
 
         logInfo("checking URL for feeds");
-        Feed[] feeds;
+        Feed[] feeds = query!Feed("select * from feeds where url = $1", url);
+        if (feeds.length >= 1)
+        {
+            return makeSub(user, feeds[0], title, labels);
+        }
         try
         {
             feeds = findFeedForURL(url);
@@ -59,6 +54,7 @@ class FeedsControllerImpl
         if (feeds.length > 1)
         {
             logInfo("found several");
+            js["success"] = true;
             auto arr = new Json[feeds.length];
             foreach (i, feed; feeds)
             {
@@ -72,20 +68,47 @@ class FeedsControllerImpl
         }
 
         logInfo("found only one");
+        Feed feed = feeds[0];
+        feeds = query!Feed("select * from feeds where url = $1", feed.url);
+        if (feeds.length >= 1)
+        {
+            feed = feeds[0];
+        }
+        else
+        {
+            insert(feed);
+            logInfo("saved new feed");
+            auto articles = fetchArticles(feed);
+            foreach (article; articles)
+            {
+                insert(article);
+            }
+            logInfo("saved %s articles", articles.length);
+        }
+        return makeSub(user, feed, title, labels);
+    }
+
+    private Json makeSub(User user, Feed feed, string title, string labels)
+    {
         // TODO potential race here.
         // If we create a new feed and then our cleaner task runs, we might delete the feed
         // because there are no subscribers.
         // But then we try to add a subscriber and the feed gets deleted.
-        // Making this a transaction should fix that, though that will take a bit of work.
-        saveOrUpdate(feeds[0]);
-        auto id = feeds[0].id;
+        // Making this a transaction should fix that, though we'll need to add transactions to dpq2.
+        auto js = Json.emptyObject;
+        auto id = feed.id;
+        Subscription sub;
+        sub.userId = user.id;
+        sub.title = title;
+        sub.labels = labels;
         sub.feedId = id;
-        logInfo("saved feed");
         try
         {
             insert(sub);
             logInfo("saved sub");
             js["success"] = true;
+            js["added_feed"] = true;
+            js["articles"] = fetchArticles(feed).map!(x => toJson(x)).array;
             js["feed_id"] = id.toString;
         }
         catch (Dpq2Exception e)
@@ -100,7 +123,7 @@ class FeedsControllerImpl
             }
             else
             {
-                logError("while trying to grab feed from %s for user %s", url, user.id);
+                logError("while trying to grab feed from %s for user %s", feed.url, user.id);
                 js["error"] = e.toString;
             }
         }
@@ -256,227 +279,4 @@ class FeedsControllerImpl
     }
 }
 
-struct Test
-{
-    UUID id;
-}
 
-// This would better be named "not-logged-in controller"
-@path("login")
-class LoginController
-{
-    enum LOGIN_DURATION = dur!"days"(14);
-
-    // Do you a login for great good!
-    Json login(HTTPServerResponse response, string email, string password)
-    {
-        auto js = Json.emptyObject;
-        try
-        {
-            string[1] args;
-            args[0] = email;
-            auto matches = query!User(`SELECT * FROM users WHERE email = $1`, args);
-            logInfo("found %s users matching email %s", matches.length, email);
-            if (matches.length > 1)
-            {
-                logError("multiple users match email %s", email);
-            }
-            foreach (match; matches)
-            {
-                if (match.checkPassword(password))
-                {
-                    return reallyLogin(response, match, password);
-                }
-            }
-            logInfo("no match");
-            response.statusCode = 403;
-            js["success"] = false;
-            return js;
-        }
-        catch (Throwable e)
-        {
-            logError("couldn't log user %s in: %s", email, e);
-            response.statusCode = 500;
-            js["success"] = false;
-            js["error"] = e.toString();
-            return js;
-        }
-    }
-
-    private Json reallyLogin(HTTPServerResponse response, User match, string password)
-    {
-        if (match.sha !is null)
-        {
-            // Old imported account. Fix!
-            match.setPassword(password);
-            update(match);
-        }
-
-        // Build a session
-        Session session =
-        {
-            id: randomUUID(),
-            userId: match.id,
-            expires: Clock.currTime(UTC()) + SESSION_DURATION,
-        };
-        insert(session);
-        logInfo("set session %s => user %s", session.id, match.id);
-
-        // Set session cookie
-        Cookie cookie = new Cookie;
-        cookie.value = session.id.to!string;
-        auto expDate = Clock.currTime + LOGIN_DURATION;
-        cookie.expires = expDate.toRFC822DateTimeString;
-        cookie.path = "/";
-        response.cookies[COOKIE_NAME] = cookie;
-
-        // Make a response
-        auto js = Json.emptyObject;
-        js["success"] = true;
-        js["id"] = match.id.toString;
-        js["email"] = match.email;
-        js["checkIntervalSeconds"] = match.checkInterval.total!"seconds";
-        return js;
-    }
-
-    Json register(HTTPServerResponse response, string email, string password)
-    {
-        User user;
-        user.id = randomUUID;
-        user.email = email;
-        user.setPassword(password);
-        try
-        {
-            saveUser(user);
-            logInfo("registered %s", email);
-        }
-        catch (Throwable e)
-        {
-            auto js = Json.emptyObject;
-            js["success"] = false;
-            if (auto p = cast(Dpq2Exception)e)
-            {
-                import std.algorithm.searching : canFind;
-                if (p.msg.canFind("duplicate key"))
-                {
-                    logInfo("duplicate user %s", user.email);
-                    response.statusCode = 409;
-                    js["error"] = "Another person registered with that email address already.";
-                    return js;
-                }
-            }
-            logError("failed to save user %s: %s", user.email, e);
-            response.statusCode = 500;
-            js["error"] = e.toString;
-            return js;
-        }
-        return reallyLogin(response, user, password);
-    }
-
-    void logout(HTTPServerRequest req, HTTPServerResponse response)
-    {
-        // Clear the cookie: set its value to something invalid, set it to expire
-        auto sessionTag = req.cookies.get(COOKIE_NAME, "");
-        if (sessionTag != "")
-        {
-            try
-            {
-                dbdelete!Session(parseUUID(sessionTag));
-            }
-            catch (Exception e)
-            {
-                // This is either the database not finding it,
-                // an invalid session already,
-                // or something strange.
-                // I'm not entirely sure how to disambiguate, but it's not a problem.
-                // Probably.
-                logInfo("unexpected error logging you out from %s: %s", sessionTag, e);
-            }
-        }
-        Cookie cookie = new Cookie;
-        cookie.value = "invalid";
-        // Date doesn't matter if it's in the past.
-        cookie.expires = "Wed, 21 Oct 2015 07:28:00 GMT";
-        cookie.path = "/";
-        cookie.maxAge = 1;
-        response.cookies[COOKIE_NAME] = cookie;
-        response.writeVoidBody();
-    }
-}
-
-class UsersControllerImpl
-{
-    Json getSelf(User user)
-    {
-        Json js = Json.emptyObject;
-        js["id"] = user.id.toString;
-        js["email"] = user.email;
-        js["checkIntervalSeconds"] = cast(int) user.checkInterval.total!"seconds";
-        return js;
-    }
-
-    Json postDelete(User user)
-    {
-        Json js = Json.emptyObject;
-        return js;
-    }
-
-    Json update(
-            HTTPServerResponse res,
-            User user,
-            string email,
-            string oldPassword,
-            string newPassword,
-            int checkIntervalSeconds)
-    {
-        auto js = Json.emptyObject;
-        if (!user.checkPassword(oldPassword))
-        {
-            res.statusCode = 401;
-            js["success"] = false;
-            js["error"] = "Current password does not match";
-            return js;
-        }
-
-        // optimism
-        js["success"] = true;
-        // TODO min password length?
-        if (newPassword.length)
-        {
-            js["setPassword"] = true;
-            user.setPassword(newPassword);
-        }
-        else
-        {
-            js["setPassword"] = false;
-        }
-        user.email = email;
-        user.checkInterval = dur!"seconds"(checkIntervalSeconds);
-        try
-        {
-            .update(user);
-        }
-        catch (Dpq2Exception e)
-        {
-            // TODO detect exact exception for conflict
-            logError("failed to save user: %s", e);
-            res.statusCode = 409;
-            js["success"] = false;
-            js["setPassword"] = false;
-            js["error"] = "Another person registered with that email address already.";
-            return js;
-        }
-
-        return js;
-    }
-
-    Json getSubscriptions(User user)
-    {
-        auto js = Json.emptyObject;
-        js["subscriptions"] =
-            query!Subscription(`SELECT * FROM subscriptions WHERE userId = $1`, user.id.toString)
-            .map!(x => x.toJson)
-            .array;
-        return js;
-    }
-}

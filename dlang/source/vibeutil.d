@@ -14,10 +14,6 @@ class AuthedBase
     import std.typecons : Nullable;
     protected Nullable!User checkAuth(HTTPServerRequest req, HTTPServerResponse resp)
     {
-        foreach (key, value; req.headers.byKeyValue)
-        {
-            logInfo("got header %s -> %s", key, value);
-        }
         auto sp = req.cookies.get(COOKIE_NAME, "");
         if (sp == "")
         {
@@ -67,7 +63,7 @@ string authedForwardClass(TController)()
     auto s = ``;
     foreach (name; __traits(derivedMembers, TController))
     {
-        foreach (method; __traits(getOverloads, TController, name))
+        foreach (method; MemberFunctionsTuple!(TController, name))
         {
             if (__traits(getProtection, method) == "public")
             {
