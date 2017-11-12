@@ -5,6 +5,7 @@ import dpq2.exception;
 import dpq2;
 import std.array : array;
 import std.algorithm.iteration : map;
+import std.experimental.logger;
 import std.traits;
 import std.typecons;
 import std.uuid;
@@ -35,7 +36,7 @@ class LoginController
             string[1] args;
             args[0] = email;
             auto matches = query!User(`SELECT * FROM users WHERE email = $1`, args);
-            logInfo("found %s users matching email %s", matches.length, email);
+            infof("found %s users matching email %s", matches.length, email);
             if (matches.length > 1)
             {
                 logError("multiple users match email %s", email);
@@ -47,7 +48,7 @@ class LoginController
                     return reallyLogin(response, match, password);
                 }
             }
-            logInfo("no match");
+            infof("no match");
             response.statusCode = 403;
             js["success"] = false;
             return js;
@@ -79,7 +80,7 @@ class LoginController
             expires: Clock.currTime(UTC()) + SESSION_DURATION,
         };
         insert(session);
-        logInfo("set session %s => user %s", session.id, match.id);
+        infof("set session %s => user %s", session.id, match.id);
 
         // Set session cookie
         Cookie cookie = new Cookie;
@@ -107,7 +108,7 @@ class LoginController
         try
         {
             saveUser(user);
-            logInfo("registered %s", email);
+            infof("registered %s", email);
         }
         catch (Throwable e)
         {
@@ -118,7 +119,7 @@ class LoginController
                 import std.algorithm.searching : canFind;
                 if (p.msg.canFind("duplicate key"))
                 {
-                    logInfo("duplicate user %s", user.email);
+                    infof("duplicate user %s", user.email);
                     response.statusCode = 409;
                     js["error"] = "Another person registered with that email address already.";
                     return js;
@@ -149,7 +150,7 @@ class LoginController
                 // or something strange.
                 // I'm not entirely sure how to disambiguate, but it's not a problem.
                 // Probably.
-                logInfo("unexpected error logging you out from %s: %s", sessionTag, e);
+                infof("unexpected error logging you out from %s: %s", sessionTag, e);
             }
         }
         Cookie cookie = new Cookie;

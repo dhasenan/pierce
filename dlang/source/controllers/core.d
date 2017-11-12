@@ -1,8 +1,9 @@
 module pierce.controllers.core;
 
-import vibe.d;
+import std.experimental.logger;
 import std.traits;
 import std.uuid;
+import vibe.d;
 
 import pierce.db;
 import pierce.domain;
@@ -17,30 +18,30 @@ class AuthedBase
         auto sp = req.cookies.get(COOKIE_NAME, "");
         if (sp == "")
         {
-            logInfo("missing cookie %s", COOKIE_NAME);
+            infof("missing cookie %s", COOKIE_NAME);
             return Nullable!User.init;
         }
         auto sessionId = parseUUID(sp);
         auto maybeSession = fetch!Sess(sessionId);
         if (maybeSession.isNull)
         {
-            logInfo("failed to find session %s", sessionId);
+            infof("failed to find session %s", sessionId);
             return Nullable!User.init;
         }
         auto session = maybeSession.get;
-        logInfo("session will expire %s", session.expires);
+        infof("session will expire %s", session.expires);
         if (session.expires < Clock.currTime(UTC()))
         {
-            logInfo("session %s is already expired", sessionId);
+            infof("session %s is already expired", sessionId);
             // clean it up I guess?
             dbdelete(session);
             return Nullable!User.init;
         }
-        logInfo("session is good! sessionId: %s userid: %s", session.id, session.userId);
+        infof("session is good! sessionId: %s userid: %s", session.id, session.userId);
         auto user = fetch!User(session.userId);
         if (user.isNull)
         {
-            logInfo("user is null despite having a valid session");
+            infof("user is null despite having a valid session");
         }
         return user;
     }
@@ -102,7 +103,7 @@ string authedForwardMethod(string fnName, alias method)()
             auto user = checkAuth(reqForAuth, respForAuth);
             if (user.isNull)
             {
-                logInfo("not logged in person!!1");
+                infof("not logged in person!!1");
                 respForAuth.statusCode = 401;
                 return typeof(return).init;
             }

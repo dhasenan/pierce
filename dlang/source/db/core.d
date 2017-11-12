@@ -9,12 +9,12 @@ import pierce.domain;
 
 import std.conv;
 import std.datetime;
+import std.experimental.logger;
 import std.string;
 import std.traits;
 import std.typecons;
 import std.uuid;
 
-import vibe.core.log;
 
 /**
   * Update a DB row.

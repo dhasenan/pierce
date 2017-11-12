@@ -2,6 +2,7 @@ module pierce.tasks;
 
 import dpq2;
 import std.datetime;
+import std.experimental.logger;
 import vibe.d;
 
 import pierce.db;
@@ -29,12 +30,12 @@ class TaskRunner
 
     void runStandardTasks()
     {
-        logInfo("running periodic tasks");
+        infof("running periodic tasks");
         foreach (task; tasks)
         {
             try
             {
-                logInfo("running task %s", task);
+                infof("running task %s", task);
                 task.run();
             }
             catch (Throwable t)
@@ -51,7 +52,7 @@ class TaskRunner
             WHERE nextRead IS NULL OR nextRead < now()
             ORDER BY lastRead
             LIMIT 100`);
-        logInfo("scanning %s feeds", feeds.length);
+        infof("scanning %s feeds", feeds.length);
         foreach (feed; feeds)
         {
             runTasksOnFeed(feed);
@@ -64,7 +65,7 @@ class TaskRunner
         {
             try
             {
-                logInfo("running task %s", feedTask);
+                infof("running task %s", feedTask);
                 feedTask.run(feed);
             }
             catch (Throwable t)
@@ -83,16 +84,16 @@ void runTasks()
     vibe.core.core.yield();
     auto tasks = buildTasks();
     auto feedTasks = buildFeedTasks();
-    logInfo("have %s periodic tasks and %s feed tasks", tasks.length, feedTasks.length);
+    infof("have %s periodic tasks and %s feed tasks", tasks.length, feedTasks.length);
 
     while (true)
     {
-        logInfo("running periodic tasks");
+        infof("running periodic tasks");
         foreach (task; tasks)
         {
             try
             {
-                logInfo("running task %s", task);
+                infof("running task %s", task);
                 task.run();
             }
             catch (Throwable t)
@@ -106,14 +107,14 @@ void runTasks()
             WHERE nextRead IS NULL OR nextRead < now()
             ORDER BY lastRead
             LIMIT 100`);
-        logInfo("scanning %s feeds", feeds.length);
+        infof("scanning %s feeds", feeds.length);
         foreach (feed; feeds)
         {
             foreach (feedTask; feedTasks)
             {
                 try
                 {
-                    logInfo("running task %s", feedTask);
+                    infof("running task %s", feedTask);
                     feedTask.run(feed);
                 }
                 catch (Throwable t)

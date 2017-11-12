@@ -5,6 +5,7 @@ import dpq2.exception;
 import dpq2;
 import std.array : array;
 import std.algorithm.iteration : map;
+import std.experimental.logger;
 import std.traits;
 import std.typecons;
 import std.uuid;
@@ -71,7 +72,7 @@ class UsersControllerImpl
         catch (Dpq2Exception e)
         {
             // TODO detect exact exception for conflict
-            logError("failed to save user: %s", e);
+            errorf("failed to save user: %s", e);
             res.statusCode = 409;
             js["success"] = false;
             js["setPassword"] = false;

@@ -4,6 +4,7 @@ import dpq2;
 import dpq2.exception;
 import pierce.db.core;
 import std.datetime;
+import std.experimental.logger;
 import std.string;
 import vibe.core.log;
 
@@ -12,7 +13,7 @@ void dbMigrate()
     import std.algorithm.setops : setDifference;
     import std.algorithm.sorting : sort;
     import std.array : array;
-    logInfo("running database migrations");
+    infof("running database migrations");
 
     auto base = import("base.sql");
 
@@ -34,16 +35,16 @@ void dbMigrate()
     // Just in case.
     sort(toApply);
 
-    logInfo("%s migrations already run, %s defined, %s remaining",
+    infof("%s migrations already run, %s defined, %s remaining",
             finishedMigrations.length,
             migrations.length,
             toApply.length);
 
     foreach (migration; toApply)
     {
-        logInfo("applying migration %s", migration.name);
+        infof("applying migration %s", migration.name);
         apply(migration.name, migration.script);
-        logInfo("migration applied");
+        infof("migration applied");
     }
 }
 

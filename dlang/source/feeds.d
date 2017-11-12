@@ -5,6 +5,7 @@ import std.stdio;
 import std.algorithm;
 import std.array : Appender;
 import std.datetime;
+import std.experimental.logger;
 import std.range : isInputRange;
 import std.typecons : Nullable;
 import std.uuid;
@@ -33,7 +34,7 @@ alias XMLException = std.xml.XMLException;
 Feed[] findFeeds(URL url)
 {
     auto w = wget(url);
-    logInfo("have page for %s", url);
+    infof("have page for %s", url);
     if (w.isHTML)
     {
         import std.algorithm;
@@ -153,7 +154,7 @@ Page wget(URL url)
         return *existing;
     }
     */
-    logInfo("making request for URL %s", url);
+    infof("making request for URL %s", url);
     Page page;
     requestHTTP(url,
     (scope HTTPClientRequest req)
@@ -162,17 +163,17 @@ Page wget(URL url)
     },
     (scope HTTPClientResponse resp)
     {
-        logInfo("connected to remote host!");
+        infof("connected to remote host!");
         foreach (k, v; resp.headers)
         {
-            logInfo("header %s => %s", k, v);
+            infof("header %s => %s", k, v);
         }
         import vibe.stream.operations : readAllUTF8;
         auto data = resp.bodyReader.readAllUTF8();
         page = Page(data, resp.contentType, url, Clock.currTime);
 
     });
-    logInfo("finished making request for URL %s", url);
+    infof("finished making request for URL %s", url);
 
     // TODO encodings
     return page;
@@ -190,7 +191,7 @@ Nullable!Feed findFeed(Page page)
     }
     catch (XMLException e)
     {
-        logInfo("failed to parse document at %s as XML: %s", page.url, e);
+        infof("failed to parse document at %s as XML: %s", page.url, e);
         return nothing!Feed;
     }
 
@@ -210,7 +211,7 @@ Nullable!Feed findFeed(Page page)
         return parseRSSHeader(doc, page.url);
     }
 
-    logInfo("page at %s has unrecognized content type %s", page.url, page.contentType);
+    infof("page at %s has unrecognized content type %s", page.url, page.contentType);
     return nothing!Feed;
 }
 

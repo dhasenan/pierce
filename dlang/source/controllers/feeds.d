@@ -5,6 +5,7 @@ import dpq2.exception;
 import dpq2;
 import std.array : array;
 import std.algorithm.iteration : map;
+import std.experimental.logger;
 import std.traits;
 import std.typecons;
 import std.uuid;
@@ -20,13 +21,13 @@ class FeedsControllerImpl
 {
     Json postAdd(User user, string url, string title, string labels)
     {
-        logInfo("postAdd");
+        infof("postAdd");
         auto js = Json.emptyObject;
         // Let's have a little optimism here.
         js["success"] = true;
 
 
-        logInfo("checking URL for feeds");
+        infof("checking URL for feeds");
         Feed[] feeds = query!Feed("select * from feeds where url = $1", url);
         if (feeds.length >= 1)
         {
@@ -43,7 +44,7 @@ class FeedsControllerImpl
             js["error"] = e.toString;
             return js;
         }
-        logInfo("found %s feeds", feeds.length);
+        infof("found %s feeds", feeds.length);
         if (feeds.length == 0)
         {
             js["success"] = false;
@@ -53,7 +54,7 @@ class FeedsControllerImpl
 
         if (feeds.length > 1)
         {
-            logInfo("found several");
+            infof("found several");
             js["success"] = true;
             auto arr = new Json[feeds.length];
             foreach (i, feed; feeds)
@@ -67,7 +68,7 @@ class FeedsControllerImpl
             return js;
         }
 
-        logInfo("found only one");
+        infof("found only one");
         Feed feed = feeds[0];
         feeds = query!Feed("select * from feeds where url = $1", feed.url);
         if (feeds.length >= 1)
@@ -77,13 +78,13 @@ class FeedsControllerImpl
         else
         {
             insert(feed);
-            logInfo("saved new feed");
+            infof("saved new feed");
             auto articles = fetchArticles(feed);
             foreach (article; articles)
             {
                 insert(article);
             }
-            logInfo("saved %s articles", articles.length);
+            infof("saved %s articles", articles.length);
         }
         return makeSub(user, feed, title, labels);
     }
@@ -105,7 +106,7 @@ class FeedsControllerImpl
         try
         {
             insert(sub);
-            logInfo("saved sub");
+            infof("saved sub");
             js["success"] = true;
             js["added_feed"] = true;
             js["articles"] = fetchArticles(feed).map!(x => toJson(x)).array;
@@ -113,7 +114,7 @@ class FeedsControllerImpl
         }
         catch (Dpq2Exception e)
         {
-            logInfo("error: %s", e);
+            infof("error: %s", e);
             js["success"] = false;
             // Is it a conflict?
             import std.algorithm.searching : canFind;
@@ -135,17 +136,17 @@ class FeedsControllerImpl
     // not public. __traits(getOverloads) sucks.
     package Feed[] findFeedForURL(string url)
     {
-        logInfo("querying for existing feed");
+        infof("querying for existing feed");
         auto existing = query!Feed("select * from feeds where url = $1", url);
         Feed feedToAdd;
         if (existing.length)
         {
-            logInfo("found %s existing feeds", existing.length);
+            infof("found %s existing feeds", existing.length);
             return existing;
         }
-        logInfo("looking for feeds at %s", url);
+        infof("looking for feeds at %s", url);
         auto feeds = findFeeds(url.parseURL);
-        logInfo("found %s feeds", feeds.length);
+        infof("found %s feeds", feeds.length);
         if (feeds.length == 0)
         {
             return null;
