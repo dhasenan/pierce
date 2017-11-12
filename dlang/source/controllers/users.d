@@ -14,7 +14,7 @@ import vibe.d;
 import pierce.db;
 import pierce.domain;
 import pierce.feeds;
-import pierce.vibeutil;
+import pierce.controllers.core;
 
 class UsersControllerImpl
 {

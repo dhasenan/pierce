@@ -5,13 +5,13 @@ import std.experimental.logger;
 import std.stdio;
 import vibe.d;
 
+import pierce.controllers.core;
 import pierce.controllers.feeds;
 import pierce.controllers.login;
 import pierce.controllers.users;
 import pierce.db.migrate;
 import pierce.log;
 import pierce.tasks;
-import pierce.vibeutil;
 
 shared static this()
 {

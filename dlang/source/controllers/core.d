@@ -1,4 +1,4 @@
-module pierce.vibeutil;
+module pierce.controllers.core;
 
 import vibe.d;
 import std.traits;
