@@ -18,7 +18,7 @@ shared static this()
     registerMemoryErrorHandler();
     auto log = new MultiLogger;
     log.insertLogger("console", new std.experimental.logger.FileLogger(stderr));
-    log.insertLogger("file", new VibeRollingFileLogger("pierce-%y-%m-%d.%n.log", std.experimental.logger.LogLevel.all));
+    log.insertLogger("file", new VibeRollingFileLogger("pierce-%y-%m-%d.%i.log", std.experimental.logger.LogLevel.all));
     sharedLog = log;
 
     dbMigrate();

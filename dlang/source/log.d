@@ -96,7 +96,7 @@ private string formatFilename(string fileFormat, Date date, size_t index)
                     ap ~= date.year.to!string;
                     break;
                 case 'm':
-                    ap ~= date.month.to!string;
+                    ap ~= (cast(int)date.month).to!string;
                     break;
                 case 'd':
                     ap ~= date.day.to!string;
