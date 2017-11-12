@@ -20,6 +20,8 @@ void dbMigrate()
     [
         read!("2017-11-16 core tables.sql"),
         read!("2017-11-17 create timestamps.sql"),
+        read!("2017-11-11T17:05 add subscription title.sql"),
+        read!("2017-11-11T17:08 add subscription labels.sql"),
     ];
     sort(migrations);
 
@@ -101,7 +103,8 @@ void apply(string name, string script, bool record = true)
         }
         if (record)
         {
-            insert(Migration(name, script, Clock.currTime(UTC())));
+            auto m = Migration(name, script, Clock.currTime(UTC()));
+            insert(m);
         }
         return cast(void*)null;
     });

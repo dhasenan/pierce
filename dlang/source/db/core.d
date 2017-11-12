@@ -28,8 +28,12 @@ void update(T)(T val)
 /**
   * Insert a new DB row.
   */
-void insert(T)(T val)
+void insert(T)(ref T val)
 {
+    static if (is (typeof(val.id) == UUID))
+    {
+        val.id = randomUUID();
+    }
     static immutable string cmd = insertText!T();
     auto params = val.toParams(false);
     import std.algorithm : joiner, map;
@@ -209,7 +213,14 @@ QueryParams toParams(T)(T val, bool trailingId)
             auto fieldVal = __traits(getMember, val, m);
             static if (is(FT == SysTime))
             {
-                v[i] = toValue(fieldVal.format(ISO8601FORMAT));
+                if (fieldVal == SysTime.init)
+                {
+                    // TODO send default / null value?
+                }
+                else
+                {
+                    v[i] = toValue(fieldVal.format(ISO8601FORMAT));
+                }
             }
             else static if (is(FT == Duration))
             {
@@ -217,6 +228,10 @@ QueryParams toParams(T)(T val, bool trailingId)
                 v[i] = toValue(cast(int)secs);
             }
             else static if (is(FT == string))
+            {
+                v[i] = toValue(fieldVal);
+            }
+            else static if (isNumeric!FT)
             {
                 v[i] = toValue(fieldVal);
             }

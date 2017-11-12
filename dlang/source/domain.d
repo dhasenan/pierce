@@ -8,6 +8,8 @@ import std.datetime;
 import std.random;
 import std.uuid;
 
+static const SysTime defaultTime = SysTime(DateTime(1970, 1, 1, 0, 0, 0), UTC());
+
 struct User
 {
     UUID id;
@@ -25,8 +27,8 @@ struct Feed
     string iconURL;
 
     Duration checkInterval;
-    SysTime nextRead;
-    SysTime lastRead;
+    SysTime nextRead = defaultTime;
+    SysTime lastRead = defaultTime;
     int errors;
 }
 
@@ -39,7 +41,7 @@ struct Article
     string description;
     string author;
     string internalId;
-    SysTime publishDate;
+    SysTime publishDate = defaultTime;
 
     bool isProbablySameAs(Article other)
     {
@@ -166,5 +168,5 @@ struct Session
 {
     UUID id;
     UUID userId;
-    SysTime expires;
+    SysTime expires = defaultTime;
 }

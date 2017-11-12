@@ -62,27 +62,17 @@ Article[] fetchArticles(Feed feed)
 
 Article[] parseArticles(Feed feed, Page page)
 {
+    // We don't know whether this is RSS or Atom.
+    // Thanks to XKCD etc, we may never know.
+    // So try both.
     auto dom = new XDoc(page.text);
     XElem feedContainer;
-    if (page.isRSS)
-    {
-        feedContainer = dom.first("rss").first("channel");
-        return feed.parseArticles(
-            dom.first("rss").first("channel")
-                .elements
-                .filter!(x => x.tag.name == "item"));
-    }
-    else if (page.isAtom)
-    {
-        feedContainer = dom.first("feed");
-        return feed.parseArticles(
-                feedContainer.elements.filter!(x => x.tag.name == "entry"));
-
-    }
-    return parseArticles(
-            feed,
-            feedContainer.elements
-                .filter!(x => x.tag.name == "item" || x.tag.name == "entry"));
+    auto container = dom.first("rss").first("channel")
+        .or(dom.first("feed"));
+    return feed.parseArticles(
+        container
+            .elements
+            .filter!(x => x.tag.name == "item" || x.tag.name == "entry"));
 }
 
 /**
