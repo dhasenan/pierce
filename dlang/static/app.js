@@ -48,19 +48,26 @@ class Feeds {
   }
 
   grabArticles(unreadOnly, newerThan, olderThan) {
-    return this.http.get("/feeds/articles", {unreadOnly, newerThan, olderThan});
+    console.log("grabArticles");
+    return this.http.get("/feeds/articles", {unreadOnly, newerThan, olderThan})
+      .then((info) => {
+        return info.body.articles;
+      });
   }
 
   grabAllArticles(unreadOnly, afterDate, storage) {
+    console.log("grabAllArticles");
     if (!storage) {
       storage = [];
     }
     return this.grabArticles(unreadOnly, afterDate, null)
       .then((arts) => {
         if (arts.length == 0) {
+          console.log("found 0 new articles");
           return storage;
         }
-        storage.splice(storage.length, 0, arts);
+        console.log(`found ${arts.length} new articles`);
+        arts.forEach((x) => storage.push(x));
         return grabAllArticles(unreadOnly, arts[arts.length - 1].publishDate, storage);
       });
   }
@@ -295,9 +302,21 @@ var domain = {
       ui.updateTitle();
 
       ui.showAlert("Refreshing articles...");
-      feeds.grabArticles(ui.showingUnreadOnly, '1000-01-01', '9999-01-01', (articles) => {
+      feeds.grabArticles(ui.showingUnreadOnly, '1000-01-01', '9999-01-01')
+      .then((articles) => {
+        console.log("grabArticles");
         articles.forEach(domain.mungeArticle);
         domain.articles = articles;
+        articles.forEach((article) => {
+          let feed = domain.feedsByID.get(article.feedId);
+          if (!feed) {
+            console.log(`failed to find feed ${article.feedId}`);
+            return;
+          }
+          console.log(`added article ${article.id} to feed ${feed.id}`);
+          feed.articles.push(article);
+        })
+        domain.reloadFeedInfo();
         ui.updateTitle();
         ui.showAlert("Done!");
         window.setTimeout(() => ui.hideAlert(), 3000);
@@ -306,6 +325,7 @@ var domain = {
   },
 
   mungeFeed: function(feed) {
+    feed.articles = [];
     let sub = domain.getSubscription(feed.id);
     if (!sub) {
       console.log(`failed to find sub for feed ${feed.id}`);
@@ -796,7 +816,7 @@ var ui = {
       ui.showArticle(article.Feed.id, article);
     });
     div.innerHTML =
-      '<img style="height: 16px; width: 16px;" src="' + ui.iconUrl(article.Feed) + '" />'
+      '<img style="height: 16px; width: 16px;" src="' + ui.iconUrl(article.feed) + '" />'
         + ui.fmtDate(article.publishDate)
         + ' '
         + article.title;
@@ -1131,10 +1151,10 @@ var ui = {
   },
 
   iconUrl: function(feed) {
-    if (feed.IconUri) {
-      return feed.IconUri;
+    if (feed.iconURL) {
+      return feed.iconURI;
     }
-    return '/Content/no-icon.png';
+    return '/static/no-icon.png';
   },
 
   logout: function() {
