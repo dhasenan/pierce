@@ -102,21 +102,22 @@
     <!-- variables: feed, article -->
     <script id='articlefull' type='text/html'>
       <div>
-        <img style='float: left' src='<%= data.feed.ImageUri %>' />
-        <h3><a href="<%= data.article.Link %>"><%- data.article.title %></a> - <%- data.feed.title %></h3>
-        <div><%- ui.fmtDate(data.article.PublishDate) %>
+        <!-- we don't currently have this? -->
+        <!--<img style='float: left' src='<%= data.feed.imageURL %>' />-->
+        <h3><a href="<%= data.article.Link %>"><%- data.article.title %></a> - <%- data.article.feed.title %></h3>
+        <div><%- ui.fmtDate(data.article.publishDate) %>
           <% if (ui.authors(data.article)) { %> -- by <%= ui.authors(data.article) %><% } %></div>
         <!-- as a special case, load this with html unescaped -->
-        <frame><%= data.article.Description || data.article.Summary %></frame>
+        <frame><%= data.article.description || data.article.summary %></frame>
       </div>
     </script>
 
     <!-- variables: author -->
     <script id='authorLink' type='text/html'>
       <% if (data.author.Link) {%>
-        <a href="<%= data.author.Link %>"><%- data.author.Name %></a>
+        <a href="<%= data.author.Link %>"><%- data.author.name %></a>
       <% } else { %>
-        <%- data.author.Name %>
+        <%- data.author.name %>
       <% }%>
     </script>
 

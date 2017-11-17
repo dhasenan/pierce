@@ -247,10 +247,6 @@ class FeedsControllerImpl
                 WHERE subscriptions.userId = $1
                 AND articles.publishDate > $2::timestamp
                 AND articles.publishDate < $3::timestamp
-                AND ($4 = 'false' OR NOT EXISTS
-                    (SELECT * FROM read
-                        WHERE read.articleId = articles.id
-                        AND read.userId = $1))
                 ORDER BY publishDate DESC
                 LIMIT 500`,
                 user.id.toString(), newerThan, olderThan, unreadOnly.to!string)

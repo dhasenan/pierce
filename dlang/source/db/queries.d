@@ -63,7 +63,8 @@ void markUnread(User user, string feedId, string articleId)
 void markRead(User user, string feedId, string articleId)
 {
     QueryParams p;
-    p.sqlCommand = "INSERT INTO read (userId, feedId, articleId) VALUES ($1, $2, $3)";
+    p.sqlCommand = `INSERT INTO read (userId, feedId, articleId) VALUES ($1, $2, $3)
+        ON CONFLICT DO NOTHING`;
     p.args = [toValue(user.id.toString), toValue(feedId), toValue(articleId)];
     inConnection!(conn => conn.execParams(p));
 }
