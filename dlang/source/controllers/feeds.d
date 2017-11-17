@@ -244,12 +244,12 @@ class FeedsControllerImpl
         js["articles"] = query!Article(`
                 SELECT articles.* FROM articles
                 INNER JOIN subscriptions ON subscriptions.feedId = articles.feedId
-                WHERE subscriptions.userId = $1::
-                AND articles.publishDate > $2::timestamp with timezone
-                AND articles.publishDate < $3::timestamp with timezone
+                WHERE subscriptions.userId = $1
+                AND articles.publishDate > $2::timestamp
+                AND articles.publishDate < $3::timestamp
                 AND ($4 = 'false' OR NOT EXISTS
                     (SELECT * FROM read
-                        WHERE readarticleId = articles.id
+                        WHERE read.articleId = articles.id
                         AND read.userId = $1))
                 ORDER BY publishDate DESC
                 LIMIT 500`,

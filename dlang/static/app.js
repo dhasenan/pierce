@@ -3,9 +3,14 @@ var user;
 class HTTP {
   get(url, data) {
     if (data) {
-      url += '?';
-      url += Object.keys(data)
-        .map((k) => encodeURIComponent(k) + "=" + encodeURIComponent(data[k]));
+      let params =  Object.keys(data)
+        .map((k) => {
+          if (!data[k]) return encodeURIComponent(k) + "=";
+          return encodeURIComponent(k) + "=" + encodeURIComponent(data[k]);
+        });
+      if (params) {
+        url += '?' + params.join('&');
+      }
     }
     return this.req("GET", url, null);
   }
@@ -42,8 +47,8 @@ class Feeds {
     this.http = new HTTP();
   }
 
-  grabArticles(unreadOnly, startDate, endDate) {
-    return this.http.get(`/feeds/articles?unreadOnly=${unreadOnly}&newerThan=${startDate}&olderThan=${endDate}`);
+  grabArticles(unreadOnly, newerThan, olderThan) {
+    return this.http.get("/feeds/articles", {unreadOnly, newerThan, olderThan});
   }
 
   grabAllArticles(unreadOnly, afterDate, storage) {
@@ -139,8 +144,7 @@ var domain = {
     var lab = new Map()
     var unlisted = [];
     domain.realFeeds.forEach((feed) => {
-      var sub = domain.getSubscription(feed.id);
-      var labels = sub ? sub.labels : [];
+      let labels = feed.labels;
       if (labels.length) {
         labels.forEach((name) =>  {
           var e = lab.get(name);
@@ -162,7 +166,7 @@ var domain = {
     });
 
     var lablist = [];
-    lab.forEach((k, label) => lablist.push(label));
+    lab.forEach((label, v) => lablist.push(label));
 
     domain.allList = {
       title: 'All',
@@ -259,7 +263,7 @@ var domain = {
       data: {last: last},
       success: function(data) {
         subs.subscriptions = subs.subscriptions.concat(data.subscriptions);
-        subs.feeds = subs.feeds.concat(data.subscriptions);
+        subs.feeds = subs.feeds.concat(data.feeds);
         if (data.next) {
           refreshSubsImpl(data.next, subs, after);
         } else {
@@ -291,7 +295,7 @@ var domain = {
       ui.updateTitle();
 
       ui.showAlert("Refreshing articles...");
-      feeds.grabArticles(showingUnreadOnly, null, null, (articles) => {
+      feeds.grabArticles(ui.showingUnreadOnly, '1000-01-01', '9999-01-01', (articles) => {
         articles.forEach(domain.mungeArticle);
         domain.articles = articles;
         ui.updateTitle();
@@ -302,13 +306,19 @@ var domain = {
   },
 
   mungeFeed: function(feed) {
-    if (typeof feed.labels === "string") {
-      feed.labels = feed.labels.split(",");
-    } else if (!feed.labels) {
+    let sub = domain.getSubscription(feed.id);
+    if (!sub) {
+      console.log(`failed to find sub for feed ${feed.id}`);
+      return;
+    }
+    if (typeof sub.labels === "string") {
+      feed.labels = sub.labels.split(",");
+    } else if (!sub.labels) {
       feed.labels = [];
     }
-    console.log(`mungeFeed(${feed.title}): labels now ${feed.labels}`);
-    console.log(feed);
+    if (sub.title) {
+      feed.title = sub.title;
+    }
   },
 
   refreshFeed: function(feedId) {
@@ -361,6 +371,7 @@ var domain = {
 
   updateLabelUnreadCounts: function(labels) {
     labels.forEach((label) => {
+      console.log(label);
       let unread = 0;
       label.feeds.forEach((feed) => {
         unread += feed.unreadCount;
