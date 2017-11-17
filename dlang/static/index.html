@@ -19,12 +19,12 @@
     <!-- variables: labels -->
     <script id='labelListTemplate' type='text/html'>
       <% $.each(data.labels, function(i, label) {
-        var count = label.UnreadCount;
+        var count = label.unreadCount;
         var classes = 'labelBox';
         var labelclass = 'labelName';
-        var name = label.Title;
-        if (ui.isExpanded(label.Id)) classes += ' expanded'; else classes += ' collapsed';
-        if (ui.currentLabel && label.Id == ui.currentLabel.Id && !ui.currentFeed) {
+        var name = label.title;
+        if (ui.isExpanded(label.id)) classes += ' expanded'; else classes += ' collapsed';
+        if (ui.currentLabel && label.id == ui.currentLabel.id && !ui.currentFeed) {
           labelclass += ' selectedItem';
         }
         if (count > 0) {
@@ -32,16 +32,16 @@
           name += ' (' + count + ')';
         }
       %>
-      <div id='labelBox_<%= label.Id %>' class='<%= classes %>'>
+      <div id='labelBox_<%= label.id %>' class='<%= classes %>'>
         <!-- The label title and expand button. -->
         <div class='label'>
-          <span id='expander_<%= label.Id %>' class='ui-icon ui-icon-circle-minus expander' onclick='ui.toggleExpanded("<%= label.Id %>")'></span>
-          <span id='labelName_<%= label.Id %>' class='<%= labelclass %>'
-              onclick='ui.showLabel("<%= label.Id %>")'><%- name %></span>
+          <span id='expander_<%= label.id %>' class='ui-icon ui-icon-circle-minus expander' onclick='ui.toggleExpanded("<%= label.id %>")'></span>
+          <span id='labelName_<%= label.id %>' class='<%= labelclass %>'
+              onclick='ui.showLabel("<%= label.id %>")'><%- name %></span>
         </div>
         <!-- The child feed list. -->
-        <div id='labelContent_<%= label.Id %>' class='labelContent'>
-          <%= ui.template('feedlistTemplate', { feeds: label.Feeds, labelId: label.Id }) %>
+        <div id='labelContent_<%= label.id %>' class='labelContent'>
+          <%= ui.template('feedlistTemplate', { feeds: label.feeds, labelId: label.id }) %>
         </div><!-- labelContent -->
       </div><!-- labelBox -->
       <%}); %>
@@ -50,15 +50,15 @@
     <!-- variables: feeds, labelId -->
     <script id='feedlistTemplate' type='text/html'>
       <% $.each(data.feeds, function(i, feed) { %>
-        <div class='feedRow feedRow_<%= feed.Id %> lf_<%= feed.Id %><%= data.labelId %><%
+        <div class='feedRow feedRow_<%= feed.id %> lf_<%= feed.id %><%= data.labelId %><%
           if (ui.currentLabel
-              && ui.currentLabel.Id == data.labelId
+              && ui.currentLabel.id == data.labelId
               && ui.currentFeed
-              && ui.currentFeed.Id == feed.Id) {
+              && ui.currentFeed.id == feed.id) {
             print(' selectedItem'); 
           }
           %>'
-          onclick='ui.showFeed("<%= feed.Id %>", "<%= data.labelId %>")'>
+          onclick='ui.showFeed("<%= feed.id %>", "<%= data.labelId %>")'>
           <span style='float: left; overflow: hidden; text-overflow: ellipsis; width: 90%'>
             <%= ui.template('feedli', { feed: feed }) %>
           </span>
@@ -73,16 +73,16 @@
 
     <!-- variables: feed -->
     <script id='feedli' type='text/html'>
-      <span class='feedli_<%- data.feed.Id %> feedli<%
-        var unreadc = data.feed.UnreadCount;
+      <span class='feedli_<%- data.feed.id %> feedli<%
+        var unreadc = data.feed.unreadCount;
         if (unreadc > 0) print(' unread'); %>'
         >
-        <% if (data.feed.IconUri) { %>
-          <img style='height: 16px; width: 16px;' src='<%- data.feed.IconUri %>' />
+        <% if (data.feed.iconURL) { %>
+          <img style='height: 16px; width: 16px;' src='<%- data.feed.iconURL %>' />
         <% } else { %>
           <img style='height: 16px; width: 16px;' src='/static/no-icon.png' />
         <% } %>
-        <%-  data.feed.Title  %>
+        <%-  data.feed.title  %>
         <%
           if (unreadc) print(' (' + unreadc + ')');
         %>
@@ -94,7 +94,7 @@
       <span
         style='float: right; height: 1em; width: 1em'
         class='ui-icon ui-icon-triangle-e'
-        onclick='ui.showUpdateFeedWindow("<%= data.feed.Id %>")'
+        onclick='ui.showUpdateFeedWindow("<%= data.feed.id %>")'
       >
       </span>
     </script>
@@ -103,7 +103,7 @@
     <script id='articlefull' type='text/html'>
       <div>
         <img style='float: left' src='<%= data.feed.ImageUri %>' />
-        <h3><a href="<%= data.article.Link %>"><%- data.article.Title %></a> - <%- data.feed.Title %></h3>
+        <h3><a href="<%= data.article.Link %>"><%- data.article.title %></a> - <%- data.feed.title %></h3>
         <div><%- ui.fmtDate(data.article.PublishDate) %>
           <% if (ui.authors(data.article)) { %> -- by <%= ui.authors(data.article) %><% } %></div>
         <!-- as a special case, load this with html unescaped -->
