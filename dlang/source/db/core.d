@@ -15,6 +15,14 @@ import std.traits;
 import std.typecons;
 import std.uuid;
 
+__gshared MultiLogger dblog;
+shared static this()
+{
+    // So I can manipulate its log level separately
+    dblog = new MultiLogger(LogLevel.warning);
+    dblog.insertLogger("parent", sharedLog);
+}
+
 
 /**
   * Update a DB row.
@@ -22,6 +30,7 @@ import std.uuid;
 void update(T)(T val)
 {
     enum cmd = updateText!T();
+    dblog.infof("update cmd: %s", cmd);
     auto params = val.toParams(true);
     params.sqlCommand = cmd;
     inConnection!(conn => conn.execParams(params));
@@ -218,7 +227,9 @@ QueryParams toParams(T)(T val, bool trailingId)
                 }
                 else
                 {
-                    v[i] = toValue(fieldVal.format(ISO8601FORMAT));
+                    auto fs = fieldVal.format(ISO8601FORMAT);
+                    v[i] = toValue(fs);
+                    dblog.infof("field %s value %s", i, fs);
                 }
             }
             else static if (is(FT == Duration))

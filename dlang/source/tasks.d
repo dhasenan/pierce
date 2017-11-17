@@ -3,17 +3,22 @@ module pierce.tasks;
 import dpq2;
 import std.datetime;
 import std.experimental.logger;
-import vibe.d;
+import vibe.core.core : sleep;
 
+import pierce.datetimeformat;
 import pierce.db;
 import pierce.domain;
 import pierce.feeds;
 
 enum MAX_SAVED_ARTICLES = 1000;
 
+__gshared MultiLogger tasklog;
 __gshared TaskRunner tasks;
 shared static this()
 {
+    // So I can manipulate its log level separately
+    tasklog = new MultiLogger(LogLevel.warning);
+    tasklog.insertLogger("parent", sharedLog);
     tasks = new TaskRunner;
 }
 
@@ -28,19 +33,29 @@ class TaskRunner
         feedTasks = buildFeedTasks();
     }
 
+    void run()
+    {
+        while (true)
+        {
+            runStandardTasks();
+            runFeedTasks();
+            sleep(60.seconds);
+        }
+    }
+
     void runStandardTasks()
     {
-        infof("running periodic tasks");
+        tasklog.infof("running periodic tasks");
         foreach (task; tasks)
         {
             try
             {
-                infof("running task %s", task);
+                tasklog.infof("running task %s", task);
                 task.run();
             }
             catch (Throwable t)
             {
-                logError("in task %s: %s", task, t);
+                tasklog.errorf("in task %s: %s", task, t);
             }
         }
     }
@@ -52,7 +67,7 @@ class TaskRunner
             WHERE nextRead IS NULL OR nextRead < now()
             ORDER BY lastRead
             LIMIT 100`);
-        infof("scanning %s feeds", feeds.length);
+        tasklog.infof("scanning %s feeds", feeds.length);
         foreach (feed; feeds)
         {
             runTasksOnFeed(feed);
@@ -65,68 +80,18 @@ class TaskRunner
         {
             try
             {
-                infof("running task %s", feedTask);
+                tasklog.infof("running task %s", feedTask);
                 feedTask.run(feed);
             }
             catch (Throwable t)
             {
-                logError("in feed task %s: %s", feedTask, t);
+                tasklog.errorf("in feed task %s: %s", feedTask, t);
             }
 
         }
-        feed.nextRead = Clock.currTime() + feed.checkInterval;
         update(feed);
-    }
-}
-
-void runTasks()
-{
-    vibe.core.core.yield();
-    auto tasks = buildTasks();
-    auto feedTasks = buildFeedTasks();
-    infof("have %s periodic tasks and %s feed tasks", tasks.length, feedTasks.length);
-
-    while (true)
-    {
-        infof("running periodic tasks");
-        foreach (task; tasks)
-        {
-            try
-            {
-                infof("running task %s", task);
-                task.run();
-            }
-            catch (Throwable t)
-            {
-                logError("in task %s: %s", task, t);
-            }
-        }
-
-        auto feeds = query!Feed(`
-            SELECT * FROM feeds
-            WHERE nextRead IS NULL OR nextRead < now()
-            ORDER BY lastRead
-            LIMIT 100`);
-        infof("scanning %s feeds", feeds.length);
-        foreach (feed; feeds)
-        {
-            foreach (feedTask; feedTasks)
-            {
-                try
-                {
-                    infof("running task %s", feedTask);
-                    feedTask.run(feed);
-                }
-                catch (Throwable t)
-                {
-                    logError("in feed task %s: %s", feedTask, t);
-                }
-
-            }
-            feed.nextRead = Clock.currTime() + feed.checkInterval;
-            update(feed);
-        }
-        sleep(60.seconds);
+        // put this in the main log so it's sure to be visible
+        infof("feed %s next scheduled check: %s", feed.url, feed.nextRead.format(ISO8601FORMAT));
     }
 }
 
@@ -140,6 +105,7 @@ FeedTask[] buildFeedTasks()
     return [
         cast(FeedTask)new ReadFeed(),
         new ScrubOldArticles(),
+        new ScheduleNextCheck(),
         // TODO feed icon finder
     ];
 }
@@ -226,5 +192,21 @@ class ScrubOldArticles : FeedTask
             ];
             inConnection!(conn => conn.execParams(p));
         }
+    }
+}
+
+class ScheduleNextCheck : FeedTask
+{
+    private Duration minCheckInterval = 1.hours;
+
+    void run(ref Feed feed)
+    {
+        Duration interval = feed.checkInterval;
+        if (interval < minCheckInterval)
+        {
+            interval = minCheckInterval;
+        }
+        auto now = Clock.currTime(UTC());
+        feed.nextRead = now + interval;
     }
 }

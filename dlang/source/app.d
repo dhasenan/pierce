@@ -18,12 +18,12 @@ shared static this()
     registerMemoryErrorHandler();
     auto log = new MultiLogger;
     log.insertLogger("console", new std.experimental.logger.FileLogger(stderr));
-    log.insertLogger("file", new VibeRollingFileLogger("pierce-%y-%m-%d.%i.log", std.experimental.logger.LogLevel.all));
+    log.insertLogger("file", new VibeRollingFileLogger("logs/pierce-%y-%m-%d.%i.log", std.experimental.logger.LogLevel.all));
     sharedLog = log;
 
     dbMigrate();
     // Set up background processes.
-    runTask(() => pierce.tasks.runTasks());
+    runTask(() => pierce.tasks.tasks.run());
 
     // Set up http server.
     auto settings = new HTTPServerSettings;

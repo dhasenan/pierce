@@ -86,8 +86,24 @@ class UsersControllerImpl
     Json getSubscriptions(User user)
     {
         auto js = Json.emptyObject;
-        js["subscriptions"] =
-            query!Subscription(`SELECT * FROM subscriptions WHERE userId = $1`, user.id.toString)
+        // TODO pagination (for users with >500 subs...)
+        // TODO maybe extend the ORM bit so I can get several sides
+        // of a join out of it?
+        auto subs =
+            query!Subscription(`SELECT * FROM subscriptions WHERE userId = $1`, user.id.toString);
+        infof("found %s subs for user %s", subs.length, user.id);
+        js["subscriptions"] = subs
+            .map!(x => x.toJson)
+            .array;
+
+        js["feeds"] =
+            query!Feed(`
+                    SELECT * FROM feeds
+                    WHERE EXISTS (
+                        SELECT * FROM subscriptions
+                        WHERE feedId = feeds.id
+                        AND userId = $1
+                    )`, user.id.toString)
             .map!(x => x.toJson)
             .array;
         return js;

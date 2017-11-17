@@ -29,7 +29,6 @@ class AuthedBase
             return Nullable!User.init;
         }
         auto session = maybeSession.get;
-        infof("session will expire %s", session.expires);
         if (session.expires < Clock.currTime(UTC()))
         {
             infof("session %s is already expired", sessionId);
@@ -37,7 +36,6 @@ class AuthedBase
             dbdelete(session);
             return Nullable!User.init;
         }
-        infof("session is good! sessionId: %s userid: %s", session.id, session.userId);
         auto user = fetch!User(session.userId);
         if (user.isNull)
         {
@@ -130,7 +128,7 @@ string authedForwardMethod(string fnName, alias method)()
         }
         catch (Throwable e)
         {
-            logError("unexpected error %s", e);
+            errorf("unexpected error %s", e);
             respForAuth.statusCode = 500;`;
     static if (is(ReturnType!method == Json))
     {

@@ -1,10 +1,10 @@
 module pierce.domain;
 
 import core.time;
-import vibe.core.log;
 import vibe.data.json;
 import std.base64;
 import std.datetime;
+import std.experimental.logger;
 import std.random;
 import std.uuid;
 
@@ -42,6 +42,7 @@ struct Article
     string author;
     string internalId;
     SysTime publishDate = defaultTime;
+    SysTime readDate = defaultTime;
 
     bool isProbablySameAs(Article other)
     {
@@ -60,7 +61,7 @@ struct Subscription
     string labels;
 }
 
-private void addField(T, size_t i, string[] names)(T value, Json js)
+private void addField(T, size_t i, string[] names)(T value, ref Json js)
 {
     static if (i < names.length)
     {
@@ -92,6 +93,22 @@ Json toJson(T)(T value)
     Json js = Json.emptyObject;
     addField!(T, 0, [FieldNameTuple!T])(value, js);
     return js;
+}
+
+unittest
+{
+    Subscription s =
+    {
+        userId: "ee821542-c696-40f8-ae93-335bdaed288a".parseUUID,
+        feedId: "a7d14ef6-ed8b-4601-9314-3170bb734e9a".parseUUID,
+        title: "ikeran - always building",
+        labels: "blags,mine",
+    };
+    auto js = s.toJson;
+    assert(js["userId"].get!string == s.userId.toString);
+    assert(js["feedId"].get!string == s.feedId.toString);
+    assert(js["title"].get!string == s.title);
+    assert(js["labels"].get!string == s.labels);
 }
 
 bool checkPassword(const User user, string password)
@@ -132,7 +149,7 @@ bool checkPassword(const User user, string password)
     }
     else
     {
-        logError("user %s has no password", user.email);
+        errorf("user %s has no password", user.email);
         return false;
     }
 }

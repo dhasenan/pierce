@@ -85,6 +85,7 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
     foreach (elem; elems)
     {
         Article art;
+        art.readDate = Clock.currTime(UTC());
         art.feedId = feed.id;
 
         art.internalId = elem.first("guid").txt
@@ -139,6 +140,8 @@ Page wget(URL url)
 {
     import vibe.http.client;
     import vibe.core.stream : InputStream;
+    // TODO rate limiting and caching
+    // TODO check what sort of DNS caching is going on
     /*
     auto limit = Clock.currTime - dur!"minutes"(15);
     foreach (k, v; downloadCache)
@@ -154,26 +157,28 @@ Page wget(URL url)
         return *existing;
     }
     */
-    infof("making request for URL %s", url);
+    infof("fetch %s", url);
     Page page;
-    requestHTTP(url,
-    (scope HTTPClientRequest req)
+    try
     {
-        req.method = HTTPMethod.GET;
-    },
-    (scope HTTPClientResponse resp)
-    {
-        infof("connected to remote host!");
-        foreach (k, v; resp.headers)
-        {
-            infof("header %s => %s", k, v);
-        }
-        import vibe.stream.operations : readAllUTF8;
-        auto data = resp.bodyReader.readAllUTF8();
-        page = Page(data, resp.contentType, url, Clock.currTime);
+        requestHTTP(url,
+            (scope HTTPClientRequest req)
+            {
+                req.method = HTTPMethod.GET;
+            },
+            (scope HTTPClientResponse resp)
+            {
+                import vibe.stream.operations : readAllUTF8;
+                auto data = resp.bodyReader.readAllUTF8();
+                page = Page(data, resp.contentType, url, Clock.currTime);
 
-    });
-    infof("finished making request for URL %s", url);
+            });
+    }
+    catch (Exception e)
+    {
+        errorf("failed to contact %s: %s", url, e);
+        throw e;
+    }
 
     // TODO encodings
     return page;
@@ -357,12 +362,12 @@ unittest
     auto doc = new XDoc(atom);
     auto maybeFeed = parseAtomHeader(doc, "localhost/atom");
     assert(maybeFeed.present);
-    auto feed = maybeFeed.value;
+    auto feed = maybeFeed.get;
     assert(feed.title == "Example Feed");
     auto id = randomUUID();
     feed.id = id;
 
-    auto arts = parseArticles(feed, Page(atom, ATOM_CONTENT_TYPE, "localhost/atom"));
+    auto arts = parseArticles(feed, Page(atom, ATOM_CONTENT_TYPE, "http://localhost/atom".parseURL));
     assert(arts.length == 1);
     auto art = arts[0];
     assert(art.internalId == "urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a");
@@ -398,12 +403,12 @@ unittest
 </channel>
 </rss>`;
     auto maybeFeed = parseRSSHeader(new XDoc(rss), "localhost/rss");
-    auto feed = maybeFeed.value;
+    auto feed = maybeFeed.get;
     assert(feed.title == "RSS Title");
     auto id = randomUUID();
     feed.id = id;
 
-    auto arts = parseArticles(feed, Page(rss, RSS_CONTENT_TYPE, "localhost/rss"));
+    auto arts = parseArticles(feed, Page(rss, RSS_CONTENT_TYPE, "http://localhost/rss".parseURL));
     assert(arts.length == 1);
     auto art = arts[0];
     assert(art.internalId == "7bd204c6-1655-4c27-aeee-53f933c5395f");

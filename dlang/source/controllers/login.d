@@ -39,7 +39,7 @@ class LoginController
             infof("found %s users matching email %s", matches.length, email);
             if (matches.length > 1)
             {
-                logError("multiple users match email %s", email);
+                errorf("multiple users match email %s", email);
             }
             foreach (match; matches)
             {
@@ -55,7 +55,7 @@ class LoginController
         }
         catch (Throwable e)
         {
-            logError("couldn't log user %s in: %s", email, e);
+            errorf("couldn't log user %s in: %s", email, e);
             response.statusCode = 500;
             js["success"] = false;
             js["error"] = e.toString();
@@ -125,7 +125,7 @@ class LoginController
                     return js;
                 }
             }
-            logError("failed to save user %s: %s", user.email, e);
+            errorf("failed to save user %s: %s", user.email, e);
             response.statusCode = 500;
             js["error"] = e.toString;
             return js;

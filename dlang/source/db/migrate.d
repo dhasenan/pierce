@@ -17,19 +17,22 @@ void dbMigrate()
 
     auto base = import("base.sql");
 
-    auto migrations =
+    Migration[] migrations =
     [
-        read!("2017-11-16 core tables.sql"),
-        read!("2017-11-17 create timestamps.sql"),
-        read!("2017-11-11T17:05 add subscription title.sql"),
-        read!("2017-11-11T17:08 add subscription labels.sql"),
     ];
     sort(migrations);
-
-    // base.sql uses CREATE IF NOT EXISTS so it should be safe.
-    apply("base.sql", base, false);
-    auto finishedMigrations = query!Migration("select * from migrations");
+    migrations = [read!"base.sql"] ~ migrations;
+    Migration[] finishedMigrations;
+    try
+    {
+       finishedMigrations = query!Migration("select * from migrations");
+    }
+    catch (Exception e)
+    {
+        // Probably the table doesn't yet exist.
+    }
     sort(finishedMigrations);
+
     // Might want to check if we're applying out of order...
     auto toApply = setDifference(migrations, finishedMigrations).array;
     // Just in case.
@@ -86,7 +89,7 @@ void applyPart(Connection conn, string name, string part)
     }
     catch (Dpq2Exception e)
     {
-        logError("error applying migration %s!\nscript was: %s\nerror: %s",
+        errorf("error applying migration %s!\nscript was: %s\nerror: %s",
                 name, part, e);
         throw new MigrationException(
                 "while applying " ~ name ~ ", specifically:\n" ~ part, e);

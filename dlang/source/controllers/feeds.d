@@ -39,7 +39,7 @@ class FeedsControllerImpl
         }
         catch (Exception e)
         {
-            logError("while trying to find feeds at %s: %s", url, e);
+            errorf("while trying to find feeds at %s: %s", url, e);
             js["success"] = false;
             js["error"] = e.toString;
             return js;
@@ -124,7 +124,7 @@ class FeedsControllerImpl
             }
             else
             {
-                logError("while trying to grab feed from %s for user %s", feed.url, user.id);
+                errorf("while trying to grab feed from %s for user %s", feed.url, user.id);
                 js["error"] = e.toString;
             }
         }
@@ -227,14 +227,14 @@ class FeedsControllerImpl
         return js;
     }
 
-    Json getAllUnread(User user, string newerThan = null, string olderThan = null)
+    Json getArticles(User user, bool unreadOnly = false, string newerThan = null, string olderThan = null)
     {
         // psql supports years from -4713 to 294276
         // this is a narrower range, but it's more than reasonable
         // (mysql supports 1000 to 9999, for no discernable reason)
         if (!newerThan)
         {
-            newerThan = "0000-01-01T00:00:00Z";
+            newerThan = "1000-01-01T00:00:00Z";
         }
         if (!olderThan)
         {
@@ -244,22 +244,22 @@ class FeedsControllerImpl
         js["articles"] = query!Article(`
                 SELECT articles.* FROM articles
                 INNER JOIN subscriptions ON subscriptions.feedId = articles.feedId
-                WHERE subscriptions.userId = $1
-                AND articles.publishDate > $2
-                AND articles.publishDate < $3
-                AND NOT EXISTS
+                WHERE subscriptions.userId = $1::
+                AND articles.publishDate > $2::timestamp with timezone
+                AND articles.publishDate < $3::timestamp with timezone
+                AND ($4 = 'false' OR NOT EXISTS
                     (SELECT * FROM read
                         WHERE readarticleId = articles.id
-                        AND read.userId = $1)
-                ORDER BY publishDate ASCENDING
+                        AND read.userId = $1))
+                ORDER BY publishDate DESC
                 LIMIT 500`,
-                user.id.toString(), newerThan, olderThan)
+                user.id.toString(), newerThan, olderThan, unreadOnly.to!string)
             .map!(x => toJson(x))
             .array;
         return js;
     }
 
-    Json getAll(User user, string newerThan)
+    Json getAll(User user, string newerThan, string olderThan)
     {
         if (!newerThan)
         {
@@ -270,8 +270,8 @@ class FeedsControllerImpl
                 SELECT articles.* FROM articles
                 INNER JOIN subscriptions ON subscriptions.feedId = articles.feedId
                 WHERE subscriptions.userId = $1
-                AND articles.publishDate > $2
-                ORDER BY publishDate ASCENDING
+                AND articles.readDate > $2
+                ORDER BY readDate ASCENDING
                 LIMIT 500`,
                 user.id.toString, newerThan)
             .map!(x => toJson(x))
