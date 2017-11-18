@@ -19,6 +19,8 @@ void dbMigrate()
 
     Migration[] migrations =
     [
+        // TODO make this work?
+        //read!("1 - readDate.sql"),
     ];
     sort(migrations);
     migrations = [read!"base.sql"] ~ migrations;

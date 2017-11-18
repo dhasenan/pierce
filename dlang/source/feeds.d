@@ -96,7 +96,8 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
         art.description = elem.first("description").txt
             .or(elem.first("summary").txt);
 
-        art.author = elem.first("author").txt;
+        auto authorElem = elem.first("author");
+        art.author = authorElem.first("name").or(authorElem).txt;
         if (!art.author)
         {
             Appender!string a;

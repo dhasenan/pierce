@@ -242,7 +242,15 @@ class FeedsControllerImpl
         }
         auto js = Json.emptyObject;
         js["articles"] = query!Article(`
-                SELECT articles.* FROM articles
+                SELECT
+                    articles.*,
+                    EXISTS (
+                        SELECT * FROM read
+                        WHERE read.articleId = articles.id
+                        AND read.feedId = articles.feedId
+                        AND read.userId = $1
+                    ) AS isRead
+                FROM articles
                 INNER JOIN subscriptions ON subscriptions.feedId = articles.feedId
                 WHERE subscriptions.userId = $1
                 AND articles.publishDate > $2::timestamp

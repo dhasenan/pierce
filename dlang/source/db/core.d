@@ -15,6 +15,9 @@ import std.traits;
 import std.typecons;
 import std.uuid;
 
+/** Attribute to mark a field as transient (don't save it). */
+struct Transient {}
+
 __gshared MultiLogger dblog;
 shared static this()
 {
@@ -192,6 +195,10 @@ T parse(T)(immutable Row row) if (is(T == class) || is(T == struct))
         {
             __traits(getMember, val, m) = cell.as!int;
         }
+        else static if (is(FT == bool))
+        {
+            __traits(getMember, val, m) = cell.as!bool;
+        }
         else
         {
             static assert(false, "can't deserialize " ~ FT.stringof ~ " from DB");
@@ -279,7 +286,7 @@ string updateText(T)()
     foreach (m; __traits(derivedMembers, T))
     {
         alias FT = typeof(__traits(getMember, T, m));
-        static if (!isFunction!FT)
+        static if (!isFunction!FT && !hasUDA!(__traits(getMember, T, m), Transient))
         {
             i++;
             if (i > 1)
@@ -319,7 +326,7 @@ string insertText(T)()
     foreach (m; __traits(derivedMembers, T))
     {
         alias FT = typeof(__traits(getMember, T, m));
-        if (!isFunction!FT)
+        static if (!isFunction!FT && !hasUDA!(__traits(getMember, T, m), Transient))
         {
             i++;
             if (i > 1)

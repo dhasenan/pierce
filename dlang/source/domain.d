@@ -1,6 +1,7 @@
 module pierce.domain;
 
 import core.time;
+import pierce.db.core : Transient;
 import vibe.data.json;
 import std.base64;
 import std.datetime;
@@ -43,6 +44,7 @@ struct Article
     string internalId;
     SysTime publishDate = defaultTime;
     SysTime readDate = defaultTime;
+    @Transient bool isRead = false;
 
     bool isProbablySameAs(Article other)
     {
