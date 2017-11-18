@@ -1,6 +1,7 @@
 module pierce.domain;
 
 import core.time;
+import pierce.datetimeformat;
 import pierce.db.core : Transient;
 import vibe.data.json;
 import std.base64;
@@ -75,7 +76,7 @@ private void addField(T, size_t i, string[] names)(T value, ref Json js)
         }
         else static if (is(typeof(fv) == SysTime))
         {
-            js[name] = fv.toISOString;
+            js[name] = format(fv, ISO8601FORMAT);
         }
         else static if (is(typeof(fv) == Duration))
         {

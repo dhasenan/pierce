@@ -201,24 +201,11 @@ Nullable!Feed findFeed(Page page)
         return nothing!Feed;
     }
 
-    if (page.isAtom)
-    {
-        return parseAtomHeader(doc, page.url);
-    }
-    else if (page.isRSS)
-    {
-        return parseRSSHeader(doc, page.url);
-    }
-    else if (page.isXML)
-    {
-        // Some stuff says it's text/xml. Like xkcd. Which is pretty annoying.
-        auto f = parseAtomHeader(doc, page.url);
-        if (f.present) return f;
-        return parseRSSHeader(doc, page.url);
-    }
-
-    infof("page at %s has unrecognized content type %s", page.url, page.contentType);
-    return nothing!Feed;
+    // We *should* be able to use the Content-Type header to pare things down.
+    // But with the wide variety, we may as well just try both and see what works.
+    auto f = parseAtomHeader(doc, page.url);
+    if (f.present) return f;
+    return parseRSSHeader(doc, page.url);
 }
 
 URL[] findReferencedFeedsInHTML(Page p)
@@ -241,6 +228,7 @@ URL[] findReferencedFeedsInHTML(Page p)
 enum ATOM_CONTENT_TYPE = "application/atom+xml";
 enum RSS_CONTENT_TYPE = "application/rss+xml";
 enum XML_CONTENT_TYPE = "text/xml";
+enum XML_CONTENT_TYPE_ALT = "application/xml";
 enum HTML_CONTENT_TYPE = "text/html";
 enum XHTML_CONTENT_TYPE = "application/xhtml+xml";
 
@@ -269,7 +257,9 @@ struct Page
 
     bool isXML() @property
     {
-        return contentType.startsWith(XML_CONTENT_TYPE);
+        return
+            contentType.startsWith(XML_CONTENT_TYPE) ||
+            contentType.startsWith(XML_CONTENT_TYPE_ALT);
     }
 }
 
@@ -321,6 +311,16 @@ Nullable!Feed parseRSSHeader(XDoc doc, string url)
 string txt(XElem elem)
 {
     if (elem is null) return null;
+    if (elem.cdatas.length > 0)
+    {
+        // Could have multiple...see if it's bad in practice?
+        // This is honestly terrible. The main thing you want to do with a cdata
+        // is get the actual character data. Phobos only lets you get it with the
+        // `<![CDATA[]]>` bit. But to make it infuriating, it stores it *without*
+        // the prefix/suffix!
+        // Anyway, this stinks, but ya gotta do...
+        return elem.cdatas[0].toString[9..$-3];
+    }
     return elem.text;
 }
 
@@ -368,7 +368,9 @@ unittest
     auto id = randomUUID();
     feed.id = id;
 
-    auto arts = parseArticles(feed, Page(atom, ATOM_CONTENT_TYPE, "http://localhost/atom".parseURL));
+    auto arts = parseArticles(
+            feed,
+            Page(atom, ATOM_CONTENT_TYPE, "http://localhost/atom".parseURL));
     assert(arts.length == 1);
     auto art = arts[0];
     assert(art.internalId == "urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a");

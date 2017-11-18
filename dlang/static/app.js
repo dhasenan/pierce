@@ -139,7 +139,7 @@ var domain = {
     if (!articles) return 0;
     var unread = 0;
     for (var i = 0; i < articles.length; i++) {
-      if (!articles[i].IsRead) {
+      if (!articles[i].isRead) {
         unread++;
       }
     }
@@ -615,7 +615,7 @@ var domain = {
       var ai = (offset < 0) ? f.articles.length - 1 : 0;
       while (ai >= 0
           && ai < f.articles.length
-          && (f.articles[ai].IsRead || !ui.showingUnreadOnly)) {
+          && (f.articles[ai].isRead || !ui.showingUnreadOnly)) {
         ai += offset;
       }
       var art = f.articles[ai];
@@ -674,7 +674,7 @@ var domain = {
   /********** Misc ************/
   showingArticle: function(article) {
     domain.currentArticle = article;
-    if (!article.IsRead) {
+    if (!article.isRead) {
       domain.markRead(article);
       ui.displayFeeds();
       ui.updateTitle();
@@ -805,7 +805,7 @@ var ui = {
   buildArticleDisplay: function(article) {
     var div = document.createElement('div');
     div.id = util.articleId(article);
-    if (article.IsRead) {
+    if (article.isRead) {
       div.className = 'articleli read';
     } else {
       div.className = 'articleli unread';
@@ -853,7 +853,7 @@ var ui = {
       // separate places). Main problem: this might not do the right thing if the feed gets updated
       // and has a new icon. I think I can live with that.
       let art = articles[i];
-      if (ui.showingUnreadOnly && art.IsRead) {
+      if (ui.showingUnreadOnly && art.isRead) {
         // By defaulting to unread only and not building / adding things that aren't being
         // displayed, we cut render time from 8.6s to 0.028s.
         continue;
@@ -862,7 +862,7 @@ var ui = {
         art.display = ui.buildArticleDisplay(art);
       }
       list.appendChild(art.display);
-      if (!art.IsRead) {
+      if (!art.isRead) {
         unread++;
       }
     }
@@ -892,7 +892,7 @@ var ui = {
 
   displayArticleStatus: function(article) {
     var artDiv = $('#' + util.articleId(article));
-    if (article.IsRead) {
+    if (article.isRead) {
       artDiv.removeClass('unread');
       artDiv.addClass('read');
     } else {
@@ -1201,7 +1201,7 @@ var util = {
   },
 
   jsDate: function(aspNetDate) {
-    return new Date(parseInt(aspNetDate.substr(6)));
+    return new Date(aspNetDate);
   },
 
   sortArticles: function(articles) {
