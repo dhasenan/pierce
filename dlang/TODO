@@ -4,6 +4,7 @@
 [ ] Verify functionality
   [x] Subscribe to new feed
   [ ] Subscribe to existing feed
+  [ ] Feed goes away when it's got no subscribers
   [x] Read articles from feed
   [x] Grab articles for UI
   [x] Mark read
@@ -15,7 +16,7 @@
 [ ] JS cleanup
 	[-] Extract out service bit (easier code sharing?)
   [x] Promise support
-	[ ] Remove jquery / jquery UI dependencyL
+	[ ] Remove jquery / jquery UI dependency?
 
 Bugs:
 * trying to subscribe to the same feed twice gives you a db error (should no-op)
@@ -24,6 +25,7 @@ Bugs:
 * subscribing to a feed doesn't refresh view
 * need to set reasonable timeout on wget
 * fail to find feeds at http://www.elidupree.com/main/atom.xml
+* race conditions (need transactions in a few places)
 
 Fixed:
 * fail to find feeds at http://www.questionablecontent.net/QCRSS.xml: content type

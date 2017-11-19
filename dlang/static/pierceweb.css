@@ -146,6 +146,13 @@ a {
   top: 0px;
 }
 
+.feed-settings-button {
+  color: orange;
+  float: right;
+  font-weight: bold;
+  margin-top: 0.2em;
+}
+
 .pane {
   overflow: hidden;
   border: 1px solid gray;
