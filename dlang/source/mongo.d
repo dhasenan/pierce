@@ -1,6 +1,7 @@
 module pierce.mongo;
 
 import core.time;
+import dpq2 : Connection;
 import pierce.domain;
 import std.datetime;
 import std.experimental.logger;
@@ -30,23 +31,18 @@ void dumpMongo(string host, ushort port)
 
 void readMongo(string host = "localhost", ushort port = 27017)
 {
-    inConnection!((conn) => readMongo(conn, host, port));
-}
-
-void readMongo(Connection conn, string host, ushort port)
-{
     import pierce.db.core;
     import vibe.db.mongo.mongo;
     import std.random;
 
     // Burn it all to the ground!
     infof("have to clear away the rubble before we can build anew");
-    conn.query!void("DELETE FROM users");
-    conn.query!void("DELETE FROM subscriptions");
-    conn.query!void("DELETE FROM feeds");
-    conn.query!void("DELETE FROM articles");
-    conn.query!void("DELETE FROM sessions");
-    conn.query!void("DELETE FROM read");
+    query!void("DELETE FROM users");
+    query!void("DELETE FROM subscriptions");
+    query!void("DELETE FROM feeds");
+    query!void("DELETE FROM articles");
+    query!void("DELETE FROM sessions");
+    query!void("DELETE FROM read");
 
     auto client = connectMongoDB(host, port);
     auto db = client.getDatabase("pierce");
@@ -75,14 +71,14 @@ void readMongo(Connection conn, string host, ushort port)
             // so we don't have too much clustering.
             nextRead: Clock.currTime(UTC()) + uniform(0, 3600).seconds,
         };
-        auto existing = conn.query!Feed("select * from feeds where url = $1", feed.url);
+        auto existing = query!Feed("select * from feeds where url = $1", feed.url);
         if (existing.length > 0)
         {
             feedIds[id] = existing[0].id;
         }
         else
         {
-            conn.insert(feed);
+            insert(feed);
             feedIds[id] = feed.id;
         }
         activeChunks[mongoFeed["HeadChunkId"].str] = true;
@@ -98,7 +94,7 @@ void readMongo(Connection conn, string host, ushort port)
             checkInterval: parseDuration(muser["DefaultCheckInterval"].str),
         };
         infof("handling user %s", user.email);
-        conn.insert(user);
+        insert(user);
         foreach (msub; muser["Subscriptions"])
         {
             import std.array : Appender;
@@ -115,7 +111,7 @@ void readMongo(Connection conn, string host, ushort port)
                 title: msub["Title"].str,
                 labels: labels.data,
             };
-            conn.insert(sub);
+            insert(sub);
         }
     }
 
@@ -127,18 +123,33 @@ void readMongo(Connection conn, string host, ushort port)
     {
         i++;
         if (i % 100 == 0) infof("handling chunk %s", i);
-        auto id = chunk["_id"].get!BsonObjectID.toString;
+        auto id = chunk["_id"].str;
         auto archived = !(id in activeChunks);
+        if (archived)
+        {
+            infof("skipping archived chunk %s for speed purposes", id);
+            continue;
+        }
 
-        auto feedId = feedIds[chunk["FeedId"].str];
+        UUID feedId;
+        auto mid = chunk["FeedId"].str;
+        if (auto p = mid in feedIds)
+        {
+            feedId = *p;
+        }
+        else
+        {
+            warningf("chunk %s references missing feed %s; skipping", id, mid);
+            continue;
+        }
         foreach (mart; chunk["Articles"])
         {
             auto art = artBson(mart, feedId);
-            conn.insert(art);
+            insert(art);
             if (archived)
             {
                 // Mark read automatically.
-                conn.query!void(`
+                query!void(`
                         INSERT INTO read (userId, feedId, articleId)
                         (
                             SELECT userId, $1, $2 FROM subscriptions
@@ -153,7 +164,7 @@ void readMongo(Connection conn, string host, ushort port)
     // 4. Remaining read articles.
     foreach (muser; db["users"].find)
     {
-        auto user = conn.query!User("SELECT * FROM users WHERE email = $1", muser["Email"].str);
+        auto user = query!User("SELECT * FROM users WHERE email = $1", muser["Email"].str);
         infof("handling read articles for user %s", user[0].email);
         auto id = user[0].id.toString;
         foreach (msub; muser["Subscriptions"])
@@ -161,7 +172,7 @@ void readMongo(Connection conn, string host, ushort port)
             auto feedId = feedIds[msub["FeedId"].str].toString;
             foreach (read; msub["ReadArticles"])
             {
-                conn.query!void(`
+                query!void(`
                         INSERT INTO read (userId, feedId, articleId)
                         SELECT $1, $2, articles.id
                         FROM articles
@@ -180,7 +191,19 @@ private Article artBson(Bson mart, UUID feedId)
     auto mauth = mart.tryIndex("Authors");
     if (!mauth.isNull)
     {
-        author = mauth.get[0]["Name"].str;
+        auto mm = mauth.get;
+        if (mm.type == Bson.Type.array)
+        {
+            mm = mm[0];
+        }
+        if (mm.type == Bson.Type.object)
+        {
+            mm = mm["Name"];
+        }
+        if (mm.type == Bson.Type.string)
+        {
+            author = mm.str;
+        }
     }
     Article art =
     {
@@ -188,7 +211,7 @@ private Article artBson(Bson mart, UUID feedId)
         author: author,
         description: mart["Description"].str,
         internalId: mart["UniqueId"].str,
-        mongoId: mart["_id"].get!BsonObjectID.toString,
+        mongoId: mart["_id"].str,
         publishDate: sysDate(mart["PublishDate"]),
         title: mart["Title"].str,
         url: mart["Link"].str,
@@ -205,7 +228,11 @@ Duration parseDuration(string s)
 SysTime sysDate(Bson s)
 {
     import pierce.datetimeformat;
-    return parse(s.str, ISO8601FORMAT);
+    if (s.type == Bson.Type.string)
+    {
+        return parse(s.str, ISO8601FORMAT);
+    }
+    return s.get!BsonDate.toSysTime;
 }
 
 string str(Bson bs)

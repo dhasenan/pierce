@@ -9,7 +9,6 @@ import std.experimental.logger;
 import std.range : isInputRange;
 import std.typecons : Nullable;
 import std.uuid;
-static import std.xml;
 
 import arsd.dom;
 import vibe.core.log;
@@ -18,10 +17,6 @@ import pierce.datetimeformat;
 import pierce.domain;
 import pierce.opt;
 import url;
-
-alias XDoc = std.xml.Document;
-alias XElem = std.xml.Element;
-alias XMLException = std.xml.XMLException;
 
 /**
   * Find the feeds available at the given URL.
@@ -54,26 +49,46 @@ Feed[] findFeeds(URL url)
 Article[] fetchArticles(Feed feed)
 {
     import std.algorithm.sorting : sort;
+    import etc.linux.memoryerror : NullPointerError;
 
     auto w = wget(feed.url.parseURL);
-    auto articles = parseArticles(feed, w);
-    articles.sort!((x, y) => x.publishDate > y.publishDate);
-    return articles;
+    if (w.text.length == 0)
+    {
+        errorf("got no text from %s", feed.url);
+        return null;
+    }
+    try
+    {
+        auto articles = parseArticles(feed, w);
+        articles.sort!((x, y) => x.publishDate > y.publishDate);
+        return articles;
+    }
+    catch (NullPointerError e)
+    {
+        errorf("error while reading feed id:%s url:%s: %s\ndocument:\n%s",
+                feed.id, feed.url, e, w.text);
+        return null;
+    }
 }
 
 Article[] parseArticles(Feed feed, Page page)
 {
+    import std.range : chain;
     // We don't know whether this is RSS or Atom.
     // Thanks to XKCD etc, we may never know.
     // So try both.
-    auto dom = new XDoc(page.text);
-    XElem feedContainer;
-    auto container = dom.first("rss").first("channel")
-        .or(dom.first("feed"));
+    auto dom = new Document(page.text);
+    auto container = dom.optionSelector("channel, feed");
+    if (container is null)
+    {
+        warningf("failed to find feed or channel in page for %s", feed.url);
+        return null;
+    }
+    auto elem = container.element;
     return feed.parseArticles(
-        container
-            .elements
-            .filter!(x => x.tag.name == "item" || x.tag.name == "entry"));
+            chain(
+                elem.querySelectorAll("item"),
+                elem.querySelectorAll("entry")));
 }
 
 /**
@@ -102,9 +117,9 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
         {
             Appender!string a;
             bool first = true;
-            foreach (author; elem.elements)
+            foreach (author; elem.children)
             {
-                if (author.tag.name == "author")
+                if (author.tagName == "author")
                 {
                     if (!first) a ~= ", ";
                     first = false;
@@ -190,12 +205,12 @@ shared Page[string] downloadCache;
 Nullable!Feed findFeed(Page page)
 {
     Nullable!Feed m;
-    XDoc doc;
+    Document doc;
     try
     {
-        doc = new XDoc(page.text);
+        doc = new Document(page.text);
     }
-    catch (XMLException e)
+    catch (MarkupException e)
     {
         infof("failed to parse document at %s as XML: %s", page.url, e);
         return nothing!Feed;
@@ -263,15 +278,15 @@ struct Page
     }
 }
 
-XElem first(XElem parent, string tag)
+Element first(Element parent, string tag)
 {
     // TODO check Atom namespace too
     // (Dunno how std.xml works, doesn't seem to have xmlns thing explicitly)
     if (parent is null) return null;
-    if (parent.tag.name == tag) return parent;
-    foreach (e; parent.elements)
+    if (parent.tagName == tag) return parent;
+    foreach (e; parent.children)
     {
-        if (e.tag.name == tag)
+        if (e.tagName == tag)
         {
             return e;
         }
@@ -279,15 +294,15 @@ XElem first(XElem parent, string tag)
     return null;
 }
 
-string text(XElem elem)
+string text(Element elem)
 {
     if (elem is null) return null;
     return elem.text();
 }
 
-Nullable!Feed parseAtomHeader(XDoc doc, string url)
+Nullable!Feed parseAtomHeader(Document doc, string url)
 {
-    auto d = doc.first("feed");
+    auto d = doc.root.first("feed");
     if (d is null) return nothing!Feed;
     Feed f;
 
@@ -297,9 +312,9 @@ Nullable!Feed parseAtomHeader(XDoc doc, string url)
     return just(f);
 }
 
-Nullable!Feed parseRSSHeader(XDoc doc, string url)
+Nullable!Feed parseRSSHeader(Document doc, string url)
 {
-    auto channel = doc.first("rss").first("channel");
+    auto channel = doc.root.first("rss").first("channel");
     if (channel is null) nothing!Feed;
     Feed feed;
     feed.title = channel.first("title").txt;
@@ -308,28 +323,17 @@ Nullable!Feed parseRSSHeader(XDoc doc, string url)
     return just(feed);
 }
 
-string txt(XElem elem)
+string txt(Element elem)
 {
-    if (elem is null) return null;
-    if (elem.cdatas.length > 0)
-    {
-        // Could have multiple...see if it's bad in practice?
-        // This is honestly terrible. The main thing you want to do with a cdata
-        // is get the actual character data. Phobos only lets you get it with the
-        // `<![CDATA[]]>` bit. But to make it infuriating, it stores it *without*
-        // the prefix/suffix!
-        // Anyway, this stinks, but ya gotta do...
-        return elem.cdatas[0].toString[9..$-3];
-    }
-    return elem.text;
+    import std.string : strip;
+    if (elem is null) return "";
+    return elem.innerText.strip;
 }
 
-string attr(XElem elem, string name)
+string attr(Element elem, string name)
 {
     if (elem is null) return null;
-    auto p = name in elem.tag.attr;
-    if (p) return *p;
-    return null;
+    return elem.attrs.get(name);
 }
 
 T or(T)(T a, T b)
@@ -360,7 +364,7 @@ unittest
   </entry>
 
 </feed>`;
-    auto doc = new XDoc(atom);
+    auto doc = new Document(atom);
     auto maybeFeed = parseAtomHeader(doc, "localhost/atom");
     assert(maybeFeed.present);
     auto feed = maybeFeed.get;
@@ -405,7 +409,7 @@ unittest
 
 </channel>
 </rss>`;
-    auto maybeFeed = parseRSSHeader(new XDoc(rss), "localhost/rss");
+    auto maybeFeed = parseRSSHeader(new Document(rss), "localhost/rss");
     auto feed = maybeFeed.get;
     assert(feed.title == "RSS Title");
     auto id = randomUUID();
@@ -422,3 +426,4 @@ unittest
             art.publishDate.toISOString());
     assert(art.url == "http://www.example.com/blog/post/1", art.url);
 }
+
