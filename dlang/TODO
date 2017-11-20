@@ -1,3 +1,7 @@
+[ ] MongoDB import tool
+[ ] Config file
+  [ ] Database
+  [ ] New registrations allowed / disallowed
 [x] Track down auth / login problem
 [ ] Front end
   [x] Fetch articles the new way

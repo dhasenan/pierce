@@ -38,11 +38,12 @@ struct Article
 {
     UUID id;
     UUID feedId;
-    string url;
-    string title;
-    string description;
     string author;
+    string description;
     string internalId;
+    string mongoId;
+    string title;
+    string url;
     SysTime publishDate = defaultTime;
     SysTime readDate = defaultTime;
     @Transient bool isRead = false;

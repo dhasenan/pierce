@@ -10,20 +10,19 @@ import vibe.core.log;
 
 void dbMigrate()
 {
+    import std.algorithm.searching : canFind;
     import std.algorithm.setops : setDifference;
     import std.algorithm.sorting : sort;
     import std.array : array;
     infof("running database migrations");
 
-    auto base = import("base.sql");
-
     Migration[] migrations =
     [
-        // TODO make this work?
-        //read!("1 - readDate.sql"),
+        read!("0 - base tables.sql"),
+        read!("2 - mongo ids.sql"),
     ];
     sort(migrations);
-    migrations = [read!"base.sql"] ~ migrations;
+    apply("base.sql", import("base.sql"), false);
     Migration[] finishedMigrations;
     try
     {
@@ -47,9 +46,21 @@ void dbMigrate()
 
     foreach (migration; toApply)
     {
+        if (finishedMigrations.canFind!(x => x.name == migration.name))
+        {
+            infof("I have brought shame upon my house by attempting to repeat migration %s", migration.name);
+            continue;
+        }
         infof("applying migration %s", migration.name);
-        apply(migration.name, migration.script);
-        infof("migration applied");
+        try
+        {
+            apply(migration.name, migration.script);
+            infof("migration %s applied", migration.name);
+        }
+        catch (Exception e)
+        {
+            errorf("while applying migration %s: %s", migration.name, e);
+        }
     }
 }
 

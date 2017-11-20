@@ -20,6 +20,23 @@ shared static this()
     log.insertLogger("console", new std.experimental.logger.FileLogger(stderr));
     log.insertLogger("file", new VibeRollingFileLogger("logs/pierce-%y-%m-%d.%i.log", std.experimental.logger.LogLevel.all));
     sharedLog = log;
+}
+
+void main(string[] args)
+{
+    version (unittest) return;
+    auto cmd = args.length > 1 ? args[1] : "";
+    if (cmd == "dump")
+    {
+        import pierce.mongo;
+        dumpMongo("localhost", 27017);
+        return;
+    }
+    if (cmd == "migrate")
+    {
+        import pierce.mongo;
+        readMongo();
+    }
 
     dbMigrate();
     // Set up background processes.
@@ -37,5 +54,7 @@ shared static this()
     router.registerWebInterface(new Authed!(UsersControllerImpl, "users"));
     router.registerWebInterface(new LoginController);
     listenHTTP(settings, router);
+
+    runApplication();
 }
 
