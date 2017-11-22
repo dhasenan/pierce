@@ -12,6 +12,7 @@ import std.uuid;
 import url;
 import vibe.d;
 
+import pierce.config : config;
 import pierce.db;
 import pierce.domain;
 import pierce.feeds;
@@ -101,6 +102,15 @@ class LoginController
 
     Json register(HTTPServerResponse response, string email, string password)
     {
+        if (!config.allowRegistrations)
+        {
+            auto js = Json.emptyObject;
+            js["registrationsAllowed"] = false;
+            js["error"] = "New registrations have been disabled by the administrator. " ~
+                "If you are the administrator, change the 'allowRegistrations' entry " ~
+                "in the config file.";
+            return js;
+        }
         User user;
         user.id = randomUUID;
         user.email = email;

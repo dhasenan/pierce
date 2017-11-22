@@ -2,19 +2,20 @@ module pierce.mongo;
 
 import core.time;
 import dpq2 : Connection;
+import pierce.config;
 import pierce.domain;
 import std.datetime;
 import std.experimental.logger;
 import std.uuid;
 import vibe.data.bson;
 
-void dumpMongo(string host, ushort port)
+void dumpMongo()
 {
     import vibe.data.json;
     import vibe.db.mongo.mongo;
     import std.stdio;
 
-    auto client = connectMongoDB(host, port);
+    auto client = connectMongoDB(config.mongo.host, config.mongo.port);
     auto db = client.getDatabase("pierce");
 
     foreach (collection; ["users", "feeds", "chunks"])
@@ -29,7 +30,7 @@ void dumpMongo(string host, ushort port)
     }
 }
 
-void readMongo(string host = "localhost", ushort port = 27017)
+void readMongo()
 {
     import pierce.db.core;
     import vibe.db.mongo.mongo;
@@ -44,7 +45,7 @@ void readMongo(string host = "localhost", ushort port = 27017)
     query!void("DELETE FROM sessions");
     query!void("DELETE FROM read");
 
-    auto client = connectMongoDB(host, port);
+    auto client = connectMongoDB(config.mongo.host, config.mongo.port);
     auto db = client.getDatabase("pierce");
 
     UUID[string] feedIds;

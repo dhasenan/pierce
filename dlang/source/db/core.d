@@ -356,18 +356,46 @@ string insertText(T)()
     return cmd ~ values ~ `)`;
 }
 
-struct Result
-{
-    Throwable e;
-    immutable(Answer) answer;
-}
+// TODO connection pooling
 auto inConnection(alias fn)()
 {
     import vibe.core.concurrency : async;
+    static string connectionString;
+    if (connectionString.length == 0)
+    {
+        import std.array : Appender;
+        import std.string : strip;
+        import pierce.config : config;
+
+        Appender!string builder;
+        auto url = config.db;
+        if (url.user)
+        {
+            builder ~= " user=";
+            builder ~= url.user;
+        }
+        if (url.pass)
+        {
+            builder ~= " password=";
+            builder ~= url.pass;
+        }
+        if (url.port != 0)
+        {
+            builder ~= " port=";
+            builder ~= url.port.to!string;
+        }
+        if (url.path.length > 1)
+        {
+            // url is '/' followed by a db name
+            builder ~= " dbname=";
+            builder ~= url.path[1..$];
+        }
+        connectionString = builder.data.strip;
+    }
 
     Throwable err = null;
     void* delegate () @trusted dg = () @trusted {
-        scope conn = new Connection("dbname=pierce user=dhasenan");
+        scope conn = new Connection(connectionString);
         try
         {
             return cast(void*)fn(conn);

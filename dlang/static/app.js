@@ -187,7 +187,7 @@ var domain = {
       return 0;
     });
     lablist = [domain.allList].concat(lablist);
-    domain.updateLabelunreadCounts(lablist);
+    domain.updateLabelUnreadCounts(lablist);
 
     if (unlisted.length) {
       lablist.push({
@@ -393,7 +393,7 @@ var domain = {
     domain.buildLabels();
   },
 
-  updateLabelunreadCounts: function(labels) {
+  updateLabelUnreadCounts: function(labels) {
     labels.forEach((label) => {
       console.log(label);
       let unread = 0;
@@ -413,7 +413,7 @@ var domain = {
     }
     article.isRead = true;
     article.feed.unreadCount--;
-    domain.updateLabelunreadCounts(domain.labels);
+    domain.updateLabelUnreadCounts(domain.labels);
     $.ajax('/feeds/mark_read', {
       dataType: 'json',
       method: 'POST',
@@ -473,12 +473,7 @@ var domain = {
     }
     article.isRead = false;
     article.feed.unreadCount++;
-    domain.updateLabelunreadCounts(domain.labels);
-    var readArticles = domain.getSubscription(article.feed.id).ReadArticles;
-    var i = readArticles.indexOf(article.id);
-    if (i > -1) {
-      readArticles.splice(i, 1);
-    }
+    domain.updateLabelUnreadCounts(domain.labels);
     $.ajax('/feeds/mark_read', {
       dataType: 'json',
       data: {

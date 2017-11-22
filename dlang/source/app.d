@@ -5,6 +5,7 @@ import std.experimental.logger;
 import std.stdio;
 import vibe.d;
 
+import pierce.config : config, Config;
 import pierce.controllers.core;
 import pierce.controllers.feeds;
 import pierce.controllers.login;
@@ -25,20 +26,47 @@ shared static this()
 void main(string[] args)
 {
     version (unittest) return;
-    auto cmd = args.length > 1 ? args[1] : "";
+    import std.getopt;
+
+    string cmd = "run";
+    string configFile = "config.json";
+    ushort port = 9881;
+
+    auto helpInfo = getopt(args,
+            "command|cmd", "command [run,dump,migrate]", &cmd,
+            "config|c", "path to config file", &configFile);
+    if (helpInfo.helpWanted)
+    {
+        defaultGetoptPrinter(
+                "Pierce RSS reader!",
+                helpInfo.options);
+        return;
+    }
+
+    if (existsFile(configFile))
+    {
+        config = new Config(configFile);
+    }
+    else
+    {
+        config = new Config();
+    }
+
+    dbMigrate();
+
     if (cmd == "dump")
     {
         import pierce.mongo;
-        dumpMongo("localhost", 27017);
+        dumpMongo();
         return;
     }
     if (cmd == "migrate")
     {
         import pierce.mongo;
         readMongo();
+        return;
     }
 
-    dbMigrate();
     // Set up background processes.
     runTask(() => pierce.tasks.tasks.run());
 

@@ -1,8 +1,10 @@
 [x] MongoDB import tool (crude but it works?)
 [x] Unread article counts
-[ ] Config file
-  [ ] Database
-  [ ] New registrations allowed / disallowed
+[ ] Connection pool for DB connections
+[ ] DB transaction support (with multiple queries)
+[x] Config file
+  [x] Database
+  [x] New registrations allowed / disallowed
 [ ] Front end
   [x] Fetch articles the new way
   [ ] Logout (it doesn't reload the page? it should delete the session from server)
@@ -34,6 +36,8 @@ Bugs:
 * need to set reasonable timeout on wget
 * fail to find feeds at http://www.elidupree.com/main/atom.xml
 * race conditions (need transactions in a few places)
+* weirdness applying db migrations (hang on startup)
+* can't mark article unread
 
 Fixed:
 * fail to find feeds at http://www.questionablecontent.net/QCRSS.xml: content type
