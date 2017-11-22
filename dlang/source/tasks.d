@@ -17,7 +17,7 @@ __gshared TaskRunner tasks;
 shared static this()
 {
     // So I can manipulate its log level separately
-    tasklog = new MultiLogger(LogLevel.warning);
+    tasklog = new MultiLogger(LogLevel.info);
     tasklog.insertLogger("parent", sharedLog);
     tasks = new TaskRunner;
 }

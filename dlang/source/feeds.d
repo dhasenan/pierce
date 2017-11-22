@@ -77,8 +77,8 @@ Article[] parseArticles(Feed feed, Page page)
     // We don't know whether this is RSS or Atom.
     // Thanks to XKCD etc, we may never know.
     // So try both.
-    auto dom = new Document(page.text);
-    auto container = dom.optionSelector("channel, feed");
+    auto dom = new Document(page.text, false, true);
+    auto container = dom.optionSelector("channel,feed");
     if (container is null)
     {
         warningf("failed to find feed or channel in page for %s", feed.url);
@@ -103,13 +103,18 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
         art.readDate = Clock.currTime(UTC());
         art.feedId = feed.id;
 
-        art.internalId = elem.first("guid").txt
-            .or(elem.first("id").txt);
+        art.internalId = elem.optionSelector("guid,id").innerText;
         art.title = elem.first("title").txt;
-        art.url = elem.first("link").txt
-            .or(elem.first("link").attr("href"));
-        art.description = elem.first("description").txt
-            .or(elem.first("summary").txt);
+        auto link = elem.querySelector("link");
+        if (link)
+        {
+            art.url = link.attrs.get("href");
+            if (art.url.length == 0)
+            {
+                art.url = link.innerText;
+            }
+        }
+        art.description = elem.optionSelector("description,summary").innerText;
 
         auto authorElem = elem.first("author");
         art.author = authorElem.first("name").or(authorElem).txt;
@@ -129,9 +134,7 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
             art.author = a.data;
         }
 
-        auto datestr = elem.first("pubDate").txt
-            .or(elem.first("updated").txt)
-            .or(elem.first("published").txt);
+        auto datestr = elem.optionSelector("pubDate,updated,published").innerText;
         SysTime st;
         if (datestr != "")
         {
@@ -184,10 +187,14 @@ Page wget(URL url)
             },
             (scope HTTPClientResponse resp)
             {
+                if (resp.statusCode >= 300 && resp.statusCode <= 399)
+                {
+                    page = wget(resp.headers["Location"].parseURL);
+                    return;
+                }
                 import vibe.stream.operations : readAllUTF8;
                 auto data = resp.bodyReader.readAllUTF8();
                 page = Page(data, resp.contentType, url, Clock.currTime);
-
             });
     }
     catch (Exception e)
@@ -284,14 +291,7 @@ Element first(Element parent, string tag)
     // (Dunno how std.xml works, doesn't seem to have xmlns thing explicitly)
     if (parent is null) return null;
     if (parent.tagName == tag) return parent;
-    foreach (e; parent.children)
-    {
-        if (e.tagName == tag)
-        {
-            return e;
-        }
-    }
-    return null;
+    return parent.querySelector(tag);
 }
 
 string text(Element elem)
@@ -364,7 +364,7 @@ unittest
   </entry>
 
 </feed>`;
-    auto doc = new Document(atom);
+    auto doc = new Document(atom, false, true);
     auto maybeFeed = parseAtomHeader(doc, "localhost/atom");
     assert(maybeFeed.present);
     auto feed = maybeFeed.get;
@@ -377,10 +377,10 @@ unittest
             Page(atom, ATOM_CONTENT_TYPE, "http://localhost/atom".parseURL));
     assert(arts.length == 1);
     auto art = arts[0];
-    assert(art.internalId == "urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a");
+    assert(art.internalId == "urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a", art.internalId);
     assert(art.feedId == id);
     assert(art.title == "Atom-Powered Robots Run Amok");
-    assert(art.description == "Some text.");
+    assert(art.description == "Some text.", "[" ~ art.description ~ "]");
     assert(art.publishDate == SysTime(DateTime(2003, 12, 13, 18, 30, 2), UTC()),
             art.publishDate.toISOString());
     assert(art.url == "http://example.org/2003/12/13/atom03", art.url);
@@ -409,7 +409,7 @@ unittest
 
 </channel>
 </rss>`;
-    auto maybeFeed = parseRSSHeader(new Document(rss), "localhost/rss");
+    auto maybeFeed = parseRSSHeader(new Document(rss, false, true), "localhost/rss");
     auto feed = maybeFeed.get;
     assert(feed.title == "RSS Title");
     auto id = randomUUID();

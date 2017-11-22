@@ -1,18 +1,16 @@
 module pierce.log;
 
+import pierce.datetimeformat;
 import std.experimental.logger;
 import std.datetime;
 
 class VibeRollingFileLogger : Logger
 {
     import std.format : format;
-    import vibe.core.file : existsFile, FileMode, FileStream, openFile;
+    import vibe.core.file : existsFile, getFileInfo, FileMode, FileStream, openFile;
 
     this(in string fileFormat, const LogLevel lv, size_t maxFileSize = 1024 * 1024 * 10)
     {
-        import std.file : exists, mkdirRecurse;
-        import std.path : dirName;
-        import std.conv : text;
         super(lv);
         this.fileFormat = fileFormat;
         this.maxFileSize = maxFileSize;
@@ -23,8 +21,9 @@ class VibeRollingFileLogger : Logger
         import std.string : lastIndexOf;
         ptrdiff_t fnIdx = payload.file.lastIndexOf('/') + 1;
         ptrdiff_t funIdx = payload.funcName.lastIndexOf('.') + 1;
-        getFile().write("%s:%s:%s:%u %s\n".format(
-            payload.timestamp.toISOString,
+        getFile().write("%s %s %s:%s:%u %s\n".format(
+            pierce.datetimeformat.format(payload.timestamp, ISO8601FORMAT),
+            payload.logLevel,
             payload.file[fnIdx..$],
             payload.funcName[funIdx..$],
             payload.line,
@@ -64,12 +63,17 @@ private:
         foreach (i; 0..100)
         {
             auto name = formatFilename(fileFormat, fileDate, index);
-            if (!existsFile(name))
+            if (existsFile(name))
             {
-                file = openFile(name, FileMode.append);
-                return file;
+                auto info = getFileInfo(name);
+                if (info.size >= maxFileSize)
+                {
+                    index++;
+                    continue;
+                }
             }
-            index++;
+            file = openFile(name, FileMode.append);
+            return file;
         }
         throw new Exception("tried creating new file " ~
                 "but you have an excessive number of old logfiles for this same date");

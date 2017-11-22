@@ -50,6 +50,7 @@ void main(string[] args)
     fsettings.serverPathPrefix = "/static";
     router.get("/static/*", serveStaticFiles("static/", fsettings));
     router.get("/", serveStaticFile("static/index.html"));
+    router.get("/favicon.ico", serveStaticFile("static/favicon.ico"));
     router.registerWebInterface(new Authed!(FeedsControllerImpl, "feeds"));
     router.registerWebInterface(new Authed!(UsersControllerImpl, "users"));
     router.registerWebInterface(new LoginController);
