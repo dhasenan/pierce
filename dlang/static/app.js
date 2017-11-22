@@ -187,7 +187,7 @@ var domain = {
       return 0;
     });
     lablist = [domain.allList].concat(lablist);
-    domain.updateLabelUnreadCounts(lablist);
+    domain.updateLabelunreadCounts(lablist);
 
     if (unlisted.length) {
       lablist.push({
@@ -315,6 +315,9 @@ var domain = {
           }
           console.log(`added article ${article.id} to feed ${feed.id}`);
           feed.articles.push(article);
+          if (!article.isRead) {
+            feed.unreadCount++;
+          }
         })
         domain.reloadFeedInfo();
         ui.updateTitle();
@@ -326,15 +329,16 @@ var domain = {
 
   mungeFeed: function(feed) {
     feed.articles = [];
+    feed.unreadCount = 0;
     let sub = domain.getSubscription(feed.id);
     if (!sub) {
       console.log(`failed to find sub for feed ${feed.id}`);
       return;
     }
-    if (typeof sub.labels === "string") {
-      feed.labels = sub.labels.split(",");
-    } else if (!sub.labels) {
+    if (!sub.labels) {
       feed.labels = [];
+    } else if (typeof sub.labels === "string") {
+      feed.labels = sub.labels.split(",");
     }
     if (sub.title) {
       feed.title = sub.title;
@@ -389,7 +393,7 @@ var domain = {
     domain.buildLabels();
   },
 
-  updateLabelUnreadCounts: function(labels) {
+  updateLabelunreadCounts: function(labels) {
     labels.forEach((label) => {
       console.log(label);
       let unread = 0;
@@ -409,7 +413,7 @@ var domain = {
     }
     article.isRead = true;
     article.feed.unreadCount--;
-    domain.updateLabelUnreadCounts(domain.labels);
+    domain.updateLabelunreadCounts(domain.labels);
     $.ajax('/feeds/mark_read', {
       dataType: 'json',
       method: 'POST',
@@ -469,7 +473,7 @@ var domain = {
     }
     article.isRead = false;
     article.feed.unreadCount++;
-    domain.updateLabelUnreadCounts(domain.labels);
+    domain.updateLabelunreadCounts(domain.labels);
     var readArticles = domain.getSubscription(article.feed.id).ReadArticles;
     var i = readArticles.indexOf(article.id);
     if (i > -1) {
@@ -607,7 +611,7 @@ var domain = {
         return;
       }
       var f = label.feeds[index];
-      if (f.UnreadCount == 0 && ui.showingUnreadOnly) {
+      if (f.unreadCount == 0 && ui.showingUnreadOnly) {
         index += offset;
         continue;
       }
@@ -766,7 +770,7 @@ var ui = {
     $('.feedli_' + feed.id).replaceWith(ui.template('feedli', {feed: feed}));
   },
 
-  showingUnreadOnly: false,
+  showingUnreadOnly: true,
   currentFeed: null,
 
   showLabel: function(labelId) {
@@ -1142,7 +1146,7 @@ var ui = {
       window.document.title = 'Pierce RSS Reader';
       return;
     }
-    var unread = f.UnreadCount;
+    var unread = f.unreadCount;
     var topic = f.title;
     if (unread) {
       window.document.title = topic + ' (' + unread + ') - Pierce RSS Reader';
@@ -1153,14 +1157,18 @@ var ui = {
 
   iconUrl: function(feed) {
     if (feed.iconURL) {
-      return feed.iconURI;
+      return feed.iconURL;
     }
     return '/static/no-icon.png';
   },
 
   logout: function() {
-    document.cookie = "sessionToken=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    window.location.refresh();
+    http.post("login/logout")
+      .catch((x) => null)  // squelch errors
+      .then((x) => {
+        document.cookie = "sessionToken=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        window.location.reload();
+      });
   },
 
   // this is so everything can end with a comma

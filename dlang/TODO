@@ -1,4 +1,5 @@
 [x] MongoDB import tool (crude but it works?)
+[x] Unread article counts
 [ ] Config file
   [ ] Database
   [ ] New registrations allowed / disallowed
@@ -33,8 +34,6 @@ Bugs:
 * need to set reasonable timeout on wget
 * fail to find feeds at http://www.elidupree.com/main/atom.xml
 * race conditions (need transactions in a few places)
-* logout doesn't reload the page
-* logout doesn't clear session on the server
 
 Fixed:
 * fail to find feeds at http://www.questionablecontent.net/QCRSS.xml: content type
@@ -43,3 +42,7 @@ Fixed:
 * fail to log in with newly imported account
 * same article added many times
     Example: 18314624-14e1-49b4-83e2-977be572f413, 2078a670-cab0-4d48-96c8-d0450a2e1e2e
+* logout doesn't reload the page
+* logout doesn't clear session on the server
+* missing icons for feeds
+* label with no name instead of "Uncategorized"

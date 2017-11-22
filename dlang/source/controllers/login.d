@@ -141,6 +141,8 @@ class LoginController
         {
             try
             {
+                // TODO should we really delete these or just expire them?
+                // Might be nice to have this sort of info...
                 dbdelete!Session(parseUUID(sessionTag));
             }
             catch (Exception e)
