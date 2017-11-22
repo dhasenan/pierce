@@ -50,9 +50,19 @@ struct Article
 
     bool isProbablySameAs(Article other)
     {
+        // If they provided an ID, it's the absolute indicator of same-article-ness.
+        if (internalId.length)
+        {
+            return internalId == other.internalId;
+        }
+
+        // Guess.
         if (url != other.url) return false;
         if (title != other.title) return false;
-        if (description != other.description) return false;
+        // This is kind of a weak indicator.
+        // Some stuff, like pusheen videos, have different descriptions for the same article
+        // accessed at different times.
+        if (description == other.description) return true;
         return true;
     }
 }

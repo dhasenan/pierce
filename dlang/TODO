@@ -1,11 +1,13 @@
-[ ] MongoDB import tool
+[x] MongoDB import tool (crude but it works?)
 [ ] Config file
   [ ] Database
   [ ] New registrations allowed / disallowed
-[x] Track down auth / login problem
 [ ] Front end
   [x] Fetch articles the new way
+  [ ] Logout (it doesn't reload the page? it should delete the session from server)
 [ ] Verify functionality
+  [x] Log in with sha
+  [x] Log in with pbkdf2
   [x] Subscribe to new feed
   [ ] Subscribe to existing feed
   [ ] Feed goes away when it's got no subscribers
@@ -21,6 +23,7 @@
 	[-] Extract out service bit (easier code sharing?)
   [x] Promise support
 	[ ] Remove jquery / jquery UI dependency?
+    [ ] Switch to own popup implementation
 
 Bugs:
 * trying to subscribe to the same feed twice gives you a db error (should no-op)
@@ -30,8 +33,13 @@ Bugs:
 * need to set reasonable timeout on wget
 * fail to find feeds at http://www.elidupree.com/main/atom.xml
 * race conditions (need transactions in a few places)
+* logout doesn't reload the page
+* logout doesn't clear session on the server
 
 Fixed:
 * fail to find feeds at http://www.questionablecontent.net/QCRSS.xml: content type
 * fail to find feeds at http://www.questionablecontent.net/QCRSS.xml: CDATA
 * dates for display are all 1970-01-01
+* fail to log in with newly imported account
+* same article added many times
+    Example: 18314624-14e1-49b4-83e2-977be572f413, 2078a670-cab0-4d48-96c8-d0450a2e1e2e
