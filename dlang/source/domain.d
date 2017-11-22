@@ -148,8 +148,9 @@ bool checkPassword(const User user, string password)
     }
     else if (user.sha)
     {
+        import std.uni : sicmp;
         auto sha = password.representation.sha1Of.toHexString;
-        return sha == user.sha;
+        return sicmp(sha, user.sha) == 0;
     }
     else
     {
