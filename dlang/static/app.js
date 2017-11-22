@@ -474,7 +474,8 @@ var domain = {
     article.isRead = false;
     article.feed.unreadCount++;
     domain.updateLabelUnreadCounts(domain.labels);
-    $.ajax('/feeds/mark_read', {
+    $.ajax('/feeds/mark_unread', {
+      method: 'POST',
       dataType: 'json',
       data: {
         feedId: article.feed.id,
@@ -487,6 +488,7 @@ var domain = {
 
   modifyFeed: function(feedId, title, checkInterval, labels) {
     $.ajax('/feeds/update', {
+      method: 'POST',
       data: {
         id: feedId,
         title: title,

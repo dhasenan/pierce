@@ -103,7 +103,7 @@
       <div>
         <!-- we don't currently have this? -->
         <!--<img style='float: left' src='<%= data.feed.imageURL %>' />-->
-        <h3><a href="<%= data.article.Link %>"><%- data.article.title %></a> - <%- data.article.feed.title %></h3>
+        <h3><a href="<%= data.article.url %>"><%- data.article.title %></a> - <%- data.article.feed.title %></h3>
         <div><%- ui.fmtDate(data.article.publishDate) %>
           <% if (ui.authors(data.article)) { %> -- by <%= ui.authors(data.article) %><% } %></div>
         <!-- as a special case, load this with html unescaped -->
@@ -113,11 +113,7 @@
 
     <!-- variables: author -->
     <script id='authorLink' type='text/html'>
-      <% if (data.author.Link) {%>
-        <a href="<%= data.author.Link %>"><%- data.author.name %></a>
-      <% } else { %>
-        <%- data.author.name %>
-      <% }%>
+      <%- data.author.name %>
     </script>
 
   </head>

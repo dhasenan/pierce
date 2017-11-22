@@ -37,7 +37,6 @@ Bugs:
 * fail to find feeds at http://www.elidupree.com/main/atom.xml
 * race conditions (need transactions in a few places)
 * weirdness applying db migrations (hang on startup)
-* can't mark article unread
 
 Fixed:
 * fail to find feeds at http://www.questionablecontent.net/QCRSS.xml: content type
@@ -50,3 +49,5 @@ Fixed:
 * logout doesn't clear session on the server
 * missing icons for feeds
 * label with no name instead of "Uncategorized"
+* link goes to nowhere
+* can't mark article read/unread (happens locally, not persisted)
