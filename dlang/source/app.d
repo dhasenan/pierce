@@ -33,7 +33,7 @@ void main(string[] args)
     ushort port = 9881;
 
     auto helpInfo = getopt(args,
-            "command|cmd", "command [run,dump,migrate]", &cmd,
+            "command|cmd", "command [run,dump,migrate,stress]", &cmd,
             "config|c", "path to config file", &configFile);
     if (helpInfo.helpWanted)
     {

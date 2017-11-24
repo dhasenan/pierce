@@ -161,41 +161,11 @@ Page wget(URL url)
     import vibe.core.stream : InputStream;
     // TODO rate limiting and caching
     // TODO check what sort of DNS caching is going on
-    /*
-    auto limit = Clock.currTime - dur!"minutes"(15);
-    foreach (k, v; downloadCache)
-    {
-        auto f = cast(immutable)v.downloaded;
-        if (f < limit)
-        {
-            downloadCache.remove(k);
-        }
-    }
-    if (auto existing = url in downloadCache)
-    {
-        return *existing;
-    }
-    */
     infof("fetch %s", url);
     Page page;
     try
     {
-        requestHTTP(url,
-            (scope HTTPClientRequest req)
-            {
-                req.method = HTTPMethod.GET;
-            },
-            (scope HTTPClientResponse resp)
-            {
-                if (resp.statusCode >= 300 && resp.statusCode <= 399)
-                {
-                    page = wget(resp.headers["Location"].parseURL);
-                    return;
-                }
-                import vibe.stream.operations : readAllUTF8;
-                auto data = resp.bodyReader.readAllUTF8();
-                page = Page(data, resp.contentType, url, Clock.currTime);
-            });
+        page = reqClient(url);
     }
     catch (Exception e)
     {
@@ -207,7 +177,42 @@ Page wget(URL url)
     return page;
 }
 
-shared Page[string] downloadCache;
+private Page reqClient(URL url)
+{
+    import vibe.http.client;
+    Page page;
+    auto client = new HTTPClient;
+    auto tls = url.scheme == "https";
+    ushort defaultPort = tls ? 443 : 80;
+    client.connect(url.host, url.port, tls, new HTTPClientSettings);
+    client.request(
+        (scope HTTPClientRequest req)
+        {
+            req.method = HTTPMethod.GET;
+            req.requestURL = url.path;
+            // Provide port number when it is not the default one (RFC2616 section 14.23)
+            if (url.port && url.port != defaultPort)
+            {
+                import std.format : format;
+                req.headers["Host"] = format("%s:%d", url.host, url.port);
+            }
+            else
+                req.headers["Host"] = url.host;
+        },
+        (scope HTTPClientResponse resp)
+        {
+            if (resp.statusCode >= 300 && resp.statusCode <= 399)
+            {
+                page = wget(resp.headers["Location"].parseURL);
+                return;
+            }
+            import vibe.stream.operations : readAllUTF8;
+            auto data = resp.bodyReader.readAllUTF8();
+            page = Page(data, resp.contentType, url, Clock.currTime);
+        });
+    client.disconnect;
+    return page;
+}
 
 Nullable!Feed findFeed(Page page)
 {

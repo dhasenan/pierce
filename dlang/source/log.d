@@ -57,6 +57,7 @@ private:
         }
         else
         {
+            if (file) file.close;
             fileDate = date;
             index = 0;
         }

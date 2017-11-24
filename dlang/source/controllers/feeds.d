@@ -21,7 +21,6 @@ class FeedsControllerImpl
 {
     Json postAdd(User user, string url, string title, string labels)
     {
-        infof("postAdd");
         auto js = Json.emptyObject;
         // Let's have a little optimism here.
         js["success"] = true;
@@ -105,7 +104,7 @@ class FeedsControllerImpl
         sub.feedId = id;
         try
         {
-            insert(sub);
+            insert!(Subscription, Conflict.update)(sub);
             infof("saved sub");
             js["success"] = true;
             js["added_feed"] = true;

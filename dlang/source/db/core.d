@@ -18,6 +18,13 @@ import std.uuid;
 /** Attribute to mark a field as transient (don't save it). */
 struct Transient {}
 
+enum Conflict
+{
+    noop,
+    update,
+    error
+}
+
 __gshared MultiLogger dblog;
 shared static this()
 {
@@ -42,13 +49,13 @@ void update(T)(T val)
 /**
   * Insert a new DB row.
   */
-void insert(T)(ref T val)
+void insert(T, Conflict onConflict = Conflict.error)(ref T val)
 {
     static if (is (typeof(val.id) == UUID))
     {
         val.id = randomUUID();
     }
-    static immutable string cmd = insertText!T();
+    static immutable string cmd = insertText!(T, onConflict);
     auto params = val.toParams(false);
     import std.algorithm : joiner, map;
     params.sqlCommand = cmd;
@@ -318,7 +325,7 @@ string updateText(T)()
     return cmd;
 }
 
-string insertText(T)()
+string insertText(T, Conflict onConflict = Conflict.error)()
 {
     string cmd = `INSERT INTO ` ~ T.stringof.toLower ~ `s (`;
     int i = 0;
@@ -353,7 +360,20 @@ string insertText(T)()
         }
     }
     cmd ~= `) VALUES (`;
-    return cmd ~ values ~ `)`;
+    cmd ~= values ~ `)`;
+    final switch (onConflict)
+    {
+        case Conflict.update:
+            cmd ~= ` ON CONFLICT DO UPDATE`;
+            break;
+        case Conflict.noop:
+            cmd ~= ` ON CONFLICT DO NOTHING`;
+            break;
+        case Conflict.error:
+            // default behavior
+            break;
+    }
+    return cmd;
 }
 
 // TODO connection pooling
@@ -436,3 +456,22 @@ auto inConnection(alias fn)()
    currently do.
    */
 
+
+void stress()
+{
+    import vibe.core.core : sleep;
+    import core.time;
+    import std.stdio : writefln;
+
+    ulong queries = 0;
+    while (true)
+    {
+        query!User("SELECT * FROM users");
+        queries++;
+        if (queries % 500 == 0)
+        {
+            writefln("finished %s queries", queries);
+        }
+        sleep(10.msecs);
+    }
+}

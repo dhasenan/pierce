@@ -29,7 +29,7 @@
     [ ] Switch to own popup implementation
 
 Bugs:
-* trying to subscribe to the same feed twice gives you a db error (should no-op)
+* too many open files (after running for several days)
 * trying to subscribe to a new feed that has errors when reading articles doesn't create
   subscription (and doesn't tell you there was a problem)
 * subscribing to a feed doesn't refresh view
@@ -37,6 +37,9 @@ Bugs:
 * fail to find feeds at http://www.elidupree.com/main/atom.xml
 * race conditions (need transactions in a few places)
 * weirdness applying db migrations (hang on startup)
+
+To check:
+* trying to subscribe to the same feed twice gives you a db error (should no-op)
 
 Fixed:
 * fail to find feeds at http://www.questionablecontent.net/QCRSS.xml: content type
