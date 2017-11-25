@@ -76,8 +76,13 @@ void markOlderRead(User user, string feedId, string articleId)
         INSERT INTO read (userId, feedId, articleId)
         SELECT $1, $2, id
         FROM articles
-        WHERE feedId = $2 AND publishDate <
-        (SELECT publishDate FROM articles WHERE articleId = $3)`;
+        WHERE feedId = $2
+        AND publishDate < (SELECT publishDate FROM articles WHERE id = $3)
+        AND NOT EXISTS (
+                SELECT * FROM read
+                WHERE articles.id = read.articleId
+                AND read.userId = $1)
+        `;
     p.args = [toValue(user.id.toString), toValue(feedId), toValue(articleId)];
     inConnection!(conn => conn.execParams(p));
 }

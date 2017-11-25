@@ -14,12 +14,12 @@ import pierce.db.migrate;
 import pierce.log;
 import pierce.tasks;
 
+__gshared MultiLogger log;
 shared static this()
 {
     registerMemoryErrorHandler();
-    auto log = new MultiLogger;
+    log = new MultiLogger;
     log.insertLogger("console", new std.experimental.logger.FileLogger(stderr));
-    log.insertLogger("file", new VibeRollingFileLogger("logs/pierce-%y-%m-%d.%i.log", std.experimental.logger.LogLevel.all));
     sharedLog = log;
 }
 
@@ -51,6 +51,10 @@ void main(string[] args)
     {
         config = new Config();
     }
+
+    infof("logging to %s", config.logPathFormat);
+    log.insertLogger("file", new VibeRollingFileLogger(config.logPathFormat, std.experimental.logger.LogLevel.all));
+    infof("logging initialized");
 
     dbMigrate();
 

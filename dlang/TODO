@@ -29,7 +29,7 @@
     [ ] Switch to own popup implementation
 
 Bugs:
-* too many open files (after running for several days)
+* "attribute must be quoted" errors (including in youtube feeds) ? (not reproducing?)
 * trying to subscribe to a new feed that has errors when reading articles doesn't create
   subscription (and doesn't tell you there was a problem)
 * subscribing to a feed doesn't refresh view
@@ -42,6 +42,8 @@ To check:
 * trying to subscribe to the same feed twice gives you a db error (should no-op)
 
 Fixed:
+* mark older read
+* too many open files (after running for several days)
 * fail to find feeds at http://www.questionablecontent.net/QCRSS.xml: content type
 * fail to find feeds at http://www.questionablecontent.net/QCRSS.xml: CDATA
 * dates for display are all 1970-01-01
