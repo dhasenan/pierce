@@ -29,6 +29,7 @@
     [ ] Switch to own popup implementation
 
 Bugs:
+* can't mark Eli Dupree's articles read
 * "attribute must be quoted" errors (including in youtube feeds) ? (not reproducing?)
 * trying to subscribe to a new feed that has errors when reading articles doesn't create
   subscription (and doesn't tell you there was a problem)

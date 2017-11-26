@@ -950,10 +950,14 @@ var ui = {
       console.log(`failed to find feed with id ${article.feedId}`);
       // ERRORS
     }
-    $('#articleView .content').html(ui.template('articlefull', {
-      feed: article.feed,
-      article: article
-    }));
+    try {
+      $('#articleView .content').html(ui.template('articlefull', {
+        feed: article.feed,
+        article: article
+      }));
+    } catch (e) {
+      console.log("error showing article: " + e);
+    }
 
     $('#articleView a').attr('target', '_blank');
 
