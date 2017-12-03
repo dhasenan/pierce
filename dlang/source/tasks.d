@@ -107,8 +107,9 @@ FeedTask[] buildFeedTasks()
     return [
         cast(FeedTask)new ReadFeed(),
         new ScrubOldArticles(),
-        new ScheduleNextCheck(),
+        new FixUpFeedInfos(),
         // TODO feed icon finder
+        new ScheduleNextCheck(),
     ];
 }
 
@@ -194,6 +195,19 @@ class ScrubOldArticles : FeedTask
             ];
             inConnection!(conn => conn.execParams(p));
         }
+    }
+}
+
+class FixUpFeedInfos : FeedTask
+{
+    void run(ref Feed feed)
+    {
+        import std.string : strip;
+        // This is specifically for lesswrong, whose title is "     Less Wrong     ".
+        // (Possibly specifically for this reason, though I question whether they'd be adept enough
+        // to think of it...)
+        feed.title = feed.title.strip;
+        // TODO resolve redirects and update URL
     }
 }
 
