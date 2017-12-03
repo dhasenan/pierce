@@ -96,8 +96,12 @@ Article[] parseArticles(Feed feed, Page page)
   */
 Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange)
 {
+    import std.array : array;
+    auto f = elems.array;
+    reverse(f);
     Article[] ret;
-    foreach (elem; elems)
+    // We reverse the element list in case the feed doesn't contain publish date.
+    foreach (elem; f)
     {
         Article art;
         art.readDate = Clock.currTime(UTC());
@@ -105,7 +109,13 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
 
         art.internalId = elem.optionSelector("guid,id").innerText;
         art.title = elem.first("title").txt;
-        auto link = elem.querySelector("link");
+        // Specifically for feedburner, <feedburner:origLink> is what we want. It also has a
+        // <link rel="alternate"> that leads to a feedburner-owned redirect to the actual page.
+        // Fuck you and your user tracking, Google.
+        // The first <link> is to the atom feed for that post's comments, which is not what you
+        // actually want.
+        auto link = elem.byTag("feedburner:origLink")
+            .or(elem.querySelector("feedburner:origLink,link[rel=alternate],link"));
         if (link)
         {
             art.url = link.attrs.get("href");
@@ -114,7 +124,13 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
                 art.url = link.innerText;
             }
         }
-        art.description = elem.optionSelector("description,summary").innerText;
+        // content is the atom version of the full thing
+        // summary is the atom version of the short excerpt
+        // we prefer the longest version so you don't have to leave the current page
+        // media:description is from youtube (doesn't seem to be working?)
+        art.description = elem.byTag("media:description")
+            .or(elem.optionSelector("content,media:description,description,summary"))
+            .innerText;
 
         auto authorElem = elem.first("author");
         art.author = authorElem.first("name").or(authorElem).txt;
@@ -341,6 +357,13 @@ Nullable!Feed parseRSSHeader(Document doc, string url)
     feed.url = url;
     feed.iconURL = channel.first("image").first("url").txt;
     return just(feed);
+}
+
+Element byTag(Element elem, string tag)
+{
+    auto a = elem.getElementsByTagName(tag);
+    if (a.length > 0) return a[0];
+    return null;
 }
 
 string txt(Element elem)

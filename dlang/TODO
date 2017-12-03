@@ -30,12 +30,9 @@
 
 Bugs:
 * can't mark Eli Dupree's articles read
-* "attribute must be quoted" errors (including in youtube feeds) ? (not reproducing?)
 * trying to subscribe to a new feed that has errors when reading articles doesn't create
   subscription (and doesn't tell you there was a problem)
 * subscribing to a feed doesn't refresh view
-* need to set reasonable timeout on wget
-* fail to find feeds at http://www.elidupree.com/main/atom.xml
 * race conditions (need transactions in a few places)
 * weirdness applying db migrations (hang on startup)
 
@@ -43,6 +40,16 @@ To check:
 * trying to subscribe to the same feed twice gives you a db error (should no-op)
 
 Fixed:
+* youtube: empty bodies?
+* summary/description is way shorter on a lot of things (procworld)
+* Modify Feed UI isn't working
+* stuff with no listed publish date ends up being in reverse order (only matters for very big feeds
+  that never delete any articles if I start eliminating old articles, and for new feeds)
+* bad links for hyperbole-and-a-half
+* no dates for hyperbole-and-a-half, procedural world
+* fail to find feeds at http://www.elidupree.com/main/atom.xml
+* need to set reasonable timeout on wget
+* "attribute must be quoted" errors (including in youtube feeds) ? (not reproducing?)
 * mark older read
 * too many open files (after running for several days)
 * fail to find feeds at http://www.questionablecontent.net/QCRSS.xml: content type

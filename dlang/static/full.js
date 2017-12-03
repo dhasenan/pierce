@@ -42,11 +42,11 @@ view = {
   },
 
   showUpdateFeedWindow: function(feed, sub) {
-    $('#modFeedUrl').val(feed.Uri);
-    $('#modFeedTitle').val(feed.Title);
-    $('#modFeedInterval').val((sub.CheckInterval / 60) | 0);
-    if (sub.Labels) {
-      $('#modFeedLabels').val(sub.Labels.join(', '));
+    $('#modFeedUrl').val(feed.url);
+    $('#modFeedTitle').val(feed.title);
+    $('#modFeedInterval').val((sub.checkInterval / 60) | 0);
+    if (sub.labels) {
+      $('#modFeedLabels').val(sub.labels);
     }
     ui.showingPopup = true;
     $('#modifyFeedWindow').dialog({
@@ -67,9 +67,9 @@ view = {
           text: 'Unsubscribe',
           click: function() {
             var reallyUnsubscribe = confirm(
-                'Are you sure you want to unsubscribe from ' + feed.Title + '?');
+                'Are you sure you want to unsubscribe from ' + feed.title + '?');
             if (reallyUnsubscribe) {
-              domain.unsubscribe(feed.Id);
+              domain.unsubscribe(feed.id);
             } else {
               $('#modifyFeedWindow').dialog('close');
             }
@@ -78,7 +78,7 @@ view = {
         {
           text: 'Refresh',
           click: function() {
-            domain.refreshFeed(feed.Id);
+            domain.refreshFeed(feed.id);
             $('#modifyFeedWindow').dialog('close');
           }
         },
