@@ -2,6 +2,8 @@ Pierce
 ======
 Pierce is a simple RSS reader with a UI inspired by the late 90s. Think Thunderbird. Think Outlook.
 
+![image of pierce rss reader](https://github.com/dhasenan/pierce/raw/master/pierce.png)
+
 Building
 ========
 On Linux, use `mdtool build` or MonoDevelop to build Pierce. The version of xbuild that comes with
