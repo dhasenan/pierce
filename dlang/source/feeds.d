@@ -134,10 +134,14 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
             art.author = a.data;
         }
 
-        auto datestr = elem.optionSelector("pubDate,updated,published").innerText;
-        SysTime st;
+        auto datestr =
+            elem.querySelector("pubDate")
+                .or(elem.querySelector("updated"))
+                .or(elem.querySelector("published"))
+                .txt;
         if (datestr != "")
         {
+            SysTime st;
             if (tryParse(datestr, RFC1123FORMAT, st, UTC()))
             {
                 art.publishDate = st;
@@ -145,6 +149,10 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
             else if (tryParse(datestr, ISO8601FORMAT, st, UTC()))
             {
                 art.publishDate = st;
+            }
+            else
+            {
+                art.publishDate = Clock.currTime(UTC());
             }
         }
         ret ~= art;
@@ -159,13 +167,15 @@ Page wget(URL url)
 {
     import vibe.http.client;
     import vibe.core.stream : InputStream;
+    import vibe.core.concurrency : async;
+
     // TODO rate limiting and caching
     // TODO check what sort of DNS caching is going on
     infof("fetch %s", url);
     Page page;
     try
     {
-        page = reqClient(url);
+        async(() { page = reqClient(url); return cast(ulong)0; });
     }
     catch (Exception e)
     {
@@ -179,38 +189,43 @@ Page wget(URL url)
 
 private Page reqClient(URL url)
 {
-    import vibe.http.client;
+    import std.net.curl;
+    import std.uni : sicmp;
+
     Page page;
-    auto client = new HTTPClient;
-    auto tls = url.scheme == "https";
-    ushort defaultPort = tls ? 443 : 80;
-    client.connect(url.host, url.port, tls, new HTTPClientSettings);
-    client.request(
-        (scope HTTPClientRequest req)
+    page.url = url;
+    auto client = HTTP(url);
+
+    Appender!(ubyte[]) a;
+    client.onReceive = (ubyte[] u) { a ~= u; return u.length; };
+    client.method = HTTP.Method.get;
+    client.maxRedirects = 3;
+    client.connectTimeout = 5.seconds;
+    client.dataTimeout = 5.seconds;
+    client.operationTimeout = 15.seconds;
+
+    try
+    {
+        client.perform(No.throwOnError);
+    }
+    catch (Exception e)
+    {
+        warningf("error while getting %s: %s", url, e);
+        return page;
+    }
+
+    // TODO encoding
+    page.text = cast(string)(a.data);
+    page.downloaded = Clock.currTime(UTC());
+    foreach (k, v; client.responseHeaders)
+    {
+        // headers are case-insensitive
+        if (sicmp(k, "content-type") == 0)
         {
-            req.method = HTTPMethod.GET;
-            req.requestURL = url.path;
-            // Provide port number when it is not the default one (RFC2616 section 14.23)
-            if (url.port && url.port != defaultPort)
-            {
-                import std.format : format;
-                req.headers["Host"] = format("%s:%d", url.host, url.port);
-            }
-            else
-                req.headers["Host"] = url.host;
-        },
-        (scope HTTPClientResponse resp)
-        {
-            if (resp.statusCode >= 300 && resp.statusCode <= 399)
-            {
-                page = wget(resp.headers["Location"].parseURL);
-                return;
-            }
-            import vibe.stream.operations : readAllUTF8;
-            auto data = resp.bodyReader.readAllUTF8();
-            page = Page(data, resp.contentType, url, Clock.currTime);
-        });
-    client.disconnect;
+            page.contentType = v;
+        }
+    }
+
     return page;
 }
 
@@ -432,3 +447,15 @@ unittest
     assert(art.url == "http://www.example.com/blog/post/1", art.url);
 }
 
+version(BigTest) unittest
+{
+    import std.stdio;
+
+    auto u = "https://www.youtube.com/feeds/videos.xml?channel_id=UCut4YHUrfnwS62UdilLH9hA".parseURL;
+    writeln(u);
+    auto page = reqClient(u);
+    writeln(page.text);
+    Feed feed;
+    auto articles = parseArticles(feed, page);
+    writefln("found %s articles", articles.length);
+}

@@ -104,7 +104,7 @@ class FeedsControllerImpl
         sub.feedId = id;
         try
         {
-            insert!(Subscription, Conflict.update)(sub);
+            insert(sub);
             infof("saved sub");
             js["success"] = true;
             js["added_feed"] = true;

@@ -126,7 +126,7 @@ bool tryParse(
 }
 
 enum RFC1123FORMAT = "%a, %d %b %Y %H:%M:%S %.%.%.";
-enum ISO8601FORMAT = "%Y-%m-%dT%H:%M:%SZ";
+enum ISO8601FORMAT = "%Y-%m-%dT%H:%M:%S%z";
 
 /** Parse an RFC1123 date. */
 SysTime parseRFC1123(string data, bool allowTrailingData = false)
@@ -479,6 +479,12 @@ struct Interpreter
                 data = data[end..$];
                 return true;
             case 'z':
+                if (pop('Z'))  // for ISO8601
+                {
+                    tzOffset = 0.seconds;
+                    return true;
+                }
+
                 int sign = 0;
                 if (pop('-'))
                 {
