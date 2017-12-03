@@ -1,4 +1,7 @@
 #!/bin/sh
+
+# Init script for pierce
+
 ### BEGIN INIT INFO
 # Provides:
 # Required-Start:    $remote_fs $syslog

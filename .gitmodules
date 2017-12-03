@@ -1,6 +1,6 @@
 [submodule "dlang/psql"]
-	path = dlang/psql
+	path = psql
 	url = https://github.com/denizzzka/vibe.d.db.postgresql.git
 [submodule "dlang/DerelictPQ"]
-	path = dlang/DerelictPQ
+	path = DerelictPQ
 	url = https://github.com/dhasenan/DerelictPQ.git

@@ -1,1 +1,0 @@
-<%@ Application Inherits="pierce.Pierce" %>

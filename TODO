@@ -29,7 +29,6 @@
     [ ] Switch to own popup implementation
 
 Bugs:
-* can't mark Eli Dupree's articles read
 * trying to subscribe to a new feed that has errors when reading articles doesn't create
   subscription (and doesn't tell you there was a problem)
 * subscribing to a feed doesn't refresh view
@@ -41,6 +40,7 @@ To check:
 
 Fixed:
 * youtube: empty bodies?
+* can't mark Eli Dupree's articles read
 * summary/description is way shorter on a lot of things (procworld)
 * Modify Feed UI isn't working
 * stuff with no listed publish date ends up being in reverse order (only matters for very big feeds

@@ -1,0 +1,6 @@
+{
+  "db": "postgresql://pierceuser:piercepassword@localhost/piercedb",
+  "allowRegistrations": true,
+  "port": 9881,
+  "mongo": "mongo://localhost:27017/pierce"
+}
