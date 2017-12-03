@@ -62,11 +62,13 @@ class TaskRunner
 
     void runFeedTasks()
     {
+        import std.datetime;
+        import pierce.datetimeformat;
         auto feeds = query!Feed(`
             SELECT * FROM feeds
-            WHERE nextRead IS NULL OR nextRead < now()
+            WHERE nextRead IS NULL OR nextRead < $1::timestamp
             ORDER BY lastRead
-            LIMIT 100`);
+            LIMIT 100`, Clock.currTime(UTC()).format(ISO8601FORMAT));
         tasklog.infof("scanning %s feeds", feeds.length);
         foreach (feed; feeds)
         {
