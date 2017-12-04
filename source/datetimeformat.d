@@ -9,7 +9,10 @@
   *    %C     The century number (year/100) as a 2-digit integer.
   *    %d     The day of the month as a decimal number (range 01 to 31).
   *    %e     Like %d, the day of the month as a decimal number, but space padded.
+  *    %f     Fractional seconds. Will parse any precision and emit six decimal places.
   *    %F     Equivalent to %Y-%m-%d (the ISO 8601 date format).
+  *    %g     Milliseconds of the second.
+  *    %G     Nanoseconds of the second.
   *    %h     The hour as a decimal number using a 12-hour clock (range 01 to 12).
   *    %H     The hour as a decimal number using a 24-hour clock (range 00 to 23).
   *    %I     The hour as a decimal number using a 12-hour clock (range 00 to 23).
@@ -32,6 +35,7 @@
   *    %Y     The year as a decimal number including the century, minimum 4 digits.
   *    %z     The +hhmm or -hhmm numeric timezone (that is, the hour and minute offset from UTC).
   *    %Z     The timezone name or abbreviation. Formatting only.
+  *    %+     The numeric offset, or 'Z' for UTC. This is common with ISO8601 timestamps.
   *    %%     A literal '%' character.
   */
 module pierce.datetimeformat;
@@ -44,6 +48,21 @@ import std.string;
 import std.utf : codeLength;
 alias to = std.conv.to;
 
+
+struct Format
+{
+    string primaryFormat;
+    string[] formatOptions;
+}
+
+
+/**
+ * Format the given datetime with the given Format.
+ */
+string format(SysTime dt, const Format fmt)
+{
+    return format(dt, fmt.primaryFormat);
+}
 
 /**
  * Format the given datetime with the given format string.
@@ -87,6 +106,37 @@ string format(SysTime dt, string formatString)
  */
 SysTime parse(
         string data,
+        const Format fmt,
+        immutable(TimeZone) defaultTimeZone = null,
+        bool allowTrailingData = false)
+{
+    SysTime st;
+    foreach (f; fmt.formatOptions)
+    {
+        if (tryParse(data, cast(string)f, st, defaultTimeZone))
+        {
+            return st;
+        }
+    }
+    return parse(data, fmt.primaryFormat, defaultTimeZone, allowTrailingData);
+}
+
+
+/**
+ * Parse the given datetime string with the given format string.
+ *
+ * This tries rather hard to produce a reasonable result. If the format string doesn't describe an
+ * unambiguous point time, the result will be a date that satisfies the inputs and should generally
+ * be the earliest such date. However, that is not guaranteed.
+ *
+ * For instance:
+ * ---
+ * SysTime time = parse("%d", "21");
+ * writeln(time);  // 0000-01-21T00:00:00.000000Z
+ * ---
+ */
+SysTime parse(
+        string data,
         string formatString,
         immutable(TimeZone) defaultTimeZone = null,
         bool allowTrailingData = false)
@@ -111,6 +161,27 @@ SysTime parse(
  */
 bool tryParse(
         string data,
+        const Format fmt,
+        out SysTime dt,
+        immutable(TimeZone) defaultTimeZone = null)
+{
+    foreach (f; fmt.formatOptions)
+    {
+        if (tryParse(data, cast(string)f, dt, defaultTimeZone))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Try to parse the input string according to the given pattern.
+ *
+ * Return: true to indicate success; false to indicate failure
+ */
+bool tryParse(
+        string data,
         string formatString,
         out SysTime dt,
         immutable(TimeZone) defaultTimeZone = null)
@@ -126,7 +197,20 @@ bool tryParse(
 }
 
 enum RFC1123FORMAT = "%a, %d %b %Y %H:%M:%S %.%.%.";
-enum ISO8601FORMAT = "%Y-%m-%dT%H:%M:%S%z";
+
+immutable Format ISO8601FORMAT = {
+    primaryFormat: "%Y-%m-%dT%H:%M:%S.%f%+",
+    formatOptions: [
+        "%Y-%m-%dT%H:%M:%S.%f%+",
+        "%Y-%m-%d %H:%M:%S.%f%+",
+        "%Y-%m-%dT%H:%M:%S%+",
+        "%Y-%m-%d %H:%M:%S%+",
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d",
+    ]
+};
 
 /** Parse an RFC1123 date. */
 SysTime parseRFC1123(string data, bool allowTrailingData = false)
@@ -234,6 +318,7 @@ struct Interpreter
     long epochSecond;
     enum AMPM { AM, PM, None };
     AMPM amPm = AMPM.None;
+    Duration fracSecs;
 
     Result parse(string formatString, immutable(TimeZone) defaultTimeZone)
     {
@@ -298,6 +383,7 @@ struct Interpreter
         auto dt = SysTime(
                 DateTime(year, month, dayOfMonth, hour24, minute, second),
                 tz);
+        dt += fracSecs;
         return Result(dt, null, data);
     }
 
@@ -361,6 +447,34 @@ struct Interpreter
                 return parseInt!(x => dayOfMonth = x)(data);
             case 'e':
                 return parseInt!(x => dayOfMonth = x)(data);
+            case 'g':
+                return parseInt!(x => fracSecs = x.msecs)(data);
+            case 'G':
+                return parseInt!(x => fracSecs = x.nsecs)(data);
+            case 'f':
+                size_t end = data.length;
+                foreach (i, cc; data)
+                {
+                    if ('0' > cc || '9' < cc)
+                    {
+                        end = i;
+                        break;
+                    }
+                }
+                auto fs = data[0..end].to!ulong;
+                data = data[end..$];
+                while (end < 7)
+                {
+                    end++;
+                    fs *= 10;
+                }
+                while (end > 7)
+                {
+                    end--;
+                    fs /= 10;
+                }
+                this.fracSecs = fs.hnsecs;
+                return true;
             case 'F':
                 auto dash1 = data.indexOf('-');
                 if (dash1 <= 0) return false;
@@ -479,6 +593,7 @@ struct Interpreter
                 data = data[end..$];
                 return true;
             case 'z':
+            case '+':
                 if (pop('Z'))  // for ISO8601
                 {
                     tzOffset = 0.seconds;
@@ -510,8 +625,7 @@ struct Interpreter
                 // Or EST5EDT.
                 // And it could be followed by anything. Like the format might be:
                 //  "%Z%a" -> America/Los_AngelesMon
-                // I'll assume that this is followed by a space or something.
-                return parseInt!(x => isoWeek = x)(data);
+                throw new Exception("%Z format specifier not legal when parsing dates");
             default:
                 throw new Exception("unrecognized control character %" ~ c.to!string);
         }
@@ -540,7 +654,6 @@ bool parseInt(alias setter, int length = 2)(ref string data)
     try
     {
         v = c.to!int;
-
     }
     catch (ConvException e)
     {
@@ -552,6 +665,7 @@ bool parseInt(alias setter, int length = 2)(ref string data)
 
 void interpretIntoString(ref Appender!string ap, SysTime dt, char c)
 {
+    static import std.format;
     switch (c)
     {
         case 'a':
@@ -585,6 +699,15 @@ void interpretIntoString(ref Appender!string ap, SysTime dt, char c)
             }
             ap ~= s;
             return;
+        case 'f':
+            ap ~= std.format.format("%06d", dt.fracSecs.total!"usecs");
+            return;
+        case 'g':
+            ap ~= std.format.format("%03d", dt.fracSecs.total!"msecs");
+            return;
+        case 'G':
+            ap ~= std.format.format("%09d", dt.fracSecs.total!"nsecs");
+            return;
         case 'F':
             interpretIntoString(ap, dt, 'Y');
             ap ~= '-';
@@ -592,12 +715,6 @@ void interpretIntoString(ref Appender!string ap, SysTime dt, char c)
             ap ~= '-';
             interpretIntoString(ap, dt, 'd');
             return;
-        case 'g':
-            // TODO what is this?
-            throw new Exception("%g not yet implemented");
-        case 'G':
-            // TODO what is this?
-            throw new Exception("%G not yet implemented");
         case 'h':
         case 'I':
             auto h = dt.hour;
@@ -701,6 +818,14 @@ void interpretIntoString(ref Appender!string ap, SysTime dt, char c)
         case 'Y':
             ap.pad(dt.year.to!string, '0', 4);
             return;
+        case '+':
+            if (dt.utcOffset == dur!"seconds"(0))
+            {
+                ap ~= 'Z';
+                return;
+            }
+            // If it's not UTC, format as +HHMM
+            goto case;
         case 'z':
             import std.math : abs;
             auto d = dt.utcOffset;
@@ -717,13 +842,13 @@ void interpretIntoString(ref Appender!string ap, SysTime dt, char c)
             ap.pad((minutes % 60).to!string, '0', 2);
             return;
         case 'Z':
+            if (dt.timezone is null || dt.timezone == UTC())
+            {
+                ap ~= 'Z';
+            }
             if (dt.dstInEffect)
             {
                 ap ~= dt.timezone.stdName;
-            }
-            else if (dt.timezone is null)
-            {
-                ap ~= 'Z';
             }
             else
             {
@@ -769,16 +894,39 @@ unittest
 
 unittest
 {
+    SysTime st;
+    tryParse("2013-10-09T14:56:33.050-06:00", ISO8601FORMAT, st, UTC());
+}
+
+unittest
+{
     import std.stdio;
     auto dt = SysTime(
             DateTime(2017, 5, 3, 14, 31, 57),
             UTC());
     auto isoishFmt = ISO8601FORMAT;
-    auto isoish = "2017-05-03T14:31:57Z";
+    auto isoish = "2017-05-03T14:31:57.000000Z";
     auto parsed = isoish.parse(isoishFmt);
     assert(parsed.timezone !is null);
     assert(parsed.timezone == UTC());
     assert(parsed == dt, parsed.format(isoishFmt));
+}
+
+unittest
+{
+    import std.stdio;
+    auto dt = SysTime(
+            DateTime(2017, 5, 3, 14, 31, 57),
+            UTC()) + 10.msecs;
+    assert(dt.fracSecs == 10.msecs, "can't add dates");
+    auto isoishFmt = ISO8601FORMAT;
+    auto isoish = "2017-05-03T14:31:57.010000Z";
+    auto parsed = isoish.parse(isoishFmt);
+    assert(parsed.fracSecs == 10.msecs, "can't parse millis");
+    assert(parsed.timezone !is null);
+    assert(parsed.timezone == UTC());
+    assert(parsed == dt, parsed.format(isoishFmt));
+
 }
 
 unittest

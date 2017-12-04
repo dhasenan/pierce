@@ -130,7 +130,7 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
         // media:description is from youtube (doesn't seem to be working?)
         art.description = elem.byTag("media:description")
             .or(elem.optionSelector("content,media:description,description,summary"))
-            .innerText;
+            .txt;
 
         auto authorElem = elem.first("author");
         art.author = authorElem.first("name").or(authorElem).txt;
@@ -168,6 +168,7 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
             }
             else
             {
+                warningf("failed to parse date %s", datestr);
                 art.publishDate = Clock.currTime(UTC());
             }
         }

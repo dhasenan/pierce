@@ -97,3 +97,13 @@ defaults to `true`.
 
 `"mongo"` is the location of your mongodb instance, if you are migrating from an older version of
 Pierce that used MongoDB.
+
+
+Logging
+=======
+Pierce does not delete its own log files. This is to allow you to set your own policy for logfile
+retention. On my server, I used `sudo crontab -e` to add a cronjob:
+
+    @daily find /var/www/pierce/logs -mtime +10 -delete
+
+This deletes any logs older than 10 days.

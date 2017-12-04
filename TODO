@@ -34,6 +34,9 @@ Bugs:
 * subscribing to a feed doesn't refresh view
 * race conditions (need transactions in a few places)
 * weirdness applying db migrations (hang on startup)
+* blog.pokkeboy.com got short version of post
+* youtube puts plain text where html belongs
+* youtube feeds are horribly broken, regurgitating old stuff as new
 
 To check:
 * trying to subscribe to the same feed twice gives you a db error (should no-op)
