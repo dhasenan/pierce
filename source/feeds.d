@@ -152,8 +152,8 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
 
         auto datestr =
             elem.querySelector("pubDate")
-                .or(elem.querySelector("updated"))
                 .or(elem.querySelector("published"))
+                .or(elem.querySelector("updated"))
                 .txt;
         if (datestr != "")
         {
@@ -399,7 +399,8 @@ unittest
     <title>Atom-Powered Robots Run Amok</title>
     <link href="http://example.org/2003/12/13/atom03"/>
     <id>urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a</id>
-    <updated>2003-12-13T18:30:02Z</updated>
+    <updated>2017-12-13T18:30:02Z</updated>
+    <published>2003-12-13T18:30:02Z</published>
     <summary>Some text.</summary>
   </entry>
 
@@ -421,6 +422,9 @@ unittest
     assert(art.feedId == id);
     assert(art.title == "Atom-Powered Robots Run Amok");
     assert(art.description == "Some text.", "[" ~ art.description ~ "]");
+    // If this says 2017, that's because you changed things to prefer updated date.
+    // That will mess up youtube stuff -- updated changes whenever there's a comment or a like or
+    // maybe even a view, I think.
     assert(art.publishDate == SysTime(DateTime(2003, 12, 13, 18, 30, 2), UTC()),
             art.publishDate.toISOString());
     assert(art.url == "http://example.org/2003/12/13/atom03", art.url);
