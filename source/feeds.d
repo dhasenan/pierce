@@ -158,11 +158,7 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
         if (datestr != "")
         {
             SysTime st;
-            if (tryParse(datestr, RFC1123FORMAT, st, UTC()))
-            {
-                art.publishDate = st;
-            }
-            else if (tryParse(datestr, ISO8601FORMAT, st, UTC()))
+            if (tryParse(datestr, exhaustiveDateFormat, st, UTC()))
             {
                 art.publishDate = st;
             }
@@ -475,7 +471,8 @@ version(BigTest) unittest
 {
     import std.stdio;
 
-    auto u = "https://www.youtube.com/feeds/videos.xml?channel_id=UCut4YHUrfnwS62UdilLH9hA".parseURL;
+    auto u = "https://www.youtube.com/feeds/videos.xml?" ~
+        "channel_id=UCut4YHUrfnwS62UdilLH9hA".parseURL;
     writeln(u);
     auto page = reqClient(u);
     writeln(page.text);
@@ -483,3 +480,9 @@ version(BigTest) unittest
     auto articles = parseArticles(feed, page);
     writefln("found %s articles", articles.length);
 }
+
+immutable Format exhaustiveDateFormat = {
+    primaryFormat: ISO8601FORMAT.primaryFormat,
+    formatOptions: ISO8601FORMAT.formatOptions ~ RFC1123FORMAT.formatOptions
+};
+
