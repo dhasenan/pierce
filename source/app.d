@@ -88,6 +88,6 @@ void main(string[] args)
     router.registerWebInterface(new LoginController);
     listenHTTP(settings, router);
 
-    runApplication();
+    runApplication((string[] args) {});
 }
 
