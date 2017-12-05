@@ -231,14 +231,15 @@ class FeedsControllerImpl
         // psql supports years from -4713 to 294276
         // this is a narrower range, but it's more than reasonable
         // (mysql supports 1000 to 9999, for no discernable reason)
-        if (!newerThan)
+        if (newerThan.length == 0)
         {
             newerThan = "1000-01-01T00:00:00Z";
         }
-        if (!olderThan)
+        if (olderThan.length == 0)
         {
             olderThan = "9999-01-01T00:00:00Z";
         }
+        infof("grabbing articles between dates %s and %s", newerThan, olderThan);
         auto js = Json.emptyObject;
         js["articles"] = query!Article(`
                 SELECT
@@ -252,9 +253,9 @@ class FeedsControllerImpl
                 FROM articles
                 INNER JOIN subscriptions ON subscriptions.feedId = articles.feedId
                 WHERE subscriptions.userId = $1
-                AND articles.publishDate > $2::timestamp
-                AND articles.publishDate < $3::timestamp
-                ORDER BY publishDate DESC
+                AND articles.readDate > $2::timestamp
+                AND articles.readDate < $3::timestamp
+                ORDER BY readDate ASC
                 LIMIT 500`,
                 user.id.toString(), newerThan, olderThan, unreadOnly.to!string)
             .map!(x => toJson(x))

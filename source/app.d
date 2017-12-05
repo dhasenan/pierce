@@ -5,7 +5,7 @@ import std.experimental.logger;
 import std.stdio;
 import vibe.d;
 
-import pierce.config : config, Config;
+import pierce.config : build, config, Config;
 import pierce.controllers.core;
 import pierce.controllers.feeds;
 import pierce.controllers.login;
@@ -38,7 +38,7 @@ void main(string[] args)
     if (helpInfo.helpWanted)
     {
         defaultGetoptPrinter(
-                "Pierce RSS reader!",
+                "Pierce RSS reader!\n" ~ build.toString,
                 helpInfo.options);
         return;
     }
@@ -53,7 +53,9 @@ void main(string[] args)
     }
 
     infof("logging to %s", config.logPathFormat);
-    log.insertLogger("file", new VibeRollingFileLogger(config.logPathFormat, std.experimental.logger.LogLevel.all));
+    log.insertLogger("file", new VibeRollingFileLogger(
+                config.logPathFormat,
+                std.experimental.logger.LogLevel.all));
     infof("logging initialized");
 
     dbMigrate();
@@ -70,6 +72,8 @@ void main(string[] args)
         readMongo();
         return;
     }
+
+    infof("starting pierce %s", build);
 
     // Set up background processes.
     runTask(() => pierce.tasks.tasks.run());

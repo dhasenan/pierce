@@ -16,4 +16,10 @@
   , "copyright": "Copyright © 2017, dhasenan"
   , "license": "MS-PL"
   , "stringImportPaths": ["resources"]
+  , "preBuildCommands": [
+      "git rev-parse --abbrev-ref HEAD > resources/version.txt"
+    , "git rev-parse HEAD >> resources/version.txt"
+    , "git describe --tags >> resources/version.txt"
+    , "date --rfc-3339=seconds >> resources/version.txt"
+  ]
 }

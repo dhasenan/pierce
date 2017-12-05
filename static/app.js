@@ -51,24 +51,31 @@ class Feeds {
     console.log("grabArticles");
     return this.http.get("/feeds/articles", {unreadOnly, newerThan, olderThan})
       .then((info) => {
+        console.log(`got ${info.body.articles.length} articles`);
         return info.body.articles;
       });
   }
 
-  grabAllArticles(unreadOnly, afterDate, storage) {
+  grabAllArticles(unreadOnly, newerThan, storage) {
     console.log("grabAllArticles");
     if (!storage) {
       storage = [];
     }
-    return this.grabArticles(unreadOnly, afterDate, null)
+    return this.grabArticles(unreadOnly, newerThan, null)
       .then((arts) => {
         if (arts.length == 0) {
           console.log("found 0 new articles");
           return storage;
         }
         console.log(`found ${arts.length} new articles`);
-        arts.forEach((x) => storage.push(x));
-        return grabAllArticles(unreadOnly, arts[arts.length - 1].publishDate, storage);
+        newerThan = arts[0].readDate;
+        arts.forEach((x) => {
+          storage.push(x);
+          if (x.readDate > newerThan) {
+            newerThan = x.readDate;
+          }
+        });
+        return this.grabAllArticles(unreadOnly, newerThan, storage);
       });
   }
 }
@@ -302,9 +309,12 @@ var domain = {
       ui.updateTitle();
 
       ui.showAlert("Refreshing articles...");
-      feeds.grabArticles(false, '1000-01-01', '9999-01-01')
+      let before = new Date();
+      feeds.grabAllArticles(false, '1000-01-01')
       .then((articles) => {
-        console.log("grabArticles");
+        let after = new Date();
+        let time = after.getTime() - before.getTime();
+        console.log(`retrieved a total of ${articles.length} articles in ${time}ms`);
         articles.forEach(domain.mungeArticle);
         domain.articles = articles;
         articles.forEach((article) => {
@@ -313,7 +323,6 @@ var domain = {
             console.log(`failed to find feed ${article.feedId}`);
             return;
           }
-          console.log(`added article ${article.id} to feed ${feed.id}`);
           feed.articles.push(article);
           if (!article.isRead) {
             feed.unreadCount++;

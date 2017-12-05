@@ -49,6 +49,38 @@ class Config
     }
 }
 
+immutable class BuildInfo
+{
+    string branch, commit, tag, date;
+
+    this()
+    {
+        import std.string : split;
+        string[] versionInfo = import("version.txt").split('\n');
+        branch = versionInfo[0];
+        commit = versionInfo[1];
+        tag = versionInfo[2];
+        date = versionInfo[3];
+    }
+
+    string toString() inout
+    {
+        import std.format : format;
+        return format(
+                "build on %s from revision %s, branch %s, based on version %s",
+                date,
+                tag,
+                branch,
+                commit[0..8]);
+    }
+}
+
+immutable BuildInfo build;
+shared static this()
+{
+    build = new immutable BuildInfo();
+}
+
 private T get(T)(Json json, string key, T defaultValue)
 {
     if (key in json)
