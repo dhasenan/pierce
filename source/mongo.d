@@ -30,20 +30,29 @@ void dumpMongo()
     }
 }
 
+import pierce.db.core;
 void readMongo()
 {
-    import pierce.db.core;
+    inConnection!((conn) {
+        conn.queryConn!void("BEGIN");
+        readMongoConn(conn);
+        conn.queryConn!void("END");
+        return null;
+    });
+}
+void readMongoConn(ref scope Connection conn)
+{
     import vibe.db.mongo.mongo;
     import std.random;
 
     // Burn it all to the ground!
     infof("have to clear away the rubble before we can build anew");
-    query!void("DELETE FROM users");
-    query!void("DELETE FROM subscriptions");
-    query!void("DELETE FROM feeds");
-    query!void("DELETE FROM articles");
-    query!void("DELETE FROM sessions");
-    query!void("DELETE FROM read");
+    conn.queryConn!void("DELETE FROM users");
+    conn.queryConn!void("DELETE FROM subscriptions");
+    conn.queryConn!void("DELETE FROM feeds");
+    conn.queryConn!void("DELETE FROM articles");
+    conn.queryConn!void("DELETE FROM sessions");
+    conn.queryConn!void("DELETE FROM read");
 
     auto client = connectMongoDB(config.mongo.host, config.mongo.port);
     auto db = client.getDatabase("pierce");
@@ -51,6 +60,7 @@ void readMongo()
     UUID[string] feedIds;
     UUID[string] userIds;
     bool[string] activeChunks;
+    string[string] mongoFeedIdToURL;
 
     // 1. Feeds!
     // In mongodb, feeds are *relatively* flat.
@@ -72,16 +82,24 @@ void readMongo()
             // so we don't have too much clustering.
             nextRead: Clock.currTime(UTC()) + uniform(0, 3600).seconds,
         };
-        auto existing = query!Feed("select * from feeds where url = $1", feed.url);
+        mongoFeedIdToURL[id] = feed.url;
+        auto existing = conn.queryConn!Feed("select * from feeds where url = $1", feed.url);
         if (existing.length > 0)
         {
             feedIds[id] = existing[0].id;
         }
         else
         {
-            insert(feed);
+            conn.insertConn(feed);
             feedIds[id] = feed.id;
         }
+        /*
+        foreach (mart; mongoFeed["Articles"])
+        {
+            auto art = artBson(mart, feedId);
+            conn.insertConn(art);
+        }
+        */
         activeChunks[mongoFeed["HeadChunkId"].str] = true;
     }
 
@@ -95,7 +113,7 @@ void readMongo()
             checkInterval: parseDuration(muser["DefaultCheckInterval"].str),
         };
         infof("handling user %s", user.email);
-        insert(user);
+        conn.insertConn(user);
         foreach (msub; muser["Subscriptions"])
         {
             import std.array : Appender;
@@ -112,7 +130,7 @@ void readMongo()
                 title: msub["Title"].str,
                 labels: labels.data,
             };
-            insert(sub);
+            conn.insertConn(sub);
         }
     }
 
@@ -126,11 +144,13 @@ void readMongo()
         if (i % 100 == 0) infof("handling chunk %s", i);
         auto id = chunk["_id"].str;
         auto archived = !(id in activeChunks);
+        /*
         if (archived)
         {
             infof("skipping archived chunk %s for speed purposes", id);
             continue;
         }
+        */
 
         UUID feedId;
         auto mid = chunk["FeedId"].str;
@@ -143,14 +163,16 @@ void readMongo()
             warningf("chunk %s references missing feed %s; skipping", id, mid);
             continue;
         }
+        ulong count = 0;
         foreach (mart; chunk["Articles"])
         {
+            count++;
             auto art = artBson(mart, feedId);
-            insert(art);
+            conn.insertConn(art);
             if (archived)
             {
                 // Mark read automatically.
-                query!void(`
+                conn.queryConn!void(`
                         INSERT INTO read (userId, feedId, articleId)
                         (
                             SELECT userId, $1, $2 FROM subscriptions
@@ -160,12 +182,13 @@ void readMongo()
                         feedId.toString, art.id.toString);
             }
         }
+        infof("feed %s chunk %s archived %s articles %s", feedId, id, archived, count);
     }
 
     // 4. Remaining read articles.
     foreach (muser; db["users"].find)
     {
-        auto user = query!User("SELECT * FROM users WHERE email = $1", muser["Email"].str);
+        auto user = conn.queryConn!User("SELECT * FROM users WHERE email = $1", muser["Email"].str);
         infof("handling read articles for user %s", user[0].email);
         auto id = user[0].id.toString;
         foreach (msub; muser["Subscriptions"])
@@ -173,7 +196,7 @@ void readMongo()
             auto feedId = feedIds[msub["FeedId"].str].toString;
             foreach (read; msub["ReadArticles"])
             {
-                query!void(`
+                conn.queryConn!void(`
                         INSERT INTO read (userId, feedId, articleId)
                         SELECT $1, $2, articles.id
                         FROM articles

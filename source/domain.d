@@ -59,10 +59,8 @@ struct Article
         // Guess.
         if (url != other.url) return false;
         if (title != other.title) return false;
-        // This is kind of a weak indicator.
-        // Some stuff, like pusheen videos, have different descriptions for the same article
-        // accessed at different times.
-        if (description == other.description) return true;
+        // We *should* check the body. If it's not the same, that should indicate they differ.
+        // However, that fails with Pusheen feeds, and with stuff that has comment counts etc.
         return true;
     }
 }

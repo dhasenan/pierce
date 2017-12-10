@@ -57,9 +57,57 @@ void insert(T, Conflict onConflict = Conflict.error)(ref T val)
     }
     static immutable string cmd = insertText!(T, onConflict);
     auto params = val.toParams(false);
-    import std.algorithm : joiner, map;
     params.sqlCommand = cmd;
     inConnection!(conn => conn.execParams(params));
+}
+
+void insertConn(T)(ref scope Connection conn, ref T val)
+{
+    if (conn is null)
+    {
+        errorf("querying with existing connection: connection is null");
+    }
+    else if (conn.status != 0)
+    {
+        errorf("unexpected status from connection: %s", conn.status);
+    }
+    if (conn is null)
+    {
+        insert(val);
+    }
+    static if (is (typeof(val.id) == UUID))
+    {
+        val.id = randomUUID();
+    }
+    static immutable string cmd = insertText!(T, Conflict.error);
+    auto params = val.toParams(false);
+    params.sqlCommand = cmd;
+    conn.execParams(params);
+}
+
+auto queryConn(T = void)(ref scope Connection conn, string cmd, string[] args...)
+{
+    if (conn is null)
+    {
+        errorf("querying with existing connection: connection is null");
+    }
+    else if (conn.status != 0)
+    {
+        errorf("unexpected status from connection: %s", conn.status);
+    }
+    QueryParams params;
+    params.argsFromArray = args;
+    params.sqlCommand = cmd;
+    auto result = conn.execParams(params);
+    static if (!is(T == void))
+    {
+        auto vals = new T[result.length];
+        foreach (i, ref v; vals)
+        {
+            v = parse!T(result[i]);
+        }
+        return vals;
+    }
 }
 
 /**

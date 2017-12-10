@@ -49,7 +49,7 @@ class Feeds {
 
   grabArticles(unreadOnly, newerThan, olderThan) {
     console.log("grabArticles");
-    return this.http.get("/feeds/articles", {unreadOnly, newerThan, olderThan})
+    return this.http.get("/feeds/articles", {unreadOnly: false, newerThan, olderThan})
       .then((info) => {
         console.log(`got ${info.body.articles.length} articles`);
         return info.body.articles;
@@ -86,7 +86,9 @@ var domain = {
   // raw feeds (none of the tag-aggregated feeds)
   realFeeds: [],
   labels: [],
+  articles: [],
   subscriptions: [],
+  mostRecentArticle: '1000-01-01',
 
   /********* Read-only properties. ***********/
   getArticles: function() {
@@ -310,13 +312,14 @@ var domain = {
 
       ui.showAlert("Refreshing articles...");
       let before = new Date();
-      feeds.grabAllArticles(false, '1000-01-01')
+      feeds.grabAllArticles(ui.showingUnreadOnly, domain.mostRecentArticle)
       .then((articles) => {
         let after = new Date();
         let time = after.getTime() - before.getTime();
         console.log(`retrieved a total of ${articles.length} articles in ${time}ms`);
         articles.forEach(domain.mungeArticle);
-        domain.articles = articles;
+        domain.articles = domain.articles.concat(articles);
+        articles = domain.articles;
         articles.forEach((article) => {
           let feed = domain.feedsByID.get(article.feedId);
           if (!feed) {
@@ -327,7 +330,11 @@ var domain = {
           if (!article.isRead) {
             feed.unreadCount++;
           }
-        })
+          if (article.readDate > domain.mostRecentArticle)
+          {
+            domain.mostRecentArticle = article.readDate;
+          }
+        });
         domain.reloadFeedInfo();
         ui.updateTitle();
         ui.showAlert("Done!");

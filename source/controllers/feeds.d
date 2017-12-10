@@ -242,19 +242,23 @@ class FeedsControllerImpl
         infof("grabbing articles between dates %s and %s", newerThan, olderThan);
         auto js = Json.emptyObject;
         js["articles"] = query!Article(`
-                SELECT
-                    articles.*,
-                    EXISTS (
-                        SELECT * FROM read
-                        WHERE read.articleId = articles.id
-                        AND read.feedId = articles.feedId
-                        AND read.userId = $1
-                    ) AS isRead
-                FROM articles
-                INNER JOIN subscriptions ON subscriptions.feedId = articles.feedId
-                WHERE subscriptions.userId = $1
-                AND articles.readDate > $2::timestamp
-                AND articles.readDate < $3::timestamp
+                SELECT * FROM
+                (
+                    SELECT
+                        articles.*,
+                        EXISTS (
+                            SELECT * FROM read
+                            WHERE read.articleId = articles.id
+                            AND read.feedId = articles.feedId
+                            AND read.userId = $1
+                        ) AS isRead
+                    FROM articles
+                    INNER JOIN subscriptions ON subscriptions.feedId = articles.feedId
+                    WHERE subscriptions.userId = $1
+                    AND articles.readDate > $2::timestamp
+                    AND articles.readDate < $3::timestamp
+                ) AS beefyarticles
+                WHERE ((NOT isRead) OR ($4 = 'false'))
                 ORDER BY readDate ASC
                 LIMIT 500`,
                 user.id.toString(), newerThan, olderThan, unreadOnly.to!string)

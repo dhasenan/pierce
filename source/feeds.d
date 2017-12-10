@@ -155,6 +155,7 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
                 .or(elem.querySelector("published"))
                 .or(elem.querySelector("updated"))
                 .txt;
+        art.publishDate = Clock.currTime(UTC());
         if (datestr != "")
         {
             SysTime st;
@@ -165,7 +166,6 @@ Article[] parseArticles(TRange)(Feed feed, TRange elems) if (isInputRange!TRange
             else
             {
                 warningf("failed to parse date %s", datestr);
-                art.publishDate = Clock.currTime(UTC());
             }
         }
         ret ~= art;
@@ -490,3 +490,25 @@ immutable Format exhaustiveDateFormat = {
     formatOptions: ISO8601FORMAT.formatOptions ~ RFC1123FORMAT.formatOptions
 };
 
+unittest
+{
+    auto rss = `<rss version="0.91">
+<channel>
+<title>VG Cats</title>
+<link>http://www.vgcats.com/</link>
+<description>VG Cats - Updated Weekly</description>
+<item>
+	<title>VG Cats : Mama-Mia!</title>
+	<link>http://www.vgcats.com/comics/?strip_id=388</link>
+</item>
+</channel>
+</rss>`;
+    auto maybeFeed = parseRSSHeader(new Document(rss, false, true), "localhost/rss");
+    assert(maybeFeed.present);
+    auto feed = maybeFeed.get;
+
+    auto arts1 = parseArticles(feed, Page(rss, RSS_CONTENT_TYPE, "http://localhost/rss".parseURL));
+    auto arts2 = parseArticles(feed, Page(rss, RSS_CONTENT_TYPE, "http://localhost/rss".parseURL));
+    assert(arts1.length == 1);
+    assert(arts1[0].isProbablySameAs(arts2[0]));
+}

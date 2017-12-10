@@ -1058,3 +1058,9 @@ unittest
     test("11 June 2017 22:15:47 +0000");
     test("Sunday, 11 June 2017 22:15:47 +0000");
 }
+
+unittest
+{
+    SysTime st;
+    assert(!tryParse("", RFC1123FORMAT, st, UTC()));
+}

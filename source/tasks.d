@@ -106,7 +106,8 @@ FeedTask[] buildFeedTasks()
 {
     return [
         cast(FeedTask)new ReadFeed(),
-        new ScrubOldArticles(),
+        // TODO seems broken
+        //new ScrubOldArticles(),
         new FixUpFeedInfos(),
         // TODO feed icon finder
         new ScheduleNextCheck(),
@@ -164,16 +165,26 @@ class ReadFeed : FeedTask
             SELECT * FROM articles
             WHERE feedId = $1
             ORDER BY publishDate DESC
-            LIMIT 10`, feed.id.toString);
+            LIMIT 100`, feed.id.toString);
+        auto feedId = feed.id.toString;
         auto newArticles = feed.fetchArticles;
         foreach (article; newArticles)
         {
             import std.algorithm.searching : any;
-            if (oldArticles.any!((Article x) => x.isProbablySameAs(article)))
+            auto c = query!ulong(`
+                    SELECT COUNT(*) AS c FROM articles
+                    WHERE feedId = $1
+                    AND (
+                        (url = $2 AND title = $3)
+                        OR ($4 != '' AND internalId = $4))`,
+                    feedId,
+                    article.url,
+                    article.title,
+                    article.internalId);
+            if (c[0] == 0)
             {
-                break;
+                insert(article);
             }
-            insert(article);
         }
     }
 }
