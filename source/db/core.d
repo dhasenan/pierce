@@ -6,6 +6,7 @@ import dpq2.conv.time;
 
 import pierce.datetimeformat;
 import pierce.domain;
+import pierce.log;
 
 import std.conv;
 import std.datetime;
@@ -28,8 +29,13 @@ enum Conflict
 __gshared MultiLogger dblog;
 shared static this()
 {
+    // Be absolutely certain we don't have the wrong init order
+    if (VibeRollingFileLogger.classinfo.name == "")
+    {
+        tracef("");
+    }
     // So I can manipulate its log level separately
-    dblog = new MultiLogger(LogLevel.warning);
+    dblog = new MultiLogger(LogLevel.trace);
     dblog.insertLogger("parent", sharedLog);
 }
 
@@ -39,8 +45,9 @@ shared static this()
   */
 void update(T)(T val)
 {
-    enum cmd = updateText!T();
-    dblog.infof("update cmd: %s", cmd);
+    static immutable string cmd = updateText!T();
+    dblog.trace(cmd);
+    dblog.tracef("param: %s", val);
     auto params = val.toParams(true);
     params.sqlCommand = cmd;
     inConnection!(conn => conn.execParams(params));
@@ -56,6 +63,8 @@ void insert(T, Conflict onConflict = Conflict.error)(ref T val)
         val.id = randomUUID();
     }
     static immutable string cmd = insertText!(T, onConflict);
+    dblog.trace(cmd);
+    dblog.tracef("param: %s", val);
     auto params = val.toParams(false);
     params.sqlCommand = cmd;
     inConnection!(conn => conn.execParams(params));
@@ -95,6 +104,7 @@ auto queryConn(T = void)(ref scope Connection conn, string cmd, string[] args...
     {
         errorf("unexpected status from connection: %s", conn.status);
     }
+    dblog.tracef("query: [%s] args: %s", cmd, args);
     QueryParams params;
     params.argsFromArray = args;
     params.sqlCommand = cmd;
@@ -164,6 +174,7 @@ Nullable!T fetch(T)(UUID id)
   */
 auto query(T = void)(string cmd, string[] args...)
 {
+    dblog.tracef("query: [%s] args: %s", cmd, args);
     QueryParams params;
     params.argsFromArray = args;
     params.sqlCommand = cmd;

@@ -14,23 +14,18 @@ import pierce.db.migrate;
 import pierce.log;
 import pierce.tasks;
 
-__gshared MultiLogger log;
 shared static this()
 {
     registerMemoryErrorHandler();
-    log = new MultiLogger;
-    log.insertLogger("console", new std.experimental.logger.FileLogger(stderr));
-    sharedLog = log;
 }
 
-void main(string[] args)
+int main(string[] args)
 {
-    version (unittest) return;
+    version (unittest) return 0;
     import std.getopt;
 
     string cmd = "run";
     string configFile = "config.json";
-    ushort port = 9881;
 
     auto helpInfo = getopt(args,
             "command|cmd", "command [run,dump,migrate,stress]", &cmd,
@@ -40,7 +35,7 @@ void main(string[] args)
         defaultGetoptPrinter(
                 "Pierce RSS reader!\n" ~ build.toString,
                 helpInfo.options);
-        return;
+        return 1;
     }
 
     if (existsFile(configFile))
@@ -52,35 +47,58 @@ void main(string[] args)
         config = new Config();
     }
 
-    infof("logging to %s", config.logPathFormat);
-    log.insertLogger("file", new VibeRollingFileLogger(
-                config.logPathFormat,
-                std.experimental.logger.LogLevel.all));
-    infof("logging initialized");
-
     dbMigrate();
 
-    if (cmd == "dump")
+    switch (cmd)
     {
-        import pierce.mongo;
-        dumpMongo();
-        return;
+        case "dump":
+            import pierce.mongo;
+            dumpMongo();
+            return 0 ;
+        case "migrate":
+            import pierce.mongo;
+            readMongo();
+            return 0 ;
+        case "poll":
+            setupLogging(config, "pierce.poll");
+            runTask(() => pierce.tasks.tasks.run());
+            break;
+        case "web":
+            setupLogging(config, "pierce.web");
+            listen(config);
+            break;
+        case "fork":
+            import std.file : thisExePath;
+            import std.process;
+            auto poller = spawnProcess(
+                    [thisExePath, "--config", configFile, "--command", "poll"],
+                    null,
+                    std.process.Config.detached);
+            auto web = spawnProcess(
+                    [thisExePath, "--config", configFile, "--command", "web"],
+                    null,
+                    std.process.Config.detached);
+            break;
+        case "run":
+            setupLogging(config, "pierce");
+            runTask(() => pierce.tasks.tasks.run());
+            listen(config);
+            break;
+        default:
+            stderr.writefln("Unrecognized command %s", cmd);
+            stderr.writefln("Valid commands: dump, migrate, poll, web, fork, run");
+            return 0;
     }
-    if (cmd == "migrate")
-    {
-        import pierce.mongo;
-        readMongo();
-        return;
-    }
+    return runApplication((string[] args) {});
+}
 
+void listen(Config config)
+{
     infof("starting pierce %s", build);
-
-    // Set up background processes.
-    runTask(() => pierce.tasks.tasks.run());
 
     // Set up http server.
     auto settings = new HTTPServerSettings;
-    settings.port = 9881;
+    settings.port = config.port;
     auto router = new URLRouter;
     auto fsettings = new HTTPFileServerSettings;
     fsettings.serverPathPrefix = "/static";
@@ -95,3 +113,13 @@ void main(string[] args)
     runApplication((string[] args) {});
 }
 
+
+void setupLogging(Config cfg, string id)
+{
+    infof("logging to %s", config.logPathFormat);
+    logger.insertLogger("file", new VibeRollingFileLogger(
+                config.logPathFormat,
+                id,
+                std.experimental.logger.LogLevel.all));
+    infof("logging initialized");
+}

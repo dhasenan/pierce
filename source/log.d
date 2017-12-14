@@ -4,15 +4,25 @@ import pierce.datetimeformat;
 import std.experimental.logger;
 import std.datetime;
 
+__gshared MultiLogger logger;
+shared static this()
+{
+    import std.stdio : stderr;
+    logger = new MultiLogger;
+    logger.insertLogger("console", new std.experimental.logger.FileLogger(stderr));
+    sharedLog = logger;
+}
+
 class VibeRollingFileLogger : Logger
 {
     import std.format : format;
     import vibe.core.file : existsFile, getFileInfo, FileMode, FileStream, openFile;
 
-    this(in string fileFormat, const LogLevel lv, size_t maxFileSize = 1024 * 1024 * 10)
+    this(in string fileFormat, string id, const LogLevel lv, size_t maxFileSize = 1024 * 1024 * 10)
     {
         super(lv);
         this.fileFormat = fileFormat;
+        this.id = id;
         this.maxFileSize = maxFileSize;
     }
 
@@ -36,6 +46,7 @@ private:
     Date fileDate;
     size_t maxFileSize;
     size_t index;
+    string id;
 
     FileStream getFile()
     {
@@ -63,7 +74,7 @@ private:
         }
         foreach (i; 0..100)
         {
-            auto name = formatFilename(fileFormat, fileDate, index);
+            auto name = formatFilename(fileFormat, fileDate, index, id);
             if (existsFile(name))
             {
                 auto info = getFileInfo(name);
@@ -81,7 +92,7 @@ private:
     }
 }
 
-private string formatFilename(string fileFormat, Date date, size_t index)
+private string formatFilename(string fileFormat, Date date, size_t index, string id)
 {
     import std.array : Appender;
     import std.conv : to;
@@ -94,6 +105,9 @@ private string formatFilename(string fileFormat, Date date, size_t index)
         {
             switch (c)
             {
+                case 'n':
+                    ap ~= id;
+                    break;
                 case '%':
                     ap ~= '%';
                     break;
