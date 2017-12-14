@@ -438,7 +438,10 @@ string insertText(T, Conflict onConflict = Conflict.error)()
 // TODO connection pooling
 auto inConnection(alias fn)()
 {
-    import vibe.core.concurrency : async;
+    import vibe.core.core : runWorkerTask;
+    import vibe.core.sync : createManualEvent;
+
+    auto evt = createManualEvent;
     static string connectionString;
     if (connectionString.length == 0)
     {
@@ -473,25 +476,36 @@ auto inConnection(alias fn)()
     }
 
     Throwable err = null;
-    void* delegate () @trusted dg = () @trusted {
+    void* res;
+    void delegate () @trusted dg = () @trusted {
         scope conn = new Connection(connectionString);
+        scope (exit) evt.emit;
         try
         {
-            return cast(void*)fn(conn);
+            res = cast(void*)fn(conn);
         }
         catch (Throwable e)
         {
             err = e;
-            return null;
+            res = null;
         }
     };
-    auto v = async(dg);
-    auto res = v.getResult;
+    // This is honestly disgusting.
+    // However, it doesn't result in any more data races than we'd otherwise have.
+    runWorkerTask(&fakeShared, cast(ulong)cast(void*)&dg);
+    evt.wait;
+
     if (res is null && err !is null)
     {
         throw err;
     }
     return cast(immutable(Answer))res;
+}
+
+void fakeShared(ulong p)
+{
+    auto dg = *cast(void delegate()*)cast(void*)p;
+    dg();
 }
 
 /*
