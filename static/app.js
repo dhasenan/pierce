@@ -82,7 +82,7 @@ class Feeds {
 
 let feeds = new Feeds();
 
-var domain = {
+let domain = {
   // raw feeds (none of the tag-aggregated feeds)
   realFeeds: [],
   labels: [],
@@ -314,10 +314,11 @@ var domain = {
       let before = new Date();
       feeds.grabAllArticles(ui.showingUnreadOnly, domain.mostRecentArticle)
       .then((articles) => {
+        articles.forEach(domain.mungeArticle);
+        util.sortArticles(articles);
         let after = new Date();
         let time = after.getTime() - before.getTime();
         console.log(`retrieved a total of ${articles.length} articles in ${time}ms`);
-        articles.forEach(domain.mungeArticle);
         domain.articles = domain.articles.concat(articles);
         articles = domain.articles;
         articles.forEach((article) => {
@@ -411,7 +412,6 @@ var domain = {
 
   updateLabelUnreadCounts: function(labels) {
     labels.forEach((label) => {
-      console.log(label);
       let unread = 0;
       label.feeds.forEach((feed) => {
         unread += feed.unreadCount;
@@ -698,12 +698,20 @@ var domain = {
     }
   },
 
+  refreshShowingUnread: function() {
+    if (ui.unreadOnly) {
+      // don't need to fetch more
+      return;
+    }
+    domain.refreshFeeds();
+  },
+
   initialize: function() {
     window.setInterval(domain.refreshUser, 15 * 60 * 1000);
   }
 };
 
-var ui = {
+let ui = {
   _expandedLabels: [],
   showingPopup: false,
 
@@ -987,6 +995,7 @@ var ui = {
     ui.showingUnreadOnly = !ui.showingUnreadOnly;
     ui.showArticles(ui.articles);
     ui.refreshShowingUnread();
+    domain.refreshShowingUnread();
   },
 
   // We precompute article lis for speed.
@@ -1192,7 +1201,7 @@ var ui = {
   _barrier: null
 };
 
-var util = {
+let util = {
   hashString: function(str) {
     if (str == null) return 0;
     var hash = 0;
@@ -1258,6 +1267,242 @@ var util = {
   _barrier: null
 };
 
+let view = {
+  initialize: function() {
+    // Set up main layout.
+    $.layout.defaults.stateManagement = {
+      enabled: true,
+      autoSave: true,
+      autoLoad: true,
+      stateKeys: 'north.size,south.size,east.size,west.size,',
+      cookie: {
+        expires: 365
+      }
+    };
+
+    // This is currently using the jquery ui layout plugin.
+    // I have some annoyances with it. Consider switching to something better,
+    // or at least simpler, like http://www.methvin.com/splitter/
+    $('#mainPanel').layout({
+      defaults: {
+        applyDefaultStyles: false,
+        resizable: true,
+        closable: false,
+        slidable: true,
+        contentSelector: '.content',
+        spacing_open: 4,
+        spacing_closed: 4
+      },
+      west: {
+        paneSelector: '.feedList'
+      },
+      center: {
+        paneSelector: '#mainPanelCenter',
+        childOptions: {
+          center: {
+            paneSelector: '#articleList'
+          },
+          south: {
+            paneSelector: '#articleView'
+          }
+        }
+      }
+    });
+  },
+
+  showUpdateFeedWindow: function(feed, sub) {
+    $('#modFeedUrl').val(feed.url);
+    $('#modFeedTitle').val(feed.title);
+    $('#modFeedInterval').val((sub.checkInterval / 60) | 0);
+    if (sub.labels) {
+      $('#modFeedLabels').val(sub.labels);
+    }
+    ui.showingPopup = true;
+    $('#modifyFeedWindow').dialog({
+      close: function() { ui.showingPopup = false; },
+      height: 'auto',
+      width: 'auto',
+      buttons: [
+        {
+          text: 'Save',
+          click: function() {
+            var title = $('#modFeedTitle').val();
+            var checkInterval = $('#modFeedInterval').val();
+            var labels = $('#modFeedLabels').val();
+            domain.modifyFeed(feed.Id, title, checkInterval, labels);
+          }
+        },
+        {
+          text: 'Unsubscribe',
+          click: function() {
+            var reallyUnsubscribe = confirm(
+                'Are you sure you want to unsubscribe from ' + feed.title + '?');
+            if (reallyUnsubscribe) {
+              domain.unsubscribe(feed.id);
+            } else {
+              $('#modifyFeedWindow').dialog('close');
+            }
+          }
+        },
+        {
+          text: 'Refresh',
+          click: function() {
+            domain.refreshFeed(feed.id);
+            $('#modifyFeedWindow').dialog('close');
+          }
+        },
+      ]
+    });
+  },
+
+  closeModifyFeedWindow: function() {
+    $('#modifyFeedWindow').dialog('close');
+  },
+
+  closeFeedWindow: function() {
+    $('#addFeedWindow').dialog('close');
+  },
+
+  showSettingsWindow: function() {
+    ui.showingPopup = true;
+    $('#settingsEmail').val(user.Email);
+    $('#settingsCurrPassword').val('');
+    $('#settingsPassword').val('');
+    $('#settingsPasswordConf').val('');
+    $('#settingsWindow').dialog({
+      close: function() { ui.showingPopup = false; },
+      height: 'auto',
+      width: 'auto',
+      buttons: [
+        {
+          text: 'Okay go!',
+          click: function() {
+            ui.applyUserSettings();
+          }
+        },
+      ]
+    });
+  },
+
+  closeSettingsWindow: function() {
+    $('#settingsWindow').dialog('close');
+  },
+
+  showAddFeedWindow: function() {
+    $('#multifeed').hide();
+    $('#addFeedUrl').val('');
+    $('#addFeedTitle').val('');
+    $('#addFeedLabels').val('');
+    ui.showingPopup = true;
+    $('#addFeedWindow').dialog({
+      close: function() { ui.showingPopup = false; },
+      height: 'auto',
+      width: 'auto',
+      buttons: [
+        { text: 'Add feed!', click: ui.addFeed },
+      ]
+    });
+  },
+
+  showLoginWindow: function() {
+    ui.showingPopup = true;
+    $('#loginWindow').dialog({
+      close: function() { ui.showingPopup = false; },
+      height: 'auto',
+      width: 'auto',
+      buttons: [
+        {
+          text: 'Log in',
+          click: function() {
+            $.ajax('/login/login', {
+              dataType: 'json',
+              method: 'POST',
+              data: {
+                'email': $('#email').val(),
+                'password': $('#password').val(),
+              },
+              success: function(data, statusText, xhr) {
+                if (data.success == false) {
+                  alert("Sorry, couldn't find you.");
+                }
+                view.hideLoginWindow();
+                user = data;
+                ui.updateUserInfos();
+                domain.refreshFeeds();
+              },
+              error: function(xhr, status, message) {
+                if (xhr.status < 500) {
+                  alert("Couldn't find a user with that username and password.");
+                } else {
+                  alert("Pierce is not available right now. Please try again in a few.");
+                }
+              }
+            });
+          }
+        },
+        {
+          text: 'Register',
+          click: function() {
+            $.ajax('/login/register', {
+              dataType: 'json',
+              method: 'POST',
+              data: {
+                'email': $('#email').val(),
+                'password': $('#password').val(),
+              },
+              success: function(data, statusText, xhr) {
+                view.hideLoginWindow();
+                user = data;
+                ui.updateUserInfos();
+                domain.refreshFeeds();
+              },
+              error: function(xhr, status, message) {
+                var obj = JSON.parse(xhr.responseText);
+                if (obj != null && obj.Error != null) {
+                  view.showUnknownError(obj.Error);
+                }
+              }
+            });
+          }
+        },
+      ]
+    });
+  },
+
+  hideLoginWindow: function() {
+    try {
+      $('#loginWindow').dialog('close');
+      ui.showingPopup = false;
+    } catch (e) {}
+  },
+
+  showUnknownError: function(msg) {
+    ui.showingPopup = true;
+    view.showingUnknownError = true;
+    if (msg == null) {
+      msg = "An unknown error has occurred.";
+    }
+    $('#unknownErrorMessage').text(msg);
+    $('#unknownError').dialog({
+      close: function() { ui.showingPopup = false; },
+      buttons: [
+        {
+          text: "Okay",
+          click: function() { view.hideUnknownError(); }
+        }
+      ]
+    });
+  },
+
+  hideUnknownError: function() {
+    try {
+      $('#unknownError').dialog('close');
+      ui.showingPopup = false;
+    } catch (e) {}
+  },
+
+  _barrier: null
+};
 
 
 console.log('inserting document-ready function');
