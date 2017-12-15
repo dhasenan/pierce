@@ -1,7 +1,7 @@
 module pierce.mongo;
 
 import core.time;
-import dpq2 : Connection;
+import vibe.db.postgresql : LockedConnection, __Conn;
 import pierce.config;
 import pierce.domain;
 import std.datetime;
@@ -40,7 +40,7 @@ void readMongo()
         return null;
     });
 }
-void readMongoConn(ref scope Connection conn)
+void readMongoConn(ref scope LockedConnection!__Conn conn)
 {
     import vibe.db.mongo.mongo;
     import std.random;

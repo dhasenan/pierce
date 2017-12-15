@@ -7,10 +7,11 @@
           "vibe-d": "~>0.8.0"
         , "urld": "~>2.1.0"
         , "derelict-pq": {"path": "DerelictPQ"}
-        , "datefmt": "~master"
+        , "datefmt": "~>1.0.1"
         , "arsd-official:dom": "1.2.1"
         , "pbkdf2": "0.1.2"
         , "dpq2": "~>0.6.24"
+        , "vibe-d-postgresql": "~>0.3.0-beta.3"
     }
   , "description": "RSS reader"
   , "copyright": "Copyright © 2017, dhasenan"

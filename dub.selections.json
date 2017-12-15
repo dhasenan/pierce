@@ -4,7 +4,7 @@
 		"arsd-official": "1.2.1",
 		"botan": "1.12.9",
 		"botan-math": "1.0.3",
-		"datefmt": "~master",
+		"datefmt": "1.0.1",
 		"datetimeformat": "0.1.0",
 		"derelict-pq": {"path":"DerelictPQ"},
 		"derelict-util": "3.0.0-beta.2",
@@ -16,9 +16,10 @@
 		"memutils": "0.4.9",
 		"openssl": "1.1.6+1.0.1g",
 		"pbkdf2": "0.1.2",
-		"taggedalgebraic": "0.10.7",
+		"taggedalgebraic": "0.10.8",
 		"urld": "2.1.0",
 		"vibe-core": "1.3.0",
-		"vibe-d": "0.8.1"
+		"vibe-d": "0.8.2",
+		"vibe-d-postgresql": "0.3.0-beta.3"
 	}
 }

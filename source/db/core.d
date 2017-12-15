@@ -16,6 +16,8 @@ import std.traits;
 import std.typecons;
 import std.uuid;
 
+import vibe.db.postgresql;
+
 /** Attribute to mark a field as transient (don't save it). */
 struct Transient {}
 
@@ -27,6 +29,8 @@ enum Conflict
 }
 
 __gshared MultiLogger dblog;
+PostgresClient pg;
+
 shared static this()
 {
     // Be absolutely certain we don't have the wrong init order
@@ -35,7 +39,8 @@ shared static this()
         tracef("");
     }
     // So I can manipulate its log level separately
-    dblog = new MultiLogger(LogLevel.trace);
+    // TODO make this a separate thingy
+    dblog = new MultiLogger(LogLevel.warning);
     dblog.insertLogger("parent", sharedLog);
 }
 
@@ -70,7 +75,7 @@ void insert(T, Conflict onConflict = Conflict.error)(ref T val)
     inConnection!(conn => conn.execParams(params));
 }
 
-void insertConn(T)(ref scope Connection conn, ref T val)
+void insertConn(T)(ref scope LockedConnection!__Conn conn, ref T val)
 {
     if (conn is null)
     {
@@ -94,7 +99,7 @@ void insertConn(T)(ref scope Connection conn, ref T val)
     conn.execParams(params);
 }
 
-auto queryConn(T = void)(ref scope Connection conn, string cmd, string[] args...)
+auto queryConn(T = void)(ref scope LockedConnection!__Conn conn, string cmd, string[] args...)
 {
     if (conn is null)
     {
@@ -179,11 +184,13 @@ auto query(T = void)(string cmd, string[] args...)
     params.argsFromArray = args;
     params.sqlCommand = cmd;
     auto result = inConnection!(conn => conn.execParams(params));
+    dblog.tracef("finished query");
     static if (!is(T == void))
     {
         auto vals = new T[result.length];
         foreach (i, ref v; vals)
         {
+            dblog.tracef("parsed result %s", i);
             v = parse!T(result[i]);
         }
         return vals;
@@ -438,10 +445,6 @@ string insertText(T, Conflict onConflict = Conflict.error)()
 // TODO connection pooling
 auto inConnection(alias fn)()
 {
-    import vibe.core.core : runWorkerTask;
-    import vibe.core.sync : createManualEvent;
-
-    auto evt = createManualEvent;
     static string connectionString;
     if (connectionString.length == 0)
     {
@@ -475,31 +478,14 @@ auto inConnection(alias fn)()
         connectionString = builder.data.strip;
     }
 
-    Throwable err = null;
-    void* res;
-    void delegate () @trusted dg = () @trusted {
-        scope conn = new Connection(connectionString);
-        scope (exit) evt.emit;
-        try
-        {
-            res = cast(void*)fn(conn);
-        }
-        catch (Throwable e)
-        {
-            err = e;
-            res = null;
-        }
-    };
-    // This is honestly disgusting.
-    // However, it doesn't result in any more data races than we'd otherwise have.
-    runWorkerTask(&fakeShared, cast(ulong)cast(void*)&dg);
-    evt.wait;
-
-    if (res is null && err !is null)
+    if (pg is null)
     {
-        throw err;
+        pg = new PostgresClient(connectionString, 15);
     }
-    return cast(immutable(Answer))res;
+
+    auto conn = pg.lockConnection;
+    scope (exit) delete conn;
+    return fn(conn);
 }
 
 void fakeShared(ulong p)
