@@ -48,7 +48,6 @@ class Feeds {
   }
 
   grabArticles(unreadOnly, newerThan, olderThan) {
-    console.log("grabArticles");
     return this.http.get("/feeds/articles", {unreadOnly: false, newerThan, olderThan})
       .then((info) => {
         console.log(`got ${info.body.articles.length} articles`);
@@ -64,7 +63,6 @@ class Feeds {
     return this.grabArticles(unreadOnly, newerThan, null)
       .then((arts) => {
         if (arts.length == 0) {
-          console.log("found 0 new articles");
           return storage;
         }
         console.log(`found ${arts.length} new articles`);
@@ -248,15 +246,12 @@ let domain = {
   refreshUser: function() {
     view.hideUnknownError();
     view.hideLoginWindow();
-    console.log('refreshing user data');
     ui.showAlert('Refreshing subscriptions');
     $.ajax('/users/self', {
       dataType: 'json',
       success: function(data, statusText, xhr) {
-        console.log('success refreshing user data');
         user = data;
         ui.updateUserInfos();
-        console.log('about to refresh feeds');
         domain.refreshFeeds();
       },
       error: function(xhr, status, err) {
@@ -295,18 +290,49 @@ let domain = {
     domain.refreshSubsImpl(last, subs, after);
   },
 
+  updateFeeds: function(newFeeds, newSubs) {
+    // TODO if a feed was removed, remove it here
+    if (!domain.feedsByID) {
+      domain.feedsByID = new Map();
+    }
+    if (!domain.realFeeds) {
+      domain.realFeeds = [];
+    }
+    if (!domain.subscriptions) {
+      domain.subscriptions = [];
+    }
+    newSubs.forEach((sub) => {
+      let found = false;
+      domain.subscriptions.forEach((existing) => {
+        if (existing.feedId != sub.feedId) {
+          return;
+        }
+        found = true;
+        Object.assign(existing, sub);
+      });
+      if (!found) {
+        domain.subscriptions.push(sub);
+      }
+    });
+    newFeeds.forEach((feed) => {
+      domain.mungeFeed(feed);
+      let existing = domain.feedsByID.get(feed.id);
+      if (existing) {
+        Object.assign(existing, feed);
+      } else {
+        domain.feedsByID.set(feed.id, feed);
+        domain.realFeeds.push(feed);
+      }
+    });
+  },
+
   refreshFeeds: function() {
     // TODO progress indicators?
     ui.showAlert("Refreshing subscription list...");
     domain.refreshSubs((data) => {
-      console.log('found ' + data.subscriptions.length + ' subscriptions');
-      console.log(data);
-      domain.subscriptions = data.subscriptions;
       console.log(`found ${data.feeds.length} feeds`);
-      domain.realFeeds = data.feeds;
-      domain.feedsByID = new Map();
-      domain.realFeeds.forEach((f) => domain.mungeFeed(f));
-      domain.realFeeds.forEach((f) => domain.feedsByID.set(f.id, f));
+      // We want to keep referential transparency for existing feed objects.
+      domain.updateFeeds(data.feeds, data.subscriptions);
       domain.reloadFeedInfo();
       ui.updateTitle();
 
@@ -319,6 +345,7 @@ let domain = {
         let after = new Date();
         let time = after.getTime() - before.getTime();
         console.log(`retrieved a total of ${articles.length} articles in ${time}ms`);
+        before = new Date();
         domain.articles = domain.articles.concat(articles);
         articles = domain.articles;
         articles.forEach((article) => {
@@ -337,6 +364,8 @@ let domain = {
           }
         });
         domain.reloadFeedInfo();
+        after = new Date();
+        console.log(`spent ${after.getTime() - before.getTime()}ms in article post-production`);
         ui.updateTitle();
         ui.showAlert("Done!");
         window.setTimeout(() => ui.hideAlert(), 3000);
@@ -440,7 +469,6 @@ let domain = {
     });
 
     domain.updateDisplayForArticle(article);
-    console.log("marked read");
   },
 
   markOlderRead: function(article) {
@@ -1071,10 +1099,8 @@ let ui = {
     // Set up ajax loaders.
     $(document).ajaxStart(function() {
       $('.ajaxLoader').show();
-      console.log('tried to show');
     }).ajaxStop(function() {
       $('.ajaxLoader').hide();
-      console.log('tried to hide');
     });
 
     // Load label expansion.
@@ -1101,6 +1127,7 @@ let ui = {
   },
 
   maybeLoadMoreArticles: function() {
+    /*
     var articleList = $('#articleList .content');
     var top = articleList.scrollTop();
     var length = articleList.height();
@@ -1112,6 +1139,7 @@ let ui = {
       // have new intermediate articles.
       console.log('bad command or filename');
     }
+    */
   },
 
   setupKeybindings: function() {
@@ -1505,19 +1533,13 @@ let view = {
 };
 
 
-console.log('inserting document-ready function');
 $(document).ready(function() {
-  console.log('readying UI');
   ui.initialize();
-  console.log('readying domain');
   domain.initialize();
 
-  console.log('checking cookies');
   if ($.cookie('sessionToken')) {
-    console.log('have a user!');
     domain.refreshUser();
   } else {
-    console.log('no user; trying to log in');
     view.showLoginWindow();
   }
 });
