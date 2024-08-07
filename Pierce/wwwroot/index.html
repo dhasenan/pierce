@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>Pierce RSS Reader</title>
+    <link rel='icon' href='favicon.ico' />
+    <link rel='stylesheet' href='pierceweb.css' />
+    <link rel='stylesheet' href='jqueryui/jquery-ui.css' />
+    <link rel='stylesheet' href='jqueryui/jquery-ui.theme.css' />
+    <script type="text/javascript" src="jqueryui/jquery-ui.js"></script>
+    <script type="text/javascript" src="jquery-3.7.1.js"></script>
+    <script type="text/javascript" src="app.js"></script>
+  </head>
+  <body>
+    <div id='headerBar'>
+      <div id='userName' style='float: left'>Not logged in</div>
+      <div style='float: right'>
+        <a href='#' onclick='view.showSettingsWindow()' style='color: black'>Settings</a></span>
+        | <a id="logInOrOut" href='#' onclick='view.loginLogout()' style='color: black'>Log
+          In</a></div>
+    </div>
+		<div id="butterbar">
+			<span id="buttercontent"></span>
+		</div>
+    <div id='mainPanel'>
+      <div id='articleList' caption='Articles' class='articleList pane ui-layout-center'>
+        <div class='paneTitle'>
+          <span>Articles</span>
+          <span style='float: right'>
+            Showing: <a id='toggleUnread' href='#' onclick='ui.toggleUnreadOnly()'>Unread</a>
+          </span>
+        </div>
+        <div class='articleCaution' id='noArticles' style='display: none'>
+            There are no articles to show. Choose a feed or label, or add some feeds.
+        </div>
+        <div class='articleCaution' id='showingUnreadOnly' style='display: none'>
+            You've read everything in the current view. Choose another feed or label, or
+            <a onclick="ui.toggleUnreadOnly()">look at stuff you've already read</a>.
+        </div>
+        <div class='content'>
+          A list of articles, natch.
+        </div>
+      </div>
+
+      <div id='articleView' caption='Current article' class='articleView pane ui-layout-south'>
+        <div class='paneTitle' id='articleTitle'>Article</div>
+        <div class='content' id='articleContent' tabindex='-1'>
+          I need an article.
+        </div>
+      </div>
+
+      <div id='feedList' caption='Feeds' class='feedList pane ui-layout-west'>
+        <div class='paneTitle'>Feeds</div>
+        <div class='content'>
+          I need some feeds.
+        </div>
+        <a id='addFeedButton' href='#'>Add a feed</a>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,42 @@
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using EFCore.NamingConventions;
+
+namespace Pierce;
+
+public class PierceContext : DbContext
+{
+  public DbSet<User> Users { get; set; }
+  public DbSet<Feed> Feeds { get; set; }
+  public DbSet<Article> Articles { get; set; }
+  public DbSet<Subscription> Subscriptions { get; set; }
+
+  private readonly string _connectionString;
+
+  public PierceContext(IConfiguration config)
+  {
+    _connectionString = config.GetConnectionString("pierce");
+  }
+
+  protected override void OnConfiguring(DbContextOptionsBuilder builder)
+  {
+    builder
+      .UseNpgsql(_connectionString)
+      .UseSnakeCaseNamingConvention();
+  }
+
+  protected override void OnModelCreating(ModelBuilder builder)
+  {
+    builder.Entity<Article>().OwnsOne(article => article.AuthorInfo, ownedBuilder =>
+    {
+      ownedBuilder.ToJson();
+      ownedBuilder.OwnsMany(x => x.Authors);
+    });
+    builder.Entity<Feed>().OwnsOne(feed => feed.AuthorInfo, ownedBuilder =>
+    {
+      ownedBuilder.ToJson();
+      ownedBuilder.OwnsMany(x => x.Authors);
+    });
+  }
+}
