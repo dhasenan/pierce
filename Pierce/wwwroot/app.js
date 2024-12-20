@@ -1,6 +1,7 @@
 let user;
 
-var domain = {
+
+const domain = {
   // raw feeds (none of the tag-aggregated feeds)
   realFeeds: [],
   labels: [],
@@ -8,9 +9,9 @@ var domain = {
   /********* Read-only properties. ***********/
   getArticles: function() {
     if (ui.currentFeed) {
-      return ui.currentFeed.Articles;
+      return ui.currentFeed.articles;
     } else if (ui.currentLabel) {
-      return ui.currentLabel.Articles;
+      return ui.currentLabel.articles;
     } else {
       return [];
     }
@@ -18,8 +19,8 @@ var domain = {
 
   getSubscription: function(feedId) {
     if (!user.Subscriptions) return;
-    for (var i = 0; i < user.Subscriptions.length; i++) {
-      if (user.Subscriptions[i].FeedId == feedId) {
+    for (var i = 0; i < user.subscriptions.length; i++) {
+      if (user.Subscriptions[i].feedId == feedId) {
         return user.Subscriptions[i];
       }
     }
@@ -39,9 +40,9 @@ var domain = {
   },
 
   getArticle: function(feed, artId) {
-    for (var i = 0; i < feed.Articles.length; i++) {
-      if (feed.Articles[i].Id == artId) {
-        return feed.Articles[i];
+    for (var i = 0; i < feed.articles.length; i++) {
+      if (feed.articles[i].Id == artId) {
+        return feed.articles[i];
       }
     }
     return null;

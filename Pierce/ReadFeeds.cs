@@ -1,0 +1,79 @@
+using System;
+using Microsoft.Extensions.Logging;
+
+namespace Pierce;
+
+public class ReaderService : BackgroundService
+{
+    private readonly IServiceProvider _services;
+    private readonly ILogger _logger;
+
+    public ReaderService(IServiceProvider services, ILogger<ReaderService> logger)
+    {
+        _services = services;
+        _logger = logger;
+        _logger.LogInformation("ReaderService created");
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken token)
+    {
+        _logger.LogInformation("ExecuteAsync");
+        while (!token.IsCancellationRequested)
+        {
+            using (var scope = _services.CreateScope())
+            {
+                var readFeeds = scope.ServiceProvider.GetRequiredService<ReadFeeds>();
+                await readFeeds.Read();
+            }
+            await Task.Delay(TimeSpan.FromMinutes(1), token);
+        }
+    }
+}
+
+public class ReadFeeds
+{
+    private readonly PierceContext _db;
+    private readonly Wget _wget;
+    private readonly FeedParser _parser;
+    private readonly ILogger<ReadFeeds> _logger;
+
+    public ReadFeeds(PierceContext db, Wget wget, FeedParser parser, ILogger<ReadFeeds> logger)
+    {
+        _db = db;
+        _wget = wget;
+        _parser = parser;
+        _logger = logger;
+    }
+
+    public async Task Read()
+    {
+      var now = DateTime.UtcNow;
+      var feeds = _db.Feeds
+        .Where(x => x.NextRead < now)
+        .OrderBy(x => x.NextRead)
+        .ToList();
+      _logger.LogInformation($"have {feeds.Count} feeds to read");
+      foreach (var feed in feeds)
+      {
+        try
+        {
+          _logger.LogInformation($"reading feed {feed.Id} at {feed.Uri}");
+          Read(feed);
+        }
+        finally
+        {
+          feed.NextRead = DateTime.UtcNow + feed.ReadInterval;
+          _logger.LogInformation($"feed has {feed.Articles.Count} articles");
+          _db.Update(feed);
+          _db.SaveChanges();
+        }
+      }
+    }
+
+    public async Task Read(Feed feed)
+    {
+        _logger.LogTrace($"reading feed {feed.Id} from {feed.Uri}");
+        var xml = await _wget.Xml(feed.Uri);
+        _parser.Read(feed, xml);
+    }
+}

@@ -22,8 +22,9 @@ public class PierceContext : DbContext
   protected override void OnConfiguring(DbContextOptionsBuilder builder)
   {
     builder
-      .UseNpgsql(_connectionString)
-      .UseSnakeCaseNamingConvention();
+      .UseSqlite(_connectionString)
+      .UseSnakeCaseNamingConvention()
+      .LogTo(Console.WriteLine, new[]{DbLoggerCategory.Database.Command.Name});
   }
 
   protected override void OnModelCreating(ModelBuilder builder)
@@ -38,5 +39,10 @@ public class PierceContext : DbContext
       ownedBuilder.ToJson();
       ownedBuilder.OwnsMany(x => x.Authors);
     });
+    builder.Entity<Feed>()
+      .HasMany(e => e.Articles)
+      .WithOne(e => e.Feed)
+      .HasForeignKey(e => e.FeedId)
+      .IsRequired();
   }
 }

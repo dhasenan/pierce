@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Isopoh.Cryptography.Argon2;
 using Microsoft.EntityFrameworkCore;
@@ -15,8 +16,8 @@ public class User
 {
   [Key]
   public long Id { get; private set; }
-  public string Email { get; set; }
-  public string PasswordHash { get; private set; }
+  public string Email { get; set; } = "";
+  public string PasswordHash { get; private set; } = "";
   public ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 
   public string Password
@@ -27,6 +28,15 @@ public class User
   public bool Verify(string password)
   {
     return Argon2.Verify(PasswordHash, password);
+  }
+
+  public User Redacted() {
+    return new User()
+    {
+      Id = this.Id,
+      Email = this.Email,
+      Subscriptions = this.Subscriptions,
+    };
   }
 }
 
@@ -46,9 +56,14 @@ public static class HttpContextExtensions
   }
 }
 
+public static class Auth
+{
+  public const string Policy = "loggedin";
+}
+
 [Route("auth")]
 [ApiController]
-[Authorize]
+[Authorize(Auth.Policy)]
 public class AuthController : Controller
 {
   private readonly PierceContext db;
@@ -103,10 +118,11 @@ public class AuthController : Controller
     {
       return StatusCode(401, "Incorrect password");
     }
-    await HttpContext.SignInAsync(new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>{
+    var identity = new ClaimsIdentity(new List<Claim>{
       new Claim("id", existing.Id.ToString()),
-    })));
-    return Ok();
+    }, CookieAuthenticationDefaults.AuthenticationScheme);
+    await HttpContext.SignInAsync(new ClaimsPrincipal(identity));
+    return Ok(existing.Redacted());
   }
 
   [AllowAnonymous]
@@ -131,9 +147,12 @@ public class AuthController : Controller
     await db.SaveChangesAsync();
     var identity = new ClaimsIdentity(new List<Claim>{
       new Claim("id", user.Id.ToString()),
-    }, "id", "id", "user");
-    await HttpContext.SignInAsync(new ClaimsPrincipal(identity));
-    return Ok();
+    }, CookieAuthenticationDefaults.AuthenticationScheme);
+    await HttpContext.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        new ClaimsPrincipal(identity),
+        new AuthenticationProperties { IsPersistent = true });
+    return Ok(user.Redacted());
   }
 
   [HttpPost("changepassword")]

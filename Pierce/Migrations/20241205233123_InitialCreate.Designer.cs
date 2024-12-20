@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pierce;
 
 #nullable disable
@@ -12,69 +11,59 @@ using Pierce;
 namespace Pierce.Migrations
 {
     [DbContext(typeof(PierceContext))]
-    [Migration("20240807203434_InitialCreate")]
+    [Migration("20241205233123_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.7")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
-
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.7");
 
             modelBuilder.Entity("Pierce.Article", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("INTEGER")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<string[]>("Categories")
+                    b.Property<string>("Categories")
                         .IsRequired()
-                        .HasColumnType("text[]")
+                        .HasColumnType("TEXT")
                         .HasColumnName("categories");
 
                     b.Property<string>("CommentLink")
-                        .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("comment_link");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("description");
 
                     b.Property<long>("FeedId")
-                        .HasColumnType("bigint")
+                        .HasColumnType("INTEGER")
                         .HasColumnName("feed_id");
 
                     b.Property<string>("Link")
-                        .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("link");
 
                     b.Property<DateTime>("PublishDate")
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("TEXT")
                         .HasColumnName("publish_date");
 
                     b.Property<string>("Summary")
-                        .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("summary");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("title");
 
                     b.Property<string>("UniqueId")
-                        .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("unique_id");
 
                     b.HasKey("Id")
@@ -90,74 +79,66 @@ namespace Pierce.Migrations
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("INTEGER")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
                     b.Property<int>("ArticleCount")
-                        .HasColumnType("integer")
+                        .HasColumnType("INTEGER")
                         .HasColumnName("article_count");
 
-                    b.Property<string[]>("Categories")
+                    b.Property<string>("Categories")
                         .IsRequired()
-                        .HasColumnType("text[]")
+                        .HasColumnType("TEXT")
                         .HasColumnName("categories");
 
                     b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("description");
 
                     b.Property<int>("Errors")
-                        .HasColumnType("integer")
+                        .HasColumnType("INTEGER")
                         .HasColumnName("errors");
 
                     b.Property<string>("IconUri")
-                        .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("icon_uri");
 
                     b.Property<string>("ImageLinkTarget")
-                        .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("image_link_target");
 
                     b.Property<string>("ImageTitle")
-                        .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("image_title");
 
                     b.Property<DateTime>("LastRead")
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("TEXT")
                         .HasColumnName("last_read");
 
                     b.Property<string>("Link")
-                        .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("link");
 
                     b.Property<string>("LogoUri")
-                        .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("logo_uri");
 
                     b.Property<DateTime>("NextRead")
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("TEXT")
                         .HasColumnName("next_read");
 
                     b.Property<TimeSpan>("ReadInterval")
-                        .HasColumnType("interval")
+                        .HasColumnType("TEXT")
                         .HasColumnName("read_interval");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("title");
 
                     b.Property<string>("Uri")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("uri");
 
                     b.HasKey("Id")
@@ -174,21 +155,19 @@ namespace Pierce.Migrations
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("INTEGER")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
                     b.Property<long>("FeedId")
-                        .HasColumnType("bigint")
+                        .HasColumnType("INTEGER")
                         .HasColumnName("feed_id");
 
                     b.Property<TimeSpan>("Interval")
-                        .HasColumnType("interval")
+                        .HasColumnType("TEXT")
                         .HasColumnName("interval");
 
                     b.Property<long>("UserId")
-                        .HasColumnType("bigint")
+                        .HasColumnType("INTEGER")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
@@ -208,19 +187,17 @@ namespace Pierce.Migrations
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("INTEGER")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("email");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("TEXT")
                         .HasColumnName("password_hash");
 
                     b.HasKey("Id")
@@ -236,7 +213,7 @@ namespace Pierce.Migrations
             modelBuilder.Entity("Pierce.Article", b =>
                 {
                     b.HasOne("Pierce.Feed", "Feed")
-                        .WithMany()
+                        .WithMany("Articles")
                         .HasForeignKey("FeedId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -245,7 +222,7 @@ namespace Pierce.Migrations
                     b.OwnsOne("Pierce.AuthorInfo", "AuthorInfo", b1 =>
                         {
                             b1.Property<long>("ArticleId")
-                                .HasColumnType("bigint");
+                                .HasColumnType("INTEGER");
 
                             b1.HasKey("ArticleId")
                                 .HasName("pk_articles");
@@ -261,23 +238,21 @@ namespace Pierce.Migrations
                             b1.OwnsMany("Pierce.Author", "Authors", b2 =>
                                 {
                                     b2.Property<long>("AuthorInfoArticleId")
-                                        .HasColumnType("bigint");
+                                        .HasColumnType("INTEGER");
 
                                     b2.Property<int>("Id")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("integer");
+                                        .ValueGeneratedOnAddOrUpdate()
+                                        .HasColumnType("INTEGER");
 
                                     b2.Property<string>("Email")
-                                        .IsRequired()
-                                        .HasColumnType("text");
+                                        .HasColumnType("TEXT");
 
                                     b2.Property<string>("Link")
-                                        .IsRequired()
-                                        .HasColumnType("text");
+                                        .HasColumnType("TEXT");
 
                                     b2.Property<string>("Name")
                                         .IsRequired()
-                                        .HasColumnType("text");
+                                        .HasColumnType("TEXT");
 
                                     b2.HasKey("AuthorInfoArticleId", "Id");
 
@@ -304,7 +279,7 @@ namespace Pierce.Migrations
                     b.OwnsOne("Pierce.AuthorInfo", "AuthorInfo", b1 =>
                         {
                             b1.Property<long>("FeedId")
-                                .HasColumnType("bigint");
+                                .HasColumnType("INTEGER");
 
                             b1.HasKey("FeedId");
 
@@ -319,23 +294,21 @@ namespace Pierce.Migrations
                             b1.OwnsMany("Pierce.Author", "Authors", b2 =>
                                 {
                                     b2.Property<long>("AuthorInfoFeedId")
-                                        .HasColumnType("bigint");
+                                        .HasColumnType("INTEGER");
 
                                     b2.Property<int>("Id")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("integer");
+                                        .ValueGeneratedOnAddOrUpdate()
+                                        .HasColumnType("INTEGER");
 
                                     b2.Property<string>("Email")
-                                        .IsRequired()
-                                        .HasColumnType("text");
+                                        .HasColumnType("TEXT");
 
                                     b2.Property<string>("Link")
-                                        .IsRequired()
-                                        .HasColumnType("text");
+                                        .HasColumnType("TEXT");
 
                                     b2.Property<string>("Name")
                                         .IsRequired()
-                                        .HasColumnType("text");
+                                        .HasColumnType("TEXT");
 
                                     b2.HasKey("AuthorInfoFeedId", "Id");
 
@@ -357,7 +330,7 @@ namespace Pierce.Migrations
 
             modelBuilder.Entity("Pierce.Subscription", b =>
                 {
-                    b.HasOne("Pierce.Feed", null)
+                    b.HasOne("Pierce.Feed", "Feed")
                         .WithMany("Subscriptions")
                         .HasForeignKey("FeedId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -370,10 +343,14 @@ namespace Pierce.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_subscriptions_users_user_id");
+
+                    b.Navigation("Feed");
                 });
 
             modelBuilder.Entity("Pierce.Feed", b =>
                 {
+                    b.Navigation("Articles");
+
                     b.Navigation("Subscriptions");
                 });
 

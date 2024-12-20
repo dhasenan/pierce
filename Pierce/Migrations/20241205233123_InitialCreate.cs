@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -16,23 +15,23 @@ namespace Pierce.Migrations
                 name: "feeds",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    uri = table.Column<string>(type: "text", nullable: false),
-                    title = table.Column<string>(type: "text", nullable: false),
-                    link = table.Column<string>(type: "text", nullable: false),
-                    description = table.Column<string>(type: "text", nullable: false),
-                    categories = table.Column<string[]>(type: "text[]", nullable: false),
-                    logo_uri = table.Column<string>(type: "text", nullable: false),
-                    icon_uri = table.Column<string>(type: "text", nullable: false),
-                    image_link_target = table.Column<string>(type: "text", nullable: false),
-                    image_title = table.Column<string>(type: "text", nullable: false),
-                    last_read = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    read_interval = table.Column<TimeSpan>(type: "interval", nullable: false),
-                    next_read = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    errors = table.Column<int>(type: "integer", nullable: false),
-                    article_count = table.Column<int>(type: "integer", nullable: false),
-                    author_info = table.Column<string>(type: "jsonb", nullable: false)
+                    id = table.Column<long>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    uri = table.Column<string>(type: "TEXT", nullable: false),
+                    title = table.Column<string>(type: "TEXT", nullable: false),
+                    link = table.Column<string>(type: "TEXT", nullable: true),
+                    description = table.Column<string>(type: "TEXT", nullable: true),
+                    categories = table.Column<string>(type: "TEXT", nullable: false),
+                    logo_uri = table.Column<string>(type: "TEXT", nullable: true),
+                    icon_uri = table.Column<string>(type: "TEXT", nullable: true),
+                    image_link_target = table.Column<string>(type: "TEXT", nullable: true),
+                    image_title = table.Column<string>(type: "TEXT", nullable: true),
+                    last_read = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    read_interval = table.Column<TimeSpan>(type: "TEXT", nullable: false),
+                    next_read = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    errors = table.Column<int>(type: "INTEGER", nullable: false),
+                    article_count = table.Column<int>(type: "INTEGER", nullable: false),
+                    author_info = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -43,10 +42,10 @@ namespace Pierce.Migrations
                 name: "users",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    email = table.Column<string>(type: "text", nullable: false),
-                    password_hash = table.Column<string>(type: "text", nullable: false)
+                    id = table.Column<long>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    email = table.Column<string>(type: "TEXT", nullable: false),
+                    password_hash = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -57,18 +56,18 @@ namespace Pierce.Migrations
                 name: "articles",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    feed_id = table.Column<long>(type: "bigint", nullable: false),
-                    publish_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    link = table.Column<string>(type: "text", nullable: false),
-                    comment_link = table.Column<string>(type: "text", nullable: false),
-                    title = table.Column<string>(type: "text", nullable: false),
-                    description = table.Column<string>(type: "text", nullable: false),
-                    categories = table.Column<string[]>(type: "text[]", nullable: false),
-                    unique_id = table.Column<string>(type: "text", nullable: false),
-                    summary = table.Column<string>(type: "text", nullable: false),
-                    author_info = table.Column<string>(type: "jsonb", nullable: false)
+                    id = table.Column<long>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    feed_id = table.Column<long>(type: "INTEGER", nullable: false),
+                    publish_date = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    link = table.Column<string>(type: "TEXT", nullable: true),
+                    comment_link = table.Column<string>(type: "TEXT", nullable: true),
+                    title = table.Column<string>(type: "TEXT", nullable: false),
+                    description = table.Column<string>(type: "TEXT", nullable: false),
+                    categories = table.Column<string>(type: "TEXT", nullable: false),
+                    unique_id = table.Column<string>(type: "TEXT", nullable: true),
+                    summary = table.Column<string>(type: "TEXT", nullable: true),
+                    author_info = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -85,11 +84,11 @@ namespace Pierce.Migrations
                 name: "subscriptions",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    feed_id = table.Column<long>(type: "bigint", nullable: false),
-                    user_id = table.Column<long>(type: "bigint", nullable: false),
-                    interval = table.Column<TimeSpan>(type: "interval", nullable: false)
+                    id = table.Column<long>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    feed_id = table.Column<long>(type: "INTEGER", nullable: false),
+                    user_id = table.Column<long>(type: "INTEGER", nullable: false),
+                    interval = table.Column<TimeSpan>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
