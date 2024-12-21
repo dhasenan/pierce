@@ -58,7 +58,11 @@ public class ReadFeeds
         try
         {
           _logger.LogInformation($"reading feed {feed.Id} at {feed.Uri}");
-          Read(feed);
+          await Read(feed);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"while reading feed {feed.Id} {feed.Uri}", ex);
         }
         finally
         {

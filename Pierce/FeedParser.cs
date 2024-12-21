@@ -37,8 +37,8 @@ public class FeedParser
         if (v.Length < Rfc1123Length)
             return false;
         DateTime d;
-        // Since the length of the date can vary by 1, we might cut off on one side of the final space
-        // or the other. We trim both sides to be sure.
+        // Since the length of the date can vary by 1, we might cut off on one side of the final
+        // space or the other. We trim both sides to be sure.
         var datePart = v.Substring(0, Rfc1123Length).Trim();
         if (DateTime.TryParseExact(datePart, Rfc1123, null, DateTimeStyles.None, out d))
         {
@@ -63,17 +63,17 @@ public class FeedParser
         var rss = x.Descendants("rss").FirstOrDefault();
         XName atomFeedName = atom + "feed";
         var atomFeed = x.Descendants(atomFeedName).FirstOrDefault();
-        if (rss == null)
+        if (rss != null)
         {
-            if (atomFeed == null)
-            {
-                throw new ArgumentException("Feed did not contain an <rss> or <feed> element.");
-            }
+            ReadRss(feed, x);
+        }
+        else if (atomFeed != null)
+        {
             ReadAtom(feed, x);
         }
         else
         {
-            ReadRss(feed, x);
+            throw new ArgumentException("Feed did not contain an <rss> or <feed> element.");
         }
     }
 
@@ -294,39 +294,22 @@ public class FeedParser
                     );
             ElemLink(img, "link", v => feed.ImageLinkTarget = v);
         }
-        ReadArticles(feed, channel.Elements("item").AsEnumerable());
+        ReadArticles(feed, channel.Elements("item"));
     }
 
     private void ReadArticles(Feed feed, IEnumerable<XElement> elements)
     {
         var now = DateTime.UtcNow;
-        var headChunk = feed.Articles;
         var allArticles = elements
             .Select(x => ReadArticle(x, now))
             .Where(x => x != null)
+            .Where(x => !feed.Articles.Any(y => y.UniqueId == x.UniqueId))
             .ToList();
+        _logger.LogInformation($"feed {feed.Uri}: got {allArticles.Count} articles from {elements.Count()} article elements");
 
-        var dated = allArticles
-            // Articles with an explicitly set date
-            .Where(x => x.PublishDate != now)
-            // Order by the date, most recent to least recent
-            .OrderByDescending(x => x.PublishDate)
-            // Grab newest to oldest, stop if we've seen this before
-            .TakeWhile(x => headChunk.Any(y => y.UniqueId == x.UniqueId) == null)
-            // But insert oldest to newest, because it can cause issues otherwise.
-            .Reverse();
-        var nonDated = allArticles
-            // Articles with no explicitly set date
-            .Where(x => x.PublishDate == now)
-            // Only ones that appear in the list before the last one we've seen before.
-            .TakeWhile(x => headChunk.Any(y => y.UniqueId == x.UniqueId) == null);
-            // but don't reverse; assume articles are in order from oldest to newest
-        foreach (var c in new[]{dated, nonDated})
+        foreach (var article in allArticles)
         {
-            foreach (var article in c)
-            {
-                headChunk.Add(article);
-            }
+            feed.Articles.Add(article);
         }
     }
 }
