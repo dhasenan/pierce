@@ -29,6 +29,11 @@ public class PierceContext : DbContext
 
   protected override void OnModelCreating(ModelBuilder builder)
   {
+    builder.Entity<User>()
+      .HasMany(e => e.Subscriptions)
+      .WithOne(e => e.User)
+      .HasForeignKey(e => e.UserId)
+      .IsRequired();
     builder.Entity<Article>().OwnsOne(article => article.AuthorInfo, ownedBuilder =>
     {
       ownedBuilder.ToJson();
@@ -41,6 +46,11 @@ public class PierceContext : DbContext
     });
     builder.Entity<Feed>()
       .HasMany(e => e.Articles)
+      .WithOne(e => e.Feed)
+      .HasForeignKey(e => e.FeedId)
+      .IsRequired();
+    builder.Entity<Feed>()
+      .HasMany(e => e.Subscriptions)
       .WithOne(e => e.Feed)
       .HasForeignKey(e => e.FeedId)
       .IsRequired();

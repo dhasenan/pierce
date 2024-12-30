@@ -8,8 +8,11 @@
     <link rel='stylesheet' href='pierceweb.css' />
     <link rel='stylesheet' href='jqueryui/jquery-ui.css' />
     <link rel='stylesheet' href='jqueryui/jquery-ui.theme.css' />
-    <script type="text/javascript" src="jqueryui/jquery-ui.js"></script>
     <script type="text/javascript" src="jquery-3.7.1.js"></script>
+    <script type="text/javascript">
+      const jQuery = $;
+    </script>
+    <script type="text/javascript" src="jqueryui/jquery-ui.js"></script>
     <script type="text/javascript" src="app.js"></script>
   </head>
   <body>
@@ -17,7 +20,7 @@
       <div id='userName' style='float: left'>Not logged in</div>
       <div style='float: right'>
         <a href='#' onclick='view.showSettingsWindow()' style='color: black'>Settings</a></span>
-        | <a id="logInOrOut" href='#' onclick='view.loginLogout()' style='color: black'>Log
+        | <a id="logInOrOut" href='#' onclick='view.showLoginWindow()' style='color: black'>Log
           In</a></div>
     </div>
 		<div id="butterbar">
@@ -56,6 +59,106 @@
           I need some feeds.
         </div>
         <a id='addFeedButton' href='#'>Add a feed</a>
+      </div>
+    </div>
+
+    <div id='popupContainer' style='display: none'>
+      <!-- Popups! -->
+      <div id='addFeedWindow' title='Add a feed' class='addFeed'>
+        <div>
+        <div class="ajaxLoader" style="float: left; display: none">
+          <img src="/Content/loadinfo.net.gif" />
+        </div>
+          <table style='width: 25em'>
+            <tr>
+              <td><label for='addFeedUrl'>Feed URL:</label></td>
+              <td><input type='text' id='addFeedUrl' style='width: 98%%' /></td>
+            </tr>
+            <tr id='multifeed'>
+              <td />
+                <td><select id='multifeedOptions'></select></td>
+              </tr>
+              <tr>
+                <td><label for='addFeedTitle'>Title:</label></td>
+                <td><input type='text' id='addFeedTitle' style='width: 98%%' /></td>
+              </tr>
+              <tr>
+                <td><label for='addFeedLabels'>Labels:</label></td>
+                <td><input type='text' id='addFeedLabels' style='width: 98%%' /></td>
+              </tr>
+            </table>
+        </div>
+      </div>
+
+      <div id='modifyFeedWindow' title='Modify your feed'>
+        <div class="ajaxLoader" style="float: left; display: none">
+          <img src="/Content/loadinfo.net.gif" />
+        </div>
+        <table style='width: 25em'>
+          <tr>
+            <td><label for='modFeedUrl'>URL:</label></td>
+            <td><input type='text' id='modFeedUrl' style='width: 98%' readonly /></td>
+          </tr>
+          <tr>
+            <td><label for='modFeedTitle'>Title:</label></td>
+            <td><input type='text' id='modFeedTitle' style='width: 98%' /></td>
+          </tr>
+          <tr>
+            <td><label for='modFeedLabels'>Labels (separated by commas):</label></td>
+            <td><input type='text' id='modFeedLabels' style='width: 98%' /></td>
+          </tr>
+          <tr>
+            <td><label for='modFeedInterval'>Refresh every:</label></td>
+            <td><input type='text' id='modFeedInterval' min='15' /> minutes</td>
+          </tr>
+        </table>
+      </div>
+      
+      <div id='unknownError' title='An error has occurred' class='' style='width: 800px'>
+      </div>
+
+      <div id='loginWindow' title='Log In' class='login' style='width: 800px'>
+        <div class="ajaxLoader" style="float: left; display: none">
+          <img src="/Content/loadinfo.net.gif" />
+        </div>
+        <table style='width: 25em'>
+          <tr>
+            <td><label for='email'>Email address:</label></td>
+            <td><input id='email' type='text' /></td>
+          </tr>
+          <tr>
+            <td><label for='password'>Password:</label></td>
+            <td><input id='password' type='password' /></td>
+          </tr>
+        </table>
+      </div>
+
+      <div id='settingsWindow' title='Settings'>
+        <div class="ajaxLoader" style="float: left; display: none">
+          <img src="/Content/loadinfo.net.gif" />
+        </div>
+        <table>
+          <tr>
+            <td><label for='settingsEmail'>Email address:</label></td>
+            <td><input type='text' id='settingsEmail' /></td>
+          </tr>
+          <tr>
+            <td><label for='settingsDefaultInterval'>Default feed update interval:</label></td>
+            <td><input type='number' id='settingsDefaultInterval' /></td>
+          </tr>
+          <tr>
+            <td><label for='settingsCurrPassword'>Current password:</label></td>
+            <td><input type='password' id='settingsCurrPassword' /></td>
+          </tr>
+          <tr>
+            <td><label for='settingsPassword'>New password:</label></td>
+            <td><input type='password' id='settingsPassword' /></td>
+          </tr>
+          <tr>
+            <td><label for='settingsPasswordConf'>Confirm new password:</label></td>
+            <td><input type='password' id='settingsPasswordConf' /></td>
+          </tr>
+        </table>
       </div>
     </div>
   </body>

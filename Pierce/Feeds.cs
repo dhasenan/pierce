@@ -23,6 +23,7 @@ public class Subscription
 
   [ForeignKey(nameof(User))]
   public long UserId { get; set; }
+  public User User { get; set; }
 
   public TimeSpan Interval { get; set; }
 }
@@ -88,6 +89,14 @@ public class Feed
 
   public IList<Subscription> Subscriptions { get; set; } = new List<Subscription>();
   public IList<Article> Articles { get; set; } = new List<Article>();
+
+  public Feed Redacted()
+  {
+    var f = (Feed) MemberwiseClone();
+    f.Articles = new List<Article>();
+    f.Subscriptions = new List<Subscription>();
+    return f;
+  }
 }
 
 public class AuthorInfo
@@ -137,21 +146,19 @@ public class FeedsController : Controller
     this._autodetectFeeds = autodetectFeeds;
   }
 
-  [HttpGet("/")]
+  [HttpGet("list")]
   public async Task<IActionResult> List()
   {
+    Console.WriteLine("hihi!");
     var user = await HttpContext.PierceUser(db);
-    var subs = from sub in db.Subscriptions
-      join feed in db.Feeds
-      on sub.FeedId equals feed.Id
-      where sub.UserId == user.Id
-      select new { Subscription = sub, Feed = feed };
+    var subs =  user.Subscriptions;
     foreach (var sub in subs)
     {
       sub.Feed.Subscriptions = new List<Subscription>();
     }
     return Json(subs);
   }
+
 
   public class SubscriptionDetails
   {
@@ -199,9 +206,17 @@ public class FeedsController : Controller
       FeedId = feed.Id,
       Interval = interval,
     };
+    await db.AddAsync(sub);
 
     await db.SaveChangesAsync();
 
     return Ok(sub);
+  }
+
+  [HttpGet("articles")]
+  public async Task<IActionResult> Articles(long feedId, DateTime? since)
+  {
+    throw new Exception("not implemented");
+//    var articles = from 
   }
 }
