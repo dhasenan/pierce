@@ -1,28 +1,30 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 using System.Net;
+using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Pierce;
 
-[Index(nameof(UserId), nameof(FeedId), IsUnique = true)]
-[Index(nameof(FeedId))]
+[Index("user_id", "feed_id", IsUnique = true)]
+[Index("feed_id")]
 public class Subscription
 {
   [Key]
   [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
   public long Id { get; set; }
 
-  [ForeignKey(nameof(Feed))]
-  public long FeedId { get; set; }
+  [Required]
+  [ForeignKey("feed_id")]
   public Feed Feed { get; set; }
 
-  [ForeignKey(nameof(User))]
-  public long UserId { get; set; }
+  [JsonIgnore]
+  [Required]
+  [ForeignKey("user_id")]
   public User User { get; set; }
 
   public TimeSpan Interval { get; set; }
@@ -35,8 +37,10 @@ public class Article
   [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
   public long Id { get; set; }
 
-  [ForeignKey(nameof(Feed))]
   public long FeedId { get; set; }
+  [JsonIgnore]
+  [Required]
+  [ForeignKey(nameof(FeedId))]
   public Feed Feed { get; set; }
 
   public DateTime PublishDate { get; set; }
@@ -87,16 +91,8 @@ public class Feed
 
   public AuthorInfo AuthorInfo { get; set; } = new AuthorInfo();
 
-  public IList<Subscription> Subscriptions { get; set; } = new List<Subscription>();
-  public IList<Article> Articles { get; set; } = new List<Article>();
-
-  public Feed Redacted()
-  {
-    var f = (Feed) MemberwiseClone();
-    f.Articles = new List<Article>();
-    f.Subscriptions = new List<Subscription>();
-    return f;
-  }
+  [InverseProperty("Feed")]
+  public ICollection<Article> Articles { get; } = new List<Article>();
 }
 
 public class AuthorInfo
@@ -151,11 +147,11 @@ public class FeedsController : Controller
   {
     Console.WriteLine("hihi!");
     var user = await HttpContext.PierceUser(db);
-    var subs =  user.Subscriptions;
-    foreach (var sub in subs)
-    {
-      sub.Feed.Subscriptions = new List<Subscription>();
-    }
+    var subs = from sub in db.Subscriptions
+      join feed in db.Feeds
+      on sub.Feed equals feed
+      where sub.User == user
+      select new { Subscription = sub, Feed = feed };
     return Json(subs);
   }
 
@@ -185,13 +181,18 @@ public class FeedsController : Controller
         return Ok(new { error = "No feed found for URL " + uri});
       }
       feed = feeds[0];
-      var existing = await db.Feeds.SingleOrDefaultAsync(feed => feed.Uri == feed.Uri);
+      var existing = await db.Feeds.SingleOrDefaultAsync(f => f.Uri == feed.Uri);
       if (existing == null)
       {
         await db.Feeds.AddAsync(feed);
+        await db.SaveChangesAsync();
+      }
+      else
+      {
+        feed = existing;
       }
     }
-    var subscription = await db.Subscriptions.SingleOrDefaultAsync(sub => sub.FeedId == feed.Id && sub.UserId == user.Id);
+    var subscription = await db.Subscriptions.SingleOrDefaultAsync(sub => sub.Feed == feed && sub.User == user);
     if (subscription != null)
     {
       // nothing to do, you're already subscribed
@@ -202,8 +203,8 @@ public class FeedsController : Controller
     if (interval > Feed.MaxUpdateInterval) interval = Feed.MaxUpdateInterval;
     var sub = new Subscription
     {
-      UserId = user.Id,
-      FeedId = feed.Id,
+      User = user,
+      Feed = feed,
       Interval = interval,
     };
     await db.AddAsync(sub);

@@ -18,7 +18,6 @@ public class User
   public long Id { get; private set; }
   public string Email { get; set; } = "";
   public string PasswordHash { get; private set; } = "";
-  public ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 
   public string Password
   {
@@ -35,7 +34,6 @@ public class User
     {
       Id = this.Id,
       Email = this.Email,
-      Subscriptions = this.Subscriptions,
     };
   }
 }

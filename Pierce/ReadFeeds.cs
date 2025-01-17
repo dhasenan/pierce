@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace Pierce;
 
@@ -49,15 +50,16 @@ public class ReadFeeds
     {
       var now = DateTime.UtcNow;
       var feeds = _db.Feeds
+        .Include(x => x.Articles)
         .Where(x => x.NextRead < now)
         .OrderBy(x => x.NextRead)
         .ToList();
-      _logger.LogInformation($"have {feeds.Count} feeds to read");
+      _logger.LogInformation($"have {feeds.Count} feeds to read before {now}");
       foreach (var feed in feeds)
       {
         try
         {
-          _logger.LogInformation($"reading feed {feed.Id} at {feed.Uri}");
+          _logger.LogInformation($"reading feed {feed.Id} at {feed.Uri} with {feed.Articles.Count} articles so far");
           await Read(feed);
         }
         catch (Exception ex)
@@ -67,10 +69,17 @@ public class ReadFeeds
         finally
         {
           feed.NextRead = DateTime.UtcNow + feed.ReadInterval;
-          _logger.LogInformation($"feed has {feed.Articles.Count} articles");
+          foreach (var article in feed.Articles)
+          {
+              if (article.Id == 0)
+              {
+                  _db.Update(article);
+              }
+          }
           _db.Update(feed);
           _db.SaveChanges();
         }
+          _logger.LogInformation($"feed has {feed.Articles.Count} articles");
       }
     }
 

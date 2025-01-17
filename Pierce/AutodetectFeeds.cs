@@ -15,14 +15,12 @@ public class AutodetectFeeds
   private readonly FeedParser _parser;
   private readonly ILogger<AutodetectFeeds> _logger;
   private readonly ReadFeeds _reader;
-  private readonly PierceContext _db;
 
-  public AutodetectFeeds(Wget wget, FeedParser parser, ReadFeeds reader, PierceContext db, ILogger<AutodetectFeeds> logger)
+  public AutodetectFeeds(Wget wget, FeedParser parser, ReadFeeds reader, ILogger<AutodetectFeeds> logger)
   {
     _wget = wget;
     _parser = parser;
     _reader = reader;
-    _db = db;
     _logger = logger;
   }
 

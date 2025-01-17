@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Pierce")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+87553776fc145808a8aba6d0c7feff37048b97d4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+39ee0e46c5e33b05aadbeb26ef527e22c2458045")]
 [assembly: System.Reflection.AssemblyProductAttribute("Pierce")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Pierce")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

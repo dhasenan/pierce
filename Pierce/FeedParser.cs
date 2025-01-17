@@ -309,6 +309,7 @@ public class FeedParser
 
         foreach (var article in allArticles)
         {
+            article.Feed = feed;
             feed.Articles.Add(article);
         }
     }
